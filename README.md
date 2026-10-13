@@ -5,7 +5,7 @@ own README, and can be used on its own or chained with the others.
 
 | skill | job | status |
 |---|---|---|
-| [broll-recorder](skills/broll-recorder/) | say what to show, get finished B-roll (docs, articles, sites, code, click-through flows) in one consistent look | ready |
+| [broll-recorder](skills/broll-recorder/) | trigger word: **B-roll**. Say what to show, get finished B-roll (docs, articles, sites, code, click-through flows) in one consistent look | ready |
 | technical-video-script-library | script styles, a selection guide and examples; writes the `[B-ROLL: ...]` markers the recorder reads | separate repo for now, folding in next |
 
 ## How the pieces connect

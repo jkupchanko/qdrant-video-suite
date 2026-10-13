@@ -10,6 +10,12 @@ paragraph that matches the sentence.
 
 Watch `broll_skill_pitch.mp4` (77 seconds) before reading further.
 
+## The trigger word
+
+**B-roll.** Say it (or write it, or have the script skill emit a `[B-ROLL: ...]` marker) and this skill
+is the one that answers. "Make B-roll of the payload docs", "I need B-roll here", "B-roll: the pricing page"
+all start a recording. The only time it does not fire is when someone is just talking about what B-roll is.
+
 ## What it is for
 
 Every explainer, tutorial, or launch video needs cutaways: the docs page you are talking about, the article
