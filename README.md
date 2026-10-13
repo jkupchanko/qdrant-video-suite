@@ -4,10 +4,69 @@ Skills that take a technical video from idea to edit with less hand work. They r
 script, make the B-roll, cut. Each skill does one job, has its own README, and works on its own or
 chained with the next.
 
+## Choose a part of the video
+
+Choose a skill below. New parts of the suite are marked Coming soon.
+
+<table>
+<tr>
+<td width="33%" valign="top">
+<h3><a href="skills/technical-video-script-library/">Script writing</a></h3>
+<p>Choose the viewer, hook, story structure and clean script layout.</p>
+<p><strong>Available guide</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3><a href="skills/broll-recorder/">B roll</a></h3>
+<p>Capture selected supporting scenes where they help explain the subject.</p>
+<p><strong>Available skill</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3>Qdrant brand consistency</h3>
+<p>Keep logos, colors and fonts aligned with the <a href="skills/broll-recorder/references/styles.md">existing production style</a>.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<h3>Editing style</h3>
+<p>Set the pace, shot length, emphasis and overall feel of the edit.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3>Transitions</h3>
+<p>Connect sections and move clearly between the presenter, code and examples.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3>Camera layout</h3>
+<p>Plan face appearances, presenter size and consistent screen placement.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<h3>Visual explanations</h3>
+<p>Use diagrams, highlights and animation where the explanation needs them.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3>Audio and captions</h3>
+<p>Keep speech clear, music restrained and captions readable.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3>Final review</h3>
+<p>Check the finished video for clarity, accuracy and visual consistency.</p>
+<p><strong>Coming soon</strong></p>
+</td>
+</tr>
+</table>
+
 ## 1. Script writing: [technical-video-script-library](skills/technical-video-script-library/)
 
 Ten storytelling structures (the journey, the lesson, the practical tip, the comparison, and so on), a guide
-for picking the viewer and the structure, and worked examples. Hand-off convention: the script marks every cutaway inline as
+for picking the viewer and the structure, and worked examples. Only selected supporting scenes need B roll.
+Hand-off convention: the script marks each selected capture inline as
 `[B-ROLL: URL | the line said there]` (syntax in `skills/broll-recorder/references/script-markers.md`). The
 script skill is still being worked on; adding that marker to its output is the next step.
 
