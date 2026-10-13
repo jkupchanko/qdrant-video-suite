@@ -95,6 +95,9 @@ The structure decides the order of ideas.
 The presentation may be on camera, narration over a walkthrough, a conversation or a visual timeline.
 Distinguish the written hook on screen from the verbal hook.
 Place filming and editing directions beneath the passage they support.
+Plan full screen face appearances and keep any smaller presenter window consistent in size and position.
+Add B roll instructions only at selected moments where supporting material clarifies the explanation.
+Each selected insert identifies where to find the material, what to capture and the spoken line it supports.
 
 [See the presentation and editing layout](Presentation%20and%20Editing%20Layout.md)
 
@@ -131,3 +134,14 @@ The audience knows the work, is considering alternatives and wants a five minute
 The Comparison and Choice fits because the video must support a decision between approaches.
 
 [Open one example of the recommendation and layout](Examples/One%20Example.md)
+
+### A worked video recommendation
+
+This separate example applies the general layout to a five minute search demonstration with a little code.
+It includes the audience choice, section purposes, a clean script, consistent camera placement and two selective B roll inserts.
+
+[Open the recommendation](Examples/miniCOIL%20Recommendation.md)
+
+[Open the five minute script](Examples/miniCOIL%20Five%20Minute%20Script.md)
+
+[Open the recording notes](Examples/miniCOIL%20Recording%20Notes.md)
