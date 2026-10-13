@@ -1,0 +1,53 @@
+﻿{
+    "skill_name":  "broll-recorder",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "I\u0027m cutting a Qdrant tutorial in After Effects. At 1:12 I say \"and the nice part is you can create the payload index before you even upload the data\". Get me a 6 second b-roll of the right part of https://qdrant.tech/documentation/concepts/indexing/ for that line, dark mode, and tell me what caption to put under it.",
+                      "expected_output":  "A 1920x1080 mp4 of about 6 s showing the \u0027Create a Payload Index\u0027 section (scroll reveal, cursor on the heading / code block), a contact sheet, a manifest naming the section and the spoken line, and a short caption suggestion.",
+                      "files":  [
+
+                                ],
+                      "assertions":  [
+                                         "one_mp4_clip_saved",
+                                         "clip_is_1920x1080",
+                                         "clip_duration_5_to_7s",
+                                         "manifest_or_notes_name_create_payload_index_section",
+                                         "contact_sheet_png_saved",
+                                         "notes_give_a_caption"
+                                     ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "here\u0027s a chunk of my transcript: \u0027there\u0027s no single configuration that works best for every bulk upload, it depends on what you\u0027re optimizing for\u0027. find where that\u0027s covered on https://qdrant.tech/articles/bulk-uploads-in-qdrant/ and record it with the red box around the paragraph like the evidence-card style, 5 seconds. then tell me how you\u0027d insert it in AE.",
+                      "expected_output":  "A 5 s 1080p clip of the \u0027Choosing the Right Bulk Upload Strategy\u0027 section with a red highlight box, manifest, and an insert plan (evidence card or full-screen with box, timing, caption).",
+                      "files":  [
+
+                                ],
+                      "assertions":  [
+                                         "one_mp4_clip_saved",
+                                         "clip_is_1920x1080",
+                                         "clip_duration_4_to_6s",
+                                         "section_is_bulk_upload_strategy",
+                                         "highlight_style_used",
+                                         "notes_describe_ae_insert"
+                                     ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "For my \u0027what is Qdrant\u0027 video I need 3 cutaways in one go: the homepage https://qdrant.tech/ while I say \u0027high performance vector search at scale\u0027, the quickstart https://qdrant.tech/documentation/quickstart/ while I say \u0027you can run it locally in docker in one command\u0027, and the pricing page https://qdrant.tech/pricing/ for \u0027there is a free tier\u0027. 5 seconds each. Give me the clips and a list of what each one shows.",
+                      "expected_output":  "Three 5 s 1080p clips (home, quickstart docker section, pricing free tier), each with a manifest, plus manifests.json and a summary table of section matched per clip.",
+                      "files":  [
+
+                                ],
+                      "assertions":  [
+                                         "three_mp4_clips_saved",
+                                         "all_clips_1920x1080",
+                                         "all_clips_4_to_6s",
+                                         "quickstart_clip_matched_docker",
+                                         "pricing_clip_matched_free",
+                                         "notes_list_what_each_clip_shows"
+                                     ]
+                  }
+              ]
+}

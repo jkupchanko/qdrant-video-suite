@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.webm
+*_sections.json
+*_review.json
+.venv/
