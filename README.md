@@ -40,6 +40,11 @@ Demo: `demos/broll_skill_pitch.mp4` (77 s).
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
 
+## Reviewing
+
+This is open for review and use. Read the README in each skill folder, try the commands, and open an issue
+or a pull request with what broke or what you would change. MIT licensed.
+
 ## Using a skill with Claude
 
 Copy the skill folder into `~/.claude/skills/` (or point Claude Code at it) and ask in plain words. The
