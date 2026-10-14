@@ -1,0 +1,4 @@
+interface:
+  display_name: "Camera Layout"
+  short_description: "Plan presenter framing and screen space from a script"
+  default_prompt: "Use $camera-layout to plan camera placement and presenter size from this script, with rectangular placeholders in the examples."

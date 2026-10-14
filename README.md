@@ -1,8 +1,8 @@
 # Qdrant video suite
 
-Skills that take a technical video from idea to edit with less hand work. They run in order: write the
-script, make the B-roll, cut. Each skill does one job, has its own README, and works on its own or
-chained with the next.
+Skills that take a technical video from idea to edit with less hand work.
+Write the script, plan the camera layout, record selected supporting scenes, then edit.
+The script leads the full sequence; each available skill also works on its own.
 
 ## Choose a part of the video
 
@@ -38,9 +38,9 @@ Choose a skill below. New parts of the suite are marked Coming soon.
 <p><strong>Coming soon</strong></p>
 </td>
 <td width="33%" valign="top">
-<h3>Camera layout</h3>
+<h3><a href="skills/camera-layout/">Camera layout</a></h3>
 <p>Plan face appearances, presenter size and consistent screen placement.</p>
-<p><strong>Coming soon</strong></p>
+<p><strong>Available skill</strong></p>
 </td>
 </tr>
 <tr>
@@ -86,7 +86,14 @@ git subtree pull --prefix skills/technical-video-script-library https://github.c
 
 and push edits made here back out with `git subtree push` to the same prefix and remote.
 
-## 2. B-roll: [broll-recorder](skills/broll-recorder/)
+## 2. Camera layout: [camera-layout](skills/camera-layout/)
+
+The script determines what the viewer needs to see.
+This skill plans presenter framing, inset size, content only views and split screen choices at the relevant passages.
+It includes rectangular placeholder examples, a five minute camera plan and a review of thirty videos through ninety saved frame samples.
+The full screen appearance count comes from the chosen sequence, rather than a fixed quota.
+
+## 3. B-roll: [broll-recorder](skills/broll-recorder/)
 
 Trigger word: **B-roll**. Say what to show and get a finished 1080p60 clip in one consistent look: docs
 zooms, article slides, code typing itself, title cards, and click-through flows done by the tool in a real
@@ -95,7 +102,7 @@ beyond a one-time `setup.py`.
 
 Demo: `demos/broll_skill_pitch.mp4` (77 s).
 
-## 3. Edit
+## 4. Edit
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
 
