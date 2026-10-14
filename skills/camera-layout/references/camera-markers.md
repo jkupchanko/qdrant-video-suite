@@ -51,6 +51,17 @@ Not a reason for a call: a new paragraph, a pause, a feeling that it has been a 
 sentence turns ("now", "so", "let's", "here's") and on screen words ("code", "terminal", "run", "click");
 put the call under the passage that starts with one.
 
+## The window never covers the point of focus
+
+Before a SMALL or INSET call stands, look at what is under that corner on the card or page the viewer sees.
+If text, code, a diagram or a control sits there, the window does not go there. The order to try is top
+right, top left, bottom right, bottom left; the first clear corner wins. If no corner is clear (a ranked
+list that runs the full width, a page with navigation on both sides), the call is NONE, not a window on
+top of the material. Once a corner is chosen it stays for the section: the window is removed and restored
+in the same place, and only a section boundary may move it. `scripts/window_overlay.py --auto-corner`
+measures what is under each corner and moves or refuses the window; the example sheet
+`examples/corner-safety.png` shows it on four screens.
+
 ## What a good script looks like
 
 Two or three layouts over a 5 minute video, 10 to 15 calls, one corner for the window in each section, no

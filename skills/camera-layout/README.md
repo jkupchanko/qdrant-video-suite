@@ -77,6 +77,10 @@ python scripts/audit.py VIDEO.mp4 --sheet check.png
 
 [See how a script carries camera calls, and when one is required](references/camera-markers.md)
 
+[See the five minute script with the camera written in, final form](examples/miniCOIL-script-camera-final.md)
+
+[See the window kept off the point of focus: corner check on four screens](examples/corner-safety.png)
+
 [See six passages worked through: the words, the call, the frame, and why](examples/miniCOIL-camera-walkthrough.png)
 
 [See the layout decisions and sizing](references/decision-guide.md)
