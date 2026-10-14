@@ -165,14 +165,37 @@ def render(rows, notes, conflicts, used, total, cpm, n_used, title):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("script"); ap.add_argument("--out"); ap.add_argument("--style", default="cut", choices=["cut", "window"]); ap.add_argument("--corner", default="bottom-right")
+    ap.add_argument("--annotate", help="also write the script with a '> Camera plan:' line under every passage")
+    ap.add_argument("--json", help="also write the rows as json (for building previews)")
     a = ap.parse_args()
     text = open(a.script, encoding="utf-8").read()
     title = next((l[2:].strip() for l in text.splitlines() if l.startswith("# ")), a.script)
     sections = parse(text)
     if not any(s["passages"] for s in sections): raise SystemExit("no spoken passages found; is this a script?")
-    out = render(*plan(sections, a.style, a.corner), title)
+    result = plan(sections, a.style, a.corner); rows = result[0]
+    out = render(*result, title)
     if a.out: open(a.out, "w", encoding="utf-8").write(out); print(f"-> {a.out}")
     else: print(out)
+    if a.json:
+        import json; json.dump(rows, open(a.json, "w", encoding="utf-8"), indent=1); print(f"-> {a.json}")
+    if a.annotate:
+        # walk the script again and drop the plan line under each paragraph, matched by its first words
+        lines = text.splitlines(); out_lines = []; ri = 0; buf = []
+        def key(t): return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()[:40]
+        rk = [key(r["text"]) for r in rows]
+        for line in lines + [""]:
+            if line.strip() and not line.startswith(("[**", "## ", "# ", "**", "[B-ROLL")):
+                buf.append(line); out_lines.append(line); continue
+            if buf:
+                k = key(" ".join(l.strip() for l in buf))
+                for j in range(ri, len(rows)):
+                    if rk[j] and (k.startswith(rk[j][:25]) or rk[j].startswith(k[:25])):
+                        r = rows[j]; ri = j + 1
+                        out_lines.append(f"> **Camera plan ({r['t'] // 60:.0f}:{r['t'] % 60:02.0f}, {r['hold']:.0f} s):** {r['layout'].upper()}, {r['pos']}. {r['why']}")
+                        break
+                buf = []
+            out_lines.append(line)
+        open(a.annotate, "w", encoding="utf-8").write("\n".join(out_lines)); print(f"-> {a.annotate}")
 
 if __name__ == "__main__":
     main()
