@@ -1,0 +1,102 @@
+[
+ {
+  "t": 0.0,
+  "section": "Hook",
+  "text": "If you are loading a dataset into Qdrant with a for loop and an upsert inside it, this is the one change to make before you run it again. It takes one line, and you can see the difference in the terminal.",
+  "layout": "full",
+  "why": "hook: the person asks the question",
+  "hold": 15.0,
+  "script_camera": null,
+  "pos": "head and shoulders, centred"
+ },
+ {
+  "t": 15.0,
+  "section": "Before you change it",
+  "text": "You need three things already in place. A collection that exists, with the vector size your embeddings use. A list of points, each with an id, a vector and whatever payload you want to filter on later. And the Python client connected to your cluster.",
+  "layout": "small",
+  "why": "something is on screen but not dense: presence, small",
+  "hold": 20.833333333333332,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 35.83333333333333,
+  "section": "Before you change it",
+  "text": "If those are there, the rest is one call.",
+  "layout": "small",
+  "why": "code on screen: house rule, small window top right so the person stays while they read",
+  "hold": 4.166666666666667,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 40.0,
+  "section": "The change",
+  "text": "Here is the loop most people start with. It calls upsert once per point. Every call is a round trip to the server, so a hundred thousand points means a hundred thousand round trips.",
+  "layout": "full",
+  "why": "code on screen: house rule, small window top right so the person stays while they read (away from full for over 40 s: come back)",
+  "hold": 23.050847457627118,
+  "script_camera": null,
+  "pos": "head and shoulders, centred"
+ },
+ {
+  "t": 63.050847457627114,
+  "section": "The change",
+  "text": "Replace the loop with upload_points. Give it the collection name and the list of points. Set batch_size to something like two hundred and fifty six.",
+  "layout": "small",
+  "why": "code on screen: house rule, small window top right so the person stays while they read",
+  "hold": 18.305084745762713,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 81.35593220338983,
+  "section": "The change",
+  "text": "The client now groups the points into batches of that size and sends each batch as one request. Nothing about your points changes. Only how many trips they take.",
+  "layout": "small",
+  "why": "code on screen: house rule, small window top right so the person stays while they read",
+  "hold": 19.661016949152543,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 101.01694915254237,
+  "section": "The change",
+  "text": "Run both versions on the same list and print the elapsed time after each. Read the two numbers you get. The batched one is the one to keep.",
+  "layout": "full",
+  "why": "code on screen: house rule, small window top right so the person stays while they read (away from full for over 40 s: come back)",
+  "hold": 18.983050847457626,
+  "script_camera": null,
+  "pos": "head and shoulders, centred"
+ },
+ {
+  "t": 120.0,
+  "section": "How you know it worked",
+  "text": "Open the collection in the dashboard and read the point count. It should match the length of your list. If it is short, the upload stopped partway; the client prints the batch it failed on, so start again from there.",
+  "layout": "small",
+  "why": "walkthrough: presence while the viewer follows the cursor",
+  "hold": 20.0,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 140.0,
+  "section": "How you know it worked",
+  "text": "One condition changes how useful this is. If your points carry large payloads, a smaller batch size keeps each request inside the server's limits. Try two hundred and fifty six first, and halve it if you see request size errors.",
+  "layout": "small",
+  "why": "something is on screen but not dense: presence, small",
+  "hold": 20.0,
+  "script_camera": null,
+  "pos": "window 20% width, corner (top-right)"
+ },
+ {
+  "t": 160.0,
+  "section": "Try it on yours",
+  "text": "Take the loop you have, swap the loop for one upload_points call, and run it on the same data. Read the elapsed time and the point count. That is the whole change.",
+  "layout": "full",
+  "why": "code on screen: house rule, small window top right so the person stays while they read (away from full for over 40 s: come back)",
+  "hold": 20.0,
+  "script_camera": null,
+  "pos": "head and shoulders, centred"
+ }
+]
