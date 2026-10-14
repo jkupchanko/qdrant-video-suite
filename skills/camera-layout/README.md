@@ -1,45 +1,60 @@
-# Camera Layout
+# camera-layout
 
-A skill for choosing presenter framing and screen space from a script or a standalone scene brief.
-It plans where the face belongs, how large it is, when it disappears and what the next view should be.
-Examples use rectangular placeholders, with no actual faces.
+**Where is the person while this is said?**
 
-[Read the skill](SKILL.md)
+The camera piece of the video suite. Give it a script and it returns a camera plan: for each passage, the
+layout (full talking head, half split, large inset window, small corner window, or no face), the size and
+corner, how long it holds, and why. The rules are not taste; they are measured from 32 of the most-watched
+AI and software-development videos (Fireship, NetworkChuck, Tech With Tim, IBM, Theo, Sajjaad Khader and
+others), sampled every two seconds and tied to what was being said at each change.
 
-## Six layout examples
+## What the audit found
 
-![Six camera layouts with rectangular presenter placeholders](assets/layout-examples.svg)
+- Videos use three layouts, not one. A small window left in the corner for the whole video is the
+  exception, not the norm.
+- The most common move is face to screen and back. Nearly half of all changes are that pair.
+- The face comes back fast. Three videos in four return to the full face within 40 s; stretches with no
+  face at all run about 10 s and rarely pass 50 s.
+- The opening holds about 20 s before the first change, whether it starts on the face or the screen.
+- Changes happen where the sentence turns ("now", "so", "let's") and where the words name the screen
+  ("code", "terminal", "run", "click"), not on a clock.
+- Two families: cut videos (mostly face, 3-4 changes a minute) and window videos (one window over the
+  screen, under 1 change a minute). The cut family is the more watched one here.
 
-The diagrams are proposed compositions.
-They distinguish full screen content, a small inset, a content dominant side panel, equal halves and a comparison between two content views.
+Full numbers: `references/tendencies.md`. Speech cues at each change: `references/cues.md`.
+Layout proportions and framing: `references/layouts.md`.
 
-## How it works with the suite
+## Use it
 
-The script supplies the narration, section times and selected supporting inserts.
-Camera layout attaches decisions to those passages while preserving the story.
-The capture workflow records only the supporting scenes the script requests.
-Transition directions state the intended connection between views; editing effects remain a separate choice.
+```bash
+python scripts/camera_plan.py SCRIPT.md --out camera_plan.md
+```
 
-## Try it on its own
+Works on a script from the script-writing skill (it reads the Camera and Show directions and reports where
+it disagrees) or on plain prose with headings. Options: `--style window` for long courses that live in one
+window, `--corner top-left` to move the window.
 
-Give the skill a scene or script, its format and what the viewer needs to inspect.
-For example: explain a simple concept, then show a code call and its result, using rectangular presenter placeholders.
-It can also plan a video with narration and no visible presenter.
+To measure a video instead of planning one:
 
-## Worked example and review
+```bash
+python scripts/audit.py VIDEO.mp4 --sheet check.png
+```
 
-[See the five minute camera plan](examples/miniCOIL-camera-plan.md)
+## Files
 
-[See the layout decisions and sizing](references/decision-guide.md)
+```
+camera-layout/
+  SKILL.md                   what Claude follows
+  README.md                  this file
+  scripts/camera_plan.py     script -> camera plan
+  scripts/audit.py           video -> layout timeline and stats
+  scripts/tendencies.py      many audits -> the habits
+  scripts/cues.py            transcripts + audits -> what is said at each change
+  references/tendencies.md   the measured corpus report
+  references/cues.md         speech around changes
+  references/layouts.md      the five layouts with proportions
+  references/audit_summary.csv  one row per audited video
+```
 
-[See the annotation and machine handoff format](references/output-format.md)
-
-[Read the review of the earlier video sample](references/frame-review.md)
-
-The frame review supplies observations, not a measured retention formula or a universal presenter quota.
-
-The skill was also applied independently to the approved five minute script, a simple marketing comparison and a vertical scene without a presenter.
-Checks covered script preservation, timeline coverage, rectangle geometry and protected content.
-Inspect actual captures at the intended viewing size before recording or editing.
-
-[Return to the suite](../../README.md)
+Needs Python with opencv-python, numpy and imageio-ffmpeg; cues.py also needs faster-whisper; the corpus
+download used yt-dlp.
