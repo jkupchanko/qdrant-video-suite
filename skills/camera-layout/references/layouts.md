@@ -1,5 +1,23 @@
 # The five layouts, with proportions
 
+## Framing the face (applies inside every layout)
+
+Measure the face first (brow to chin = one unit, h), then build the crop around it. The same rule in a
+full frame, an inset, a small window or a half panel; only the aspect changes.
+
+- top: the top of the head (about 0.35 h above the face box) plus 0.25 h of headroom
+- bottom: the chin plus 0.9 h, so the neck and the top of the chest are in and the shoulders read
+- sides: at least 0.6 h of clear space left and right of the face, so a turn or a lean stays inside
+- centre: the face sits on the vertical centre line; its centre lands a little above the crop's middle so
+  the eyes are near the upper third
+- movement: on a recording, measure where the face goes through the whole clip and frame around that
+  envelope, not one frame
+
+Not every source has room for this. A close-up recorded too tight cannot be fixed in the crop; the tool
+says so ("source too tight: N px below the chin") and the fix is at the camera. `scripts/frame_face.py`
+applies the rule and writes the crops with a guide image.
+
+
 Every camera decision in a script is one of these. Sizes are for a 1920x1080 frame; scale with the frame.
 
 ## full: talking head

@@ -33,6 +33,14 @@ Numbers: [tendencies.md](references/tendencies.md). Speech at each change: [cues
 The five measured layout classes with proportions: [layouts.md](references/layouts.md).
 These are observations of a sample, not a retention formula.
 
+## Framing the face
+
+![The framing rule on four presenters](assets/framing-examples.png)
+
+Measure the face, keep headroom above the head, run down past the chin to the shoulders, keep clear space on
+both sides for turns, centre the face. `scripts/frame_face.py` applies it to a still or a whole take and says
+when the source was shot too tight to allow it.
+
 ## How it works with the suite
 
 The script supplies the narration, section times and selected supporting inserts.

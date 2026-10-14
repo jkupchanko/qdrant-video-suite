@@ -64,6 +64,20 @@ python <skill>/scripts/camera_plan.py SCRIPT.md --out camera_plan.md [--style cu
 
 Read its table against the script and keep the writer's choice wherever it does not break a check.
 
+## Frame the face the same way everywhere
+
+Inside any layout the face is framed by one rule: measure the face (brow to chin = h), keep 0.25 h of
+headroom above the head, run the crop down to the chin plus 0.9 h so the shoulders are in, keep at least
+0.6 h clear on each side so a turn stays in frame, and centre the face horizontally with the eyes near the
+upper third. On a recording, frame around where the face goes through the clip, not one frame.
+
+```bash
+python <skill>/scripts/frame_face.py TAKE.mp4 --out crops/ [--mirror]   # crops per layout + a guide image
+```
+
+If it reports the source is too tight, the fix is at the camera (step back or widen), not in the crop.
+Details in `references/layouts.md`.
+
 ## Keep the layout consistent
 
 Use rectangular presenter placeholders when examples are requested.
