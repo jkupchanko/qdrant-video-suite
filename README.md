@@ -93,6 +93,7 @@ This skill plans presenter framing, inset size, content only views and split scr
 It includes rectangular placeholder examples, a five minute camera plan and a review of thirty videos through ninety saved frame samples.
 The full screen appearance count comes from the chosen sequence, rather than a fixed quota.
 A measured audit of 32 popular AI and software-development videos (sampled every two seconds, 16 transcribed) backs the checks: opening hold, how fast the face returns, changes per minute, three layouts per video.
+Hand-off from the script: a `[**Camera:** LAYOUT, position, size.]` line under the passage where the camera changes, required at the opening, wherever something must be read, wherever the person carries the line, at a section boundary, and at the close (`skills/camera-layout/references/camera-markers.md`).
 
 ## 3. B-roll: [broll-recorder](skills/broll-recorder/)
 

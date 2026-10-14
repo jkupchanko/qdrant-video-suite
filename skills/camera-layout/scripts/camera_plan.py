@@ -165,7 +165,7 @@ def render(rows, notes, conflicts, used, total, cpm, n_used, title):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("script"); ap.add_argument("--out"); ap.add_argument("--style", default="cut", choices=["cut", "window"]); ap.add_argument("--corner", default="bottom-right")
-    ap.add_argument("--annotate", help="also write the script with a '> Camera plan:' line under every passage")
+    ap.add_argument("--annotate", help="also write the script with a [**Camera:** ...] call under each passage where the camera changes")
     ap.add_argument("--json", help="also write the rows as json (for building previews)")
     a = ap.parse_args()
     text = open(a.script, encoding="utf-8").read()
@@ -179,10 +179,17 @@ def main():
     if a.json:
         import json; json.dump(rows, open(a.json, "w", encoding="utf-8"), indent=1); print(f"-> {a.json}")
     if a.annotate:
-        # walk the script again and drop the plan line under each paragraph, matched by its first words
-        lines = text.splitlines(); out_lines = []; ri = 0; buf = []
+        # write a [**Camera:** ...] call in the script's own form under each passage where the camera CHANGES
+        lines = text.splitlines(); out_lines = []; ri = 0; buf = []; prev_layout = None
         def key(t): return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()[:40]
         rk = [key(r["text"]) for r in rows]
+        def call(r):
+            lay = r["layout"]; pos = ""
+            if lay in ("small", "inset"):
+                corner = a.corner.replace("-", " "); pos = f", {corner}, {'20' if lay == 'small' else '28'}% width"
+            elif lay == "half": pos = ", right, 40%"
+            why = r["why"].split(" (")[0]
+            return f"[**Camera:** {lay.upper()}{pos}. **Why:** {why}.]"
         for line in lines + [""]:
             if line.strip() and not line.startswith(("[**", "## ", "# ", "**", "[B-ROLL")):
                 buf.append(line); out_lines.append(line); continue
@@ -191,7 +198,8 @@ def main():
                 for j in range(ri, len(rows)):
                     if rk[j] and (k.startswith(rk[j][:25]) or rk[j].startswith(k[:25])):
                         r = rows[j]; ri = j + 1
-                        out_lines.append(f"> **Camera plan ({r['t'] // 60:.0f}:{r['t'] % 60:02.0f}, {r['hold']:.0f} s):** {r['layout'].upper()}, {r['pos']}. {r['why']}")
+                        if r["layout"] != prev_layout:
+                            out_lines.append(call(r)); prev_layout = r["layout"]
                         break
                 buf = []
             out_lines.append(line)

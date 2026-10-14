@@ -92,6 +92,15 @@ Do not invent footage or imply that a placeholder is a recorded presenter.
 Specify width relative to the frame and preserve the chosen aspect ratio.
 For machine handoffs, use [the output format](references/output-format.md), which also defines coordinates and transition intent.
 
+## How the script carries the calls
+
+A camera call is a `[**Camera:** LAYOUT, position, size.]` line under the passage where the camera changes;
+between calls it holds. A call is required at the opening, wherever something must be read (NONE or SMALL),
+wherever the person carries the line or the face has been away about 40 s (FULL), at a section boundary
+where the material changes, and at the close. Nothing else earns one. The vocabulary and the full rules are
+in [camera-markers.md](references/camera-markers.md); `camera_plan.py --annotate` writes calls in exactly
+this form, only at changes, so a writer can leave Camera out and get it filled.
+
 ## Return and check
 
 Return passage specific Camera directions beneath the spoken text, with the existing Show and Transition fields.

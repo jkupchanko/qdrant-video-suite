@@ -75,6 +75,8 @@ python scripts/audit.py VIDEO.mp4 --sheet check.png
 [See the five minute camera plan](examples/miniCOIL-camera-plan.md) and
 [the planner's generated plan for the same script](examples/miniCOIL-camera-plan-generated.md)
 
+[See how a script carries camera calls, and when one is required](references/camera-markers.md)
+
 [See the layout decisions and sizing](references/decision-guide.md)
 
 [See the annotation and machine handoff format](references/output-format.md)
