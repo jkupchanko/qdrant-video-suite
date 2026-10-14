@@ -1,0 +1,457 @@
+{
+ "file": "Bulk Uploads_FinalCleanUps.mp4",
+ "duration": 207.4,
+ "fps": 29.97,
+ "n": 59,
+ "per_min": 17.07,
+ "counts": {
+  "cut": 12,
+  "other": 5,
+  "slide": 23,
+  "element-anim": 15,
+  "element-in": 3,
+  "zoom": 1
+ },
+ "by_context": {
+  "face->face": {
+   "cut": 3,
+   "other": 1,
+   "element-in": 3,
+   "slide": 4,
+   "element-anim": 1
+  },
+  "face->screen": {
+   "other": 1,
+   "slide": 7,
+   "element-anim": 4
+  },
+  "screen->screen": {
+   "slide": 11,
+   "other": 1,
+   "element-anim": 10,
+   "cut": 6
+  },
+  "screen->face": {
+   "cut": 3,
+   "other": 2,
+   "slide": 1,
+   "zoom": 1
+  }
+ },
+ "soft_median_s": 0.23,
+ "events": [
+  {
+   "t": 3.64,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 7.57,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 10.08,
+   "kind": "other",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "face->face"
+  },
+  {
+   "t": 11.95,
+   "kind": "other",
+   "frames": 17,
+   "dur": 0.57,
+   "context": "face->screen"
+  },
+  {
+   "t": 12.71,
+   "kind": "slide",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "face->screen"
+  },
+  {
+   "t": 13.05,
+   "kind": "slide",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 13.35,
+   "kind": "other",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "screen->screen"
+  },
+  {
+   "t": 13.61,
+   "kind": "slide",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 13.91,
+   "kind": "element-anim",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "screen->screen"
+  },
+  {
+   "t": 14.25,
+   "kind": "element-anim",
+   "frames": 12,
+   "dur": 0.4,
+   "context": "screen->screen"
+  },
+  {
+   "t": 14.81,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 15.12,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 15.38,
+   "kind": "element-anim",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "screen->screen"
+  },
+  {
+   "t": 15.68,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 15.95,
+   "kind": "element-anim",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "screen->screen"
+  },
+  {
+   "t": 16.25,
+   "kind": "cut",
+   "frames": 2,
+   "dur": 0.07,
+   "context": "screen->screen"
+  },
+  {
+   "t": 32.63,
+   "kind": "element-in",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 35.8,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "face->screen"
+  },
+  {
+   "t": 40.94,
+   "kind": "slide",
+   "frames": 6,
+   "dur": 0.2,
+   "context": "screen->screen"
+  },
+  {
+   "t": 43.78,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "screen->screen"
+  },
+  {
+   "t": 44.78,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 49.58,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->face"
+  },
+  {
+   "t": 52.72,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "face->face"
+  },
+  {
+   "t": 61.83,
+   "kind": "other",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "screen->face"
+  },
+  {
+   "t": 64.76,
+   "kind": "slide",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "face->face"
+  },
+  {
+   "t": 65.97,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "face->screen"
+  },
+  {
+   "t": 70.6,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->screen"
+  },
+  {
+   "t": 72.87,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "screen->screen"
+  },
+  {
+   "t": 80.95,
+   "kind": "slide",
+   "frames": 6,
+   "dur": 0.2,
+   "context": "screen->screen"
+  },
+  {
+   "t": 85.49,
+   "kind": "slide",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "face->screen"
+  },
+  {
+   "t": 85.99,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "face->screen"
+  },
+  {
+   "t": 90.89,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->screen"
+  },
+  {
+   "t": 99.5,
+   "kind": "slide",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "face->screen"
+  },
+  {
+   "t": 104.37,
+   "kind": "slide",
+   "frames": 6,
+   "dur": 0.2,
+   "context": "screen->screen"
+  },
+  {
+   "t": 108.04,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "screen->screen"
+  },
+  {
+   "t": 108.48,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 113.05,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->screen"
+  },
+  {
+   "t": 119.75,
+   "kind": "element-in",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 122.06,
+   "kind": "slide",
+   "frames": 6,
+   "dur": 0.2,
+   "context": "face->screen"
+  },
+  {
+   "t": 127.46,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "screen->face"
+  },
+  {
+   "t": 131.56,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "face->screen"
+  },
+  {
+   "t": 132.27,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "face->screen"
+  },
+  {
+   "t": 137.7,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->face"
+  },
+  {
+   "t": 140.81,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "face->face"
+  },
+  {
+   "t": 146.71,
+   "kind": "slide",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "screen->screen"
+  },
+  {
+   "t": 150.62,
+   "kind": "slide",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "face->face"
+  },
+  {
+   "t": 151.62,
+   "kind": "element-anim",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "face->screen"
+  },
+  {
+   "t": 157.52,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->face"
+  },
+  {
+   "t": 161.73,
+   "kind": "slide",
+   "frames": 5,
+   "dur": 0.17,
+   "context": "face->screen"
+  },
+  {
+   "t": 166.77,
+   "kind": "slide",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 169.87,
+   "kind": "slide",
+   "frames": 8,
+   "dur": 0.27,
+   "context": "screen->screen"
+  },
+  {
+   "t": 170.47,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->screen"
+  },
+  {
+   "t": 176.34,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->screen"
+  },
+  {
+   "t": 185.08,
+   "kind": "element-in",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 192.86,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "face->face"
+  },
+  {
+   "t": 198.87,
+   "kind": "cut",
+   "frames": 1,
+   "dur": 0.03,
+   "context": "screen->screen"
+  },
+  {
+   "t": 199.33,
+   "kind": "zoom",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "screen->face"
+  },
+  {
+   "t": 199.83,
+   "kind": "other",
+   "frames": 7,
+   "dur": 0.23,
+   "context": "screen->face"
+  },
+  {
+   "t": 201.73,
+   "kind": "element-anim",
+   "frames": 4,
+   "dur": 0.13,
+   "context": "face->face"
+  }
+ ]
+}
