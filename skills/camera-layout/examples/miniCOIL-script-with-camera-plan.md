@@ -18,7 +18,7 @@ Let’s try it with three short passages and a little Python.
 One passage is about a dog running through a park.  
 One is about soup.  
 And one is about a star.
-[**Camera:** SMALL, bottom right, 20% width. **Why:** something is on screen but not dense: presence, small.]
+[**Camera:** SMALL, top right, 20% width. **Why:** something is on screen but not dense: presence, small.]
 
 Our first question is perro corriendo en el parque.  
 That means a dog running in the park.  
@@ -46,7 +46,7 @@ Both words contribute to the same part of the search representation.
 
 For each trained concept, the encoder produces eight numbers.  
 Those numbers also depend on the surrounding text.
-[**Camera:** SMALL, bottom right, 20% width. **Why:** something is on screen but not dense: presence, small.]
+[**Camera:** SMALL, top right, 20% width. **Why:** something is on screen but not dense: presence, small.]
 
 The question and passage can share a concept even though their words are in different languages.  
 That gives them a way to match without translating the question first.
@@ -57,7 +57,7 @@ That gives them a way to match without translating the question first.
 ## Show the code   1:35 to 2:35
 
 Here’s how that becomes a search.
-[**Camera:** NONE. **Why:** the viewer must read what is on screen.]
+[**Camera:** SMALL, top right, 20% width. **Why:** code on screen: house rule, small window top right so the person stays while they read.]
 
 We encode the passage as English.  
 Then we encode the question as Spanish.
@@ -72,7 +72,6 @@ Sparse means we keep the positions with values instead of listing every empty po
 
 We store the passage’s vector in Qdrant alongside its text.  
 This collection also uses the IDF setting, which weights positions according to how common they are across the collection.
-[**Camera:** SMALL, bottom right, 20% width. **Why:** the viewer must read what is on screen.]
 
 [**Show:** The sparse vector configuration, with Modifier.IDF highlighted. **Transition:** Move to the search call.]
 
@@ -109,7 +108,7 @@ What happens when the meaning or vocabulary becomes more complicated?
 
 Take the English word bat.  
 It could mean an animal or something you use in baseball.
-[**Camera:** SMALL, bottom right, 20% width. **Why:** something is on screen but not dense: presence, small.]
+[**Camera:** SMALL, top right, 20% width. **Why:** something is on screen but not dense: presence, small.]
 
 Sharing a concept is only part of the task.  
 The surrounding words help the encoder represent which meaning is intended.
@@ -130,7 +129,7 @@ So your own vocabulary belongs in the test.
 ## Give them something to try   4:20 to 5:00
 
 Start with a few short English passages you can judge yourself.
-[**Camera:** SMALL, bottom right, 20% width. **Why:** something is on screen but not dense: presence, small.]
+[**Camera:** SMALL, top right, 20% width. **Why:** something is on screen but not dense: presence, small.]
 
 Write one Spanish question with an obvious answer.  
 Then try a question where the surrounding words change the meaning.  

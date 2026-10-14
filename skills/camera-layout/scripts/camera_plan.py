@@ -17,13 +17,15 @@ checks and any conflicts with Camera directions already in the script.
 import argparse, re, sys
 
 LAYOUTS = ("full", "half", "inset", "small", "none")
-SIZE = {"full": "head and shoulders, centred", "half": "full-height panel, 40% width, presenter side", "inset": "window 28% width, corner", "small": "window 18% width, corner", "none": "screen only"}
+SIZE = {"full": "head and shoulders, centred", "half": "full-height panel, 40% width, presenter side", "inset": "window 28% width, corner", "small": "window 20% width, corner", "none": "screen only"}
 
 READ = r"\b(code|terminal|output|result|results|returns?|response|diagram|illustration|config|configuration|snippet|function|command|query|vector|json|table|screenshot|logs?|error)\b"
 WALK = r"\b(click|open|run|type|scroll|go to|navigate|select|paste|install|let's (build|write|add)|we (add|write|create|set))\b"
 TALK = r"\b(why|because|think|idea|means|matter|important|honestly|opinion|i (think|believe|like)|the point|in short|so what|recap|summary|to sum|that's it|thanks|subscribe|comment|next video|link)\b"
 COMPARE = r"\b(versus|vs\.?|compared (to|with)|comparison|side by side)\b"
 READ_HARD = r"\b(highlight|highlighted|readable|inspect|read|code|calls?|config|configuration|diagram|illustration|results?|output|ranked?|table)\b"
+CODE = r"\b(code|calls?|snippet|config|configuration|function|command|terminal)\b"
+LOOK_ONLY = r"\b(diagram|illustration|results?|table|ranked?)\b"
 HOOK_RESULT = r"\b(look at this|here's what|watch this|this is what happens|the result)\b"
 
 def mmss(s):
@@ -76,6 +78,8 @@ def choose(p, idx, n_in_section, section_title, is_first):
         if re.search(HOOK_RESULT, t): return "none", "hook lands on a result the viewer sees"
         return "full", "hook: the person asks the question"
     if re.search(COMPARE, t) and re.search(READ, t + " " + show): return "half", "comparison: person and content carry equal weight"
+    if re.search(CODE, show + " " + t) and not re.search(LOOK_ONLY, show):
+        return "small", "code on screen: house rule, small window top right so the person stays while they read"
     if re.search(READ_HARD, show): return "none", "the viewer must read what is on screen"
     if re.search(WALK, t): return "small", "walkthrough: presence while the viewer follows the cursor"
     if show and not re.search(TALK, t): return "small", "something is on screen but not dense: presence, small"
@@ -84,7 +88,7 @@ def choose(p, idx, n_in_section, section_title, is_first):
     if re.search(READ, t): return "small", "talks about on-screen material: keep presence, keep the screen"
     return "full", "explanation with nothing to read: the person carries it"
 
-def plan(sections, style="cut", corner="bottom-right"):
+def plan(sections, style="cut", corner="top-right"):
     rows = []; t = 0.0; first = True; wpm = 150.0
     for si, s in enumerate(sections):
         if s["start"] is not None: t = float(s["start"])
@@ -164,7 +168,7 @@ def render(rows, notes, conflicts, used, total, cpm, n_used, title):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("script"); ap.add_argument("--out"); ap.add_argument("--style", default="cut", choices=["cut", "window"]); ap.add_argument("--corner", default="bottom-right")
+    ap.add_argument("script"); ap.add_argument("--out"); ap.add_argument("--style", default="cut", choices=["cut", "window"]); ap.add_argument("--corner", default="top-right")
     ap.add_argument("--annotate", help="also write the script with a [**Camera:** ...] call under each passage where the camera changes")
     ap.add_argument("--json", help="also write the rows as json (for building previews)")
     a = ap.parse_args()

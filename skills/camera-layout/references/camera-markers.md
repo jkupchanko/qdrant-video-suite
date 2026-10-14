@@ -32,9 +32,13 @@ Write a call under a passage when any of these is true. If none is, write nothin
 1. **The opening.** The first passage always carries one, so the editor knows whether the video opens on the
    person or the screen. The opening holds about 20 s; don't call a change inside it unless the hook needs
    the screen.
-2. **Something must be read.** Code, results, a table, a diagram, an article insert. The call is NONE (or
-   SMALL if the screen is light and you keep talking). Every B-roll block implies NONE for its duration;
-   write the call only if the camera should be somewhere other than hidden when the insert ends.
+2. **Something must be read.** Code, results, a table, a diagram, an article insert.
+   - Code: SMALL, top right, 20% width. House rule: the person stays on while the viewer reads the code,
+     because code is explained as much as read. The window lives in the top right, where a code card has
+     nothing. Drop to NONE only when the code or its output runs under that corner.
+   - Results, tables, diagrams, article inserts: NONE. These are looked at, and a window would cover part of
+     them. Every B-roll block implies NONE for its duration; write a call only if the camera should be
+     somewhere other than hidden when the insert ends.
 3. **The person carries the line.** A reason, an opinion, a question, the summary of a section, the call to
    action. The call is FULL. Also write FULL when the face has been away for about 40 s, even mid-section:
    that is when watched videos bring it back.

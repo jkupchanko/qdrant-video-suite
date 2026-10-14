@@ -95,7 +95,7 @@ For machine handoffs, use [the output format](references/output-format.md), whic
 ## How the script carries the calls
 
 A camera call is a `[**Camera:** LAYOUT, position, size.]` line under the passage where the camera changes;
-between calls it holds. A call is required at the opening, wherever something must be read (NONE or SMALL),
+between calls it holds. A call is required at the opening, wherever something must be read (code: SMALL top right by house rule; results, diagrams and inserts: NONE),
 wherever the person carries the line or the face has been away about 40 s (FULL), at a section boundary
 where the material changes, and at the close. Nothing else earns one. The vocabulary and the full rules are
 in [camera-markers.md](references/camera-markers.md); `camera_plan.py --annotate` writes calls in exactly

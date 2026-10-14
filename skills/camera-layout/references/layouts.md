@@ -49,6 +49,9 @@ than 25 s before either the face returns to full or the window goes away. Bottom
 common corners (10 and 9 videos); pick the corner that does not cover the terminal, the results or the
 cursor's working area, and keep the same corner through a section.
 
+House rule (John, 2026-10-14): code gets the small window, top right, 20% width, by default. It is the one
+reading layout where the person stays on screen.
+
 ## none: screen only
 No presenter. The viewer reads code, results, a diagram, an article, a product. 31% of all time; median
 stretch 10 s, three quarters under 22 s, almost never over 50 s without the face coming back in some size.
