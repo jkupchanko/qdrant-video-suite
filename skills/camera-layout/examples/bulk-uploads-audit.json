@@ -1,0 +1,158 @@
+{
+ "file": "Bulk Uploads_FinalCleanUps.mp4",
+ "duration": 208.2,
+ "step": 2.0,
+ "share": {
+  "full": 0.471,
+  "half": 0.0,
+  "inset": 0.0,
+  "small": 0.0,
+  "none": 0.528
+ },
+ "switches": 24,
+ "switches_per_min": 6.92,
+ "avg_segment_s": {
+  "full": 7.5,
+  "none": 9.2
+ },
+ "opens_with": "full",
+ "closes_with": "full",
+ "small_corner": null,
+ "small_over": {},
+ "switches_by_third": [
+  7,
+  9,
+  8
+ ],
+ "transitions": {
+  "full->none": 12,
+  "none->full": 12
+ },
+ "segments": [
+  {
+   "layout": "full",
+   "start": 0.0,
+   "end": 12.0
+  },
+  {
+   "layout": "none",
+   "start": 12.0,
+   "end": 18.0
+  },
+  {
+   "layout": "full",
+   "start": 18.0,
+   "end": 36.0
+  },
+  {
+   "layout": "none",
+   "start": 36.0,
+   "end": 50.0
+  },
+  {
+   "layout": "full",
+   "start": 50.1,
+   "end": 54.1
+  },
+  {
+   "layout": "none",
+   "start": 54.1,
+   "end": 62.1
+  },
+  {
+   "layout": "full",
+   "start": 62.1,
+   "end": 66.1
+  },
+  {
+   "layout": "none",
+   "start": 66.1,
+   "end": 82.1
+  },
+  {
+   "layout": "full",
+   "start": 82.1,
+   "end": 86.1
+  },
+  {
+   "layout": "none",
+   "start": 86.1,
+   "end": 92.1
+  },
+  {
+   "layout": "full",
+   "start": 92.1,
+   "end": 100.1
+  },
+  {
+   "layout": "none",
+   "start": 100.1,
+   "end": 114.1
+  },
+  {
+   "layout": "full",
+   "start": 114.1,
+   "end": 122.1
+  },
+  {
+   "layout": "none",
+   "start": 122.1,
+   "end": 128.1
+  },
+  {
+   "layout": "full",
+   "start": 128.1,
+   "end": 132.1
+  },
+  {
+   "layout": "none",
+   "start": 132.1,
+   "end": 138.1
+  },
+  {
+   "layout": "full",
+   "start": 138.1,
+   "end": 142.1
+  },
+  {
+   "layout": "none",
+   "start": 142.1,
+   "end": 148.1
+  },
+  {
+   "layout": "full",
+   "start": 148.1,
+   "end": 152.2
+  },
+  {
+   "layout": "none",
+   "start": 152.2,
+   "end": 158.2
+  },
+  {
+   "layout": "full",
+   "start": 158.2,
+   "end": 162.2
+  },
+  {
+   "layout": "none",
+   "start": 162.2,
+   "end": 178.2
+  },
+  {
+   "layout": "full",
+   "start": 178.2,
+   "end": 194.2
+  },
+  {
+   "layout": "none",
+   "start": 194.2,
+   "end": 200.2
+  },
+  {
+   "layout": "full",
+   "start": 200.2,
+   "end": 208.2
+  }
+ ]
+}

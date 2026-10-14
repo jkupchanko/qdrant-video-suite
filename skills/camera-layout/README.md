@@ -70,6 +70,8 @@ python scripts/audit.py VIDEO.mp4 --sheet check.png
 
 ## Worked example and review
 
+[See the audit of a finished Qdrant video](examples/bulk-uploads-audit.md) (Bulk Uploads: habits versus the corpus, framing, the small window on real footage)
+
 [See the five minute camera plan](examples/miniCOIL-camera-plan.md) and
 [the planner's generated plan for the same script](examples/miniCOIL-camera-plan-generated.md)
 
@@ -93,6 +95,8 @@ camera-layout/
   scripts/audit.py           video -> layout timeline and stats
   scripts/tendencies.py      many audits -> the habits
   scripts/cues.py            transcripts + audits -> what is said at each change
+  scripts/frame_face.py      face -> crops by the framing rule, with a guide image
+  scripts/window_overlay.py  screen clip + face take -> rectangular window by the rule
   references/                decision-guide, output-format, layouts, frame-review, tendencies, cues, audit_summary.csv
   examples/                  worked plan, generated plan, machine-handoff json
   assets/layout-examples.svg

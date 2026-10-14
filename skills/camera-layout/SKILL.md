@@ -76,6 +76,8 @@ python <skill>/scripts/frame_face.py TAKE.mp4 --out crops/ [--mirror]   # crops 
 ```
 
 If it reports the source is too tight, the fix is at the camera (step back or widen), not in the crop.
+To put that crop into a window over a screen clip (rounded rectangle, thin border, corner and size by the
+layout): `python <skill>/scripts/window_overlay.py SCREEN.mp4 FACE.mp4 --crop x,y,w,h --width 0.20 --corner top-right --out OUT.mp4`.
 Details in `references/layouts.md`.
 
 ## Keep the layout consistent
