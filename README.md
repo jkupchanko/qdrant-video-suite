@@ -104,7 +104,15 @@ beyond a one-time `setup.py`.
 
 Demo: `demos/broll_skill_pitch.mp4` (77 s).
 
-## 4. Edit
+## 4. Transitions: [transitions](skills/transitions/)
+
+How the picture gets from one shot to the next, measured from the same 50 videos: 62% of visible changes
+are labels and cards over a held shot, and among real shot changes 65% are cuts. Rules: cut by default, a
+0.3 s push only for a card arriving over the presenter, a 0.25 s dissolve only screen to screen, fade to
+black only at a chapter break. Audits any video, renders the same join several ways on real footage, and
+writes the choice into the script's Transition field.
+
+## 5. Edit
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
 

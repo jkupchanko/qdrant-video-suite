@@ -1,6 +1,6 @@
 ---
 name: camera-layout
-description: The camera piece of the video suite. Use when a video needs presenter framing, camera placement, inset or PiP sizing, split screen choices, "where should my face be", "when do I cut to the screen", or a camera plan tied to a script (including scripts from the script-writing skill that carry Camera directions), and when someone wants to audit how an existing video or creator places the camera. Decides, passage by passage, whether the presenter is full screen, in a side panel, in a large or small inset, or hidden, how big, which corner, how long it holds and when it changes, using a decision guide plus a measured audit of 32 popular AI and software-development videos.
+description: The camera piece of the video suite. Use when a video needs presenter framing, camera placement, inset or PiP sizing, split screen choices, "where should my face be", "when do I cut to the screen", or a camera plan tied to a script (including scripts from the script-writing skill that carry Camera directions), and when someone wants to audit how an existing video or creator places the camera. Decides, passage by passage, whether the presenter is full screen, in a side panel, in a large or small inset, or hidden, how big, which corner, how long it holds and when it changes, using a decision guide plus a measured audit of 50 popular AI and software-development videos.
 ---
 
 # Camera Layout
@@ -38,7 +38,7 @@ Read [the decision guide](references/decision-guide.md) for sizing, protected co
 
 ## Check the plan against what watched videos do
 
-The habits below are measured from 32 popular AI and software-development videos sampled every two seconds
+The habits below are measured from 50 popular AI and software-development videos sampled every two seconds
 with the words spoken at each change ([tendencies.md](references/tendencies.md), [cues.md](references/cues.md)).
 They are observations of a sample, not retention rules; use them as checks on a plan, and say which one a
 departure breaks.
@@ -112,7 +112,7 @@ Check content legibility, protected regions, consistent placement and any timing
 Use the [placeholder examples](assets/layout-examples.svg), the [worked camera plan](examples/miniCOIL-camera-plan.md)
 and the [planner's generated plan](examples/miniCOIL-camera-plan-generated.md) for the same script when a visible example helps.
 The [frame review](references/frame-review.md) records observations from ninety saved stills and their limits;
-the [measured audit](references/tendencies.md) adds continuous sampling of 32 videos. Neither proves a retention effect.
+the [measured audit](references/tendencies.md) adds continuous sampling of 50 videos. Neither proves a retention effect.
 
 ## Audit a video instead
 

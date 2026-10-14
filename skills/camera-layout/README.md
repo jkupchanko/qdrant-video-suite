@@ -15,11 +15,11 @@ They distinguish full screen content, a small inset, a content dominant side pan
 
 ## What the measured audit found
 
-32 of the most-watched AI and software-development videos (Fireship, NetworkChuck, Tech With Tim, IBM, Theo,
-Sajjaad Khader and others) were sampled every two seconds, and 16 of them were transcribed so each camera
+50 of the most-watched AI and software-development videos (Fireship, NetworkChuck, Tech With Tim, IBM, Theo,
+Sajjaad Khader, Jeff Su, ByteByteGo, Matt Pocock and others) were sampled every two seconds, and 16 of them were transcribed so each camera
 change could be tied to what was being said.
 
-- Videos use three layouts, not one. A small window left in the corner for the whole video is the exception.
+- Videos use two or three layouts, not one. Half of them use three; a small window left in the corner for the whole video is the exception.
 - The most common move is face to screen and back; nearly half of all changes are that pair.
 - The face comes back fast: three videos in four return to the full face within 40 s, and stretches with no
   face run about 10 s and rarely pass 50 s.
@@ -90,7 +90,7 @@ python scripts/audit.py VIDEO.mp4 --sheet check.png
 [See the annotation and machine handoff format](references/output-format.md)
 
 [Read the review of the earlier video sample](references/frame-review.md) (ninety saved stills) and
-[the measured audit](references/tendencies.md) (32 videos, continuous)
+[the measured audit](references/tendencies.md) (50 videos, continuous)
 
 The skill was also applied independently to the approved five minute script, a simple marketing comparison and a vertical scene without a presenter.
 Checks covered script preservation, timeline coverage, rectangle geometry and protected content.
