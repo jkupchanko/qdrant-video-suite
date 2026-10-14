@@ -8,8 +8,9 @@ full frame, an inset, a small window or a half panel; only the aspect changes.
 - top: the top of the head (about 0.35 h above the face box) plus 0.25 h of headroom
 - bottom: the chin plus 0.9 h, so the neck and the top of the chest are in and the shoulders read
 - sides: at least 0.6 h of clear space left and right of the face, so a turn or a lean stays inside
-- centre: the face sits on the vertical centre line; its centre lands a little above the crop's middle so
-  the eyes are near the upper third
+- centre: the face sits dead on the vertical centre line, always. When the source is too tight for the
+  clearances, the crop shrinks symmetrically around the face; it never slides sideways to fit. Vertically the
+  face centre lands a little above the crop's middle so the eyes are near the upper third
 - movement: on a recording, measure where the face goes through the whole clip and frame around that
   envelope, not one frame
 

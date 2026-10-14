@@ -58,22 +58,26 @@ def measure(path, step=0.5):
     return img, (float(x), float(y), float(w), float(h)), float(h), 1
 
 def crop_box(env, h, aspect, W, H, headroom=0.25, head_top=0.35, chin_buffer=0.9, side=0.6):
+    """the crop around the face. Horizontal centring on the face is never given up: when the source is too
+    tight, the crop shrinks symmetrically around the face centre instead of sliding sideways."""
     ex, ey, ew, eh = env
+    cx = ex + ew / 2; cy = ey + eh / 2
     top = ey - head_top * h - headroom * h
     bottom = ey + eh + chin_buffer * h
-    left = ex - side * h; right = ex + ew + side * h
-    ch = bottom - top; cw = right - left
-    cx = ex + ew / 2
-    # widen (never shrink) to the aspect, keeping the face centred horizontally
-    if cw / ch < aspect: cw = ch * aspect
-    else: ch = cw / aspect; top = (ey + eh / 2) - ch * 0.42   # face centre a little above the crop centre: eyes near the upper third
-    left = cx - cw / 2; right = cx + cw / 2; bottom = top + ch
-    # clamp to the source, shifting rather than shrinking; report the shift
-    dx = max(0, -left) - max(0, right - W); dy = max(0, -top) - max(0, bottom - H)
-    left += dx; right += dx; top += dy; bottom += dy
-    if left < 0 or right > W or top < 0 or bottom > H:    # still too big: scale the crop down around the face centre
-        k = min(W / cw, H / ch); cw *= k; ch *= k; left = min(max(0, cx - cw / 2), W - cw); top = min(max(0, (ey + eh / 2) - ch * 0.42), H - ch); right, bottom = left + cw, top + ch; dx = dy = 0
-    return (int(left), int(top), int(right), int(bottom)), (dx, dy)
+    ch = bottom - top; cw = ew + 2 * side * h
+    if cw / ch < aspect: cw = ch * aspect            # widen to the aspect (never shrink)
+    else: ch = cw / aspect
+    # the widest crop that keeps the face dead centre horizontally inside the source
+    cw_max = 2 * min(cx, W - cx)
+    if cw > cw_max: cw = cw_max; ch = cw / aspect
+    if ch > H: ch = H; cw = ch * aspect
+    left = cx - cw / 2; right = cx + cw / 2
+    top = cy - 0.42 * ch                             # eyes near the upper third
+    dy = 0
+    if top < 0: dy = -top
+    elif top + ch > H: dy = H - (top + ch)
+    top += dy; bottom = top + ch
+    return (int(round(left)), int(round(top)), int(round(right)), int(round(bottom))), (0, dy)
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
