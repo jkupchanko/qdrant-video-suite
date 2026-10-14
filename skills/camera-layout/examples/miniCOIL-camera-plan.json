@@ -1,0 +1,508 @@
+{
+  "frame": {
+    "width": 1920,
+    "height": 1080
+  },
+  "timing_basis": "script targets with proposed scene subdivisions",
+  "presenter_source": "rectangular placeholder",
+  "full_screen_presenter_appearances": 4,
+  "source_script": "../../technical-video-script-library/Examples/miniCOIL Five Minute Script.md",
+  "selected_capture_refs": {
+    "B01": "Existing home and casa article illustration",
+    "B02": "Existing bat article illustration"
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "section": "Hook",
+      "spoken_cue": "Your search box accepts Spanish, but your documents are in English.",
+      "start_seconds": 0,
+      "end_seconds": 10,
+      "layout": "presenter_full",
+      "presenter": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "shape": "rectangle",
+        "shot": "medium",
+        "angle": "straight on"
+      },
+      "content": null,
+      "protected_regions": [],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "preview",
+      "section": "Hook",
+      "spoken_cue": "Can it still find the right answer?",
+      "start_seconds": 10,
+      "end_seconds": 20,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "preparation",
+      "section": "Set up the example",
+      "spoken_cue": "One passage is about a dog running through a park.",
+      "start_seconds": 20,
+      "end_seconds": 50,
+      "layout": "content_with_inset",
+      "presenter": {
+        "x": 0.77,
+        "y": 0.05,
+        "width": 0.2,
+        "height": 0.2666667,
+        "shape": "rectangle",
+        "crop_aspect_ratio": "4:3",
+        "shot": "head and shoulders",
+        "angle": "straight on"
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.65,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Keep the same camera placement."
+    },
+    {
+      "id": "concept_question",
+      "section": "Explain the connection",
+      "spoken_cue": "Why would perro match dog?",
+      "start_seconds": 50,
+      "end_seconds": 62,
+      "layout": "content_with_inset",
+      "presenter": {
+        "x": 0.77,
+        "y": 0.05,
+        "width": 0.2,
+        "height": 0.2666667,
+        "shape": "rectangle",
+        "crop_aspect_ratio": "4:3",
+        "shot": "head and shoulders",
+        "angle": "straight on"
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.65,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "concept_article",
+      "section": "Explain the connection",
+      "spoken_cue": "The article illustrates this with home and casa.",
+      "start_seconds": 62,
+      "end_seconds": 72,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": "B01",
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "concept_context",
+      "section": "Explain the connection",
+      "spoken_cue": "Those numbers also depend on the surrounding text.",
+      "start_seconds": 72,
+      "end_seconds": 85,
+      "layout": "content_with_inset",
+      "presenter": {
+        "x": 0.77,
+        "y": 0.05,
+        "width": 0.2,
+        "height": 0.2666667,
+        "shape": "rectangle",
+        "crop_aspect_ratio": "4:3",
+        "shot": "head and shoulders",
+        "angle": "straight on"
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.65,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "code_handoff",
+      "section": "Explain the connection",
+      "spoken_cue": "That gives them a way to match without translating the question first.",
+      "start_seconds": 85,
+      "end_seconds": 95,
+      "layout": "presenter_full",
+      "presenter": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "shape": "rectangle",
+        "shot": "medium",
+        "angle": "straight on"
+      },
+      "content": null,
+      "protected_regions": [],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "code",
+      "section": "Show the code",
+      "spoken_cue": "We encode the passage as English.",
+      "start_seconds": 95,
+      "end_seconds": 155,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Keep the same camera placement."
+    },
+    {
+      "id": "results",
+      "section": "Run the search",
+      "spoken_cue": "Here are the results.",
+      "start_seconds": 155,
+      "end_seconds": 215,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "context_setup",
+      "section": "Explain the limit",
+      "spoken_cue": "Take the English word bat.",
+      "start_seconds": 215,
+      "end_seconds": 225,
+      "layout": "presenter_full",
+      "presenter": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "shape": "rectangle",
+        "shot": "medium",
+        "angle": "straight on"
+      },
+      "content": null,
+      "protected_regions": [],
+      "selected_capture_ref": null,
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "context_article",
+      "section": "Explain the limit",
+      "spoken_cue": "The surrounding words help the encoder represent which meaning is intended.",
+      "start_seconds": 225,
+      "end_seconds": 237,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": "B02",
+      "transition_intent": "Cut to the next planned view."
+    },
+    {
+      "id": "coverage",
+      "section": "Explain the limit",
+      "spoken_cue": "The released version also has a limited set of trained concepts.",
+      "start_seconds": 237,
+      "end_seconds": 260,
+      "layout": "content_with_inset",
+      "presenter": {
+        "x": 0.77,
+        "y": 0.05,
+        "width": 0.2,
+        "height": 0.2666667,
+        "shape": "rectangle",
+        "crop_aspect_ratio": "4:3",
+        "shot": "head and shoulders",
+        "angle": "straight on"
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.65,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Keep the same camera placement."
+    },
+    {
+      "id": "practice",
+      "section": "Give them something to try",
+      "spoken_cue": "Start with a few short English passages you can judge yourself.",
+      "start_seconds": 260,
+      "end_seconds": 275,
+      "layout": "content_with_inset",
+      "presenter": {
+        "x": 0.77,
+        "y": 0.05,
+        "width": 0.2,
+        "height": 0.2666667,
+        "shape": "rectangle",
+        "crop_aspect_ratio": "4:3",
+        "shot": "head and shoulders",
+        "angle": "straight on"
+      },
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "passage or diagram labels",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.65,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Hide the presenter when the results return for inspection."
+    },
+    {
+      "id": "practice_check",
+      "section": "Give them something to try",
+      "spoken_cue": "For each question, record whether the right passage appeared and where it ranked.",
+      "start_seconds": 275,
+      "end_seconds": 285,
+      "layout": "content_only",
+      "presenter": null,
+      "content": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "protected_regions": [
+        {
+          "role": "result inspection",
+          "x": 0.06,
+          "y": 0.2,
+          "width": 0.88,
+          "height": 0.5
+        },
+        {
+          "role": "caption region",
+          "x": 0.05,
+          "y": 0.85,
+          "width": 0.9,
+          "height": 0.1
+        }
+      ],
+      "selected_capture_ref": null,
+      "transition_intent": "Return to the centered presenter for the closing invitation."
+    },
+    {
+      "id": "close",
+      "section": "Give them something to try",
+      "spoken_cue": "That’s your first experiment.",
+      "start_seconds": 285,
+      "end_seconds": 300,
+      "layout": "presenter_full",
+      "presenter": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "shape": "rectangle",
+        "shot": "medium",
+        "angle": "straight on"
+      },
+      "content": null,
+      "protected_regions": [],
+      "selected_capture_ref": null,
+      "transition_intent": "Finish on the presenter."
+    }
+  ]
+}

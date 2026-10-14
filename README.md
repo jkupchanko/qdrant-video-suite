@@ -92,6 +92,7 @@ The script determines what the viewer needs to see.
 This skill plans presenter framing, inset size, content only views and split screen choices at the relevant passages.
 It includes rectangular placeholder examples, a five minute camera plan and a review of thirty videos through ninety saved frame samples.
 The full screen appearance count comes from the chosen sequence, rather than a fixed quota.
+A measured audit of 32 popular AI and software-development videos (sampled every two seconds, 16 transcribed) backs the checks: opening hold, how fast the face returns, changes per minute, three layouts per video.
 
 ## 3. B-roll: [broll-recorder](skills/broll-recorder/)
 
