@@ -33,11 +33,17 @@ python <skill>/scripts/cut_takes.py RAW.mp4 SCRIPT.md --out DIR --max-seconds 30
 
 ## Rules the cut keeps
 
+The full list, with the reasons, is in [references/rules.md](references/rules.md): choosing the take, eyes on
+the lens, where a cut goes (out-point at the real end of speech plus air, never into the next word, pauses
+over 0.7 s removed), the picture and sound, and what to check before shipping. The short version:
+
+
 - **Spoken wording wins.** If the presenter said "all workflows" and the script says "every workload", the
   cut keeps the words that were said; the cut list shows the difference so the writer can decide.
 - **Looking at the lens is not negotiable.** A take where the eyes wander is flagged, not used quietly.
   The only exception is a passage where the script has the presenter looking at something on screen.
-- **Cut on the word, never on the breath.** Handles are 0.08 s in and 0.3 s out by default.
+- **Cut on the word, never on the breath.** In-point 0.08 s before the first word; out-point where the voice
+  actually stops plus 0.25 s, never into the next word. Silences over 0.7 s inside a line are removed.
 - **Nothing added.** No music, no labels, no B-roll. Those are other skills, laid on this cut afterwards.
 - **Length is a sentence boundary.** `--max-seconds 30` stops at the last line that ends under 30 s, not
   mid-sentence.

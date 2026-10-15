@@ -19,6 +19,13 @@ down so you can change any of them.
    top and bottom, and alternates a slight push between cuts.
 6. Fades the audio at every join and writes `cut.mp4`, `cutlist.md` and `gaze_sheet.png`.
 
+## The rules
+
+[references/rules.md](references/rules.md) has the 21 rules the cut follows: the last complete take wins,
+retakes within 45 s compete and later lines do not, half-takes can be joined, spoken wording wins, eyes on
+the lens or flagged, out-points follow the real end of speech so no line is clipped, pauses over 0.7 s are
+removed, mirror, bars, push, fades, and read the cut list before shipping.
+
 ## Use it
 
 ```bash
@@ -39,6 +46,7 @@ It also does not fix a take that was never said: it tells you.
 editing/
   SKILL.md, README.md
   scripts/cut_takes.py     raw take + script -> cut, cut list, eye-contact sheet
+  references/rules.md      the 21 rules the cut follows
   assets/how-it-works.png  the six steps on a real take
 ```
 
