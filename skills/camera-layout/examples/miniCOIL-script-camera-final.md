@@ -1,6 +1,6 @@
 # Can Spanish Search Find an English Answer?
 
-The five minute script with the camera written in. One `[**Camera:** ...]` line wherever the camera changes;
+The five minute script with the camera written in, and the transitions (cut everywhere; one push where the first card arrives; one white flash at the Explain the limit chapter; nothing else, because nothing else is in the model videos). One `[**Camera:** ...]` line wherever the camera changes;
 between lines it holds. Window = small rectangle, 4:3, 20% of frame width, top right, 24 px in, unless the
 line says otherwise. The corner is checked against what is on screen (nothing under the window) and stays
 put through a section.
@@ -15,7 +15,7 @@ Your search box accepts Spanish, but your documents are in English.
 Can it still find the right answer?
 Let's try it with three short passages and a little Python.
 
-[**Camera:** FULL, centred. Holds through the hook. **Show:** The written hook over the presenter. **Transition:** Cut to the three passages.]
+[**Camera:** FULL, centred. Holds through the hook. **Show:** The written hook over the presenter. **Transition:** cut.]
 
 ## Set up the example   0:20 to 0:50
 
@@ -23,7 +23,7 @@ One passage is about a dog running through a park.
 One is about soup.
 And one is about a star.
 
-[**Camera:** SMALL, top right, 20%. The passages card has nothing in that corner. **Show:** The query and the three English passages, intended answer marked. **Transition:** Keep the query visible.]
+[**Camera:** SMALL, top right, 20%. The passages card has nothing in that corner. **Show:** The query and the three English passages, intended answer marked. **Transition:** the passages card pushes in from the right, 0.3 s (the one push in the video); it stays.]
 
 Our first question is perro corriendo en el parque.
 That means a dog running in the park.
@@ -32,14 +32,14 @@ We want the search to find the dog passage.
 The collection and encoder are already prepared.
 We're going to follow the question through the search and inspect what comes back.
 
-[**Camera:** FULL. "We want the search to find" and "we're going to follow" are the person's lines; nothing new to read. **Transition:** Cut to the concept card.]
+[**Camera:** FULL. "We want the search to find" and "we're going to follow" are the person's lines; nothing new to read. **Transition:** cut.]
 
 ## Explain the connection   0:50 to 1:35
 
 Why would perro match dog?
 They're different words, but they refer to the same thing.
 
-[**Camera:** SMALL, top right, 20%. The perro / dog concept card is light; presence stays. **Show:** perro and dog over one shared concept. **Transition:** Hold the card for the article insert.]
+[**Camera:** SMALL, top right, 20%. The perro / dog concept card is light; presence stays. **Show:** perro and dog over one shared concept. **Transition:** cut.]
 
 This version of miniCOIL connects related English and Spanish words through a shared concept.
 The article illustrates this with home and casa.
@@ -52,12 +52,12 @@ Both words contribute to the same part of the search representation.
 For each trained concept, the encoder produces eight numbers.
 Those numbers also depend on the surrounding text.
 
-[**Camera:** SMALL, top right, 20%. Back to the same corner as before the insert. **Show:** The eight slots under the concept, lit as the words change. **Transition:** Settle on the two matching slots.]
+[**Camera:** SMALL, top right, 20%. Back to the same corner as before the insert. **Show:** The eight slots under the concept, lit as the words change. **Transition:** cut.]
 
 The question and passage can share a concept even though their words are in different languages.
 That gives them a way to match without translating the question first.
 
-[**Camera:** FULL. The "that gives them a way" line is the explanation; the face has been small or off for about 40 s. **Transition:** Cut to the encoding calls.]
+[**Camera:** FULL. The "that gives them a way" line is the explanation; the face has been small or off for about 40 s. **Transition:** cut.]
 
 ## Show the code   1:35 to 2:35
 
@@ -69,7 +69,7 @@ Then we encode the question as Spanish.
 Notice that we also mark the question as a query.
 That matters because the encoder handles a question differently from a stored passage.
 
-[**Camera:** SMALL, top right, 20%. House rule for code: the person stays while the viewer reads. The code card is clear in that corner. **Show:** The two encoding calls, language settings and is_query=True highlighted. **Transition:** Follow the passage into the prepared collection.]
+[**Camera:** SMALL, top right, 20%. House rule for code: the person stays while the viewer reads. The code card is clear in that corner. **Show:** The two encoding calls, language settings and is_query=True highlighted. **Transition:** cut.]
 
 The encoder returns positions and values for a sparse vector.
 Sparse means we keep the positions with values instead of listing every empty position.
@@ -77,12 +77,12 @@ Sparse means we keep the positions with values instead of listing every empty po
 We store the passage's vector in Qdrant alongside its text.
 This collection also uses the IDF setting, which weights positions according to how common they are across the collection.
 
-[**Show:** The sparse vector configuration, Modifier.IDF highlighted. Same window, same corner. **Transition:** Move to the search call.]
+[**Show:** The sparse vector configuration, Modifier.IDF highlighted. Same window, same corner. **Transition:** cut.]
 
 Now we send the encoded question to the collection.
 Let's see which passages come back.
 
-[**Camera:** FULL. "Now" and "let's" turn the sentence; nothing to read; the hand-off to the results is the person's. **Transition:** Cut to the results.]
+[**Camera:** FULL. "Now" and "let's" turn the sentence; nothing to read; the hand-off to the results is the person's. **Transition:** cut.]
 
 ## Run the search   2:35 to 3:35
 
@@ -96,7 +96,7 @@ And where did it rank?
 That's our first check.
 The question was in Spanish, and the passages were in English.
 
-[**Camera:** FULL. The check summary is the person's line. **Transition:** Cut to the second query.]
+[**Camera:** FULL. The check summary is the person's line. **Transition:** cut.]
 
 Now let's try sopa con cebolla y ajo.
 That means soup with onion and garlic.
@@ -109,14 +109,14 @@ We use the same process and inspect the result.
 We've checked two questions against a tiny collection.
 What happens when the words are the same across languages, but the meaning is not?
 
-[**Camera:** FULL. The question that opens the next section. **Transition:** Cut to the bat card.]
+[**Camera:** FULL. The question that opens the next section. **Transition:** cut.]
 
 ## Explain the limit   3:35 to 4:20
 
 Take the English word bat.
 It could mean an animal or something you use in a game.
 
-[**Camera:** SMALL, top right, 20%. The bat card is a single word with two meanings; light. **Show:** bat with its two meanings.]
+[**Camera:** SMALL, top right, 20%. The bat card is a single word with two meanings; light. **Show:** bat with its two meanings. **Transition:** white flash, 0.3 s, into the Explain the limit chapter (the one flash in the video).]
 
 Sharing a concept is only part of the task.
 The surrounding words help decide which meaning applies.
@@ -130,7 +130,7 @@ Words outside that vocabulary fall back to exact matching.
 
 So your own vocabulary belongs in the test.
 
-[**Camera:** FULL. The limit, then the advice, are the person's. **Transition:** Cut to the practice card.]
+[**Camera:** FULL. The limit, then the advice, are the person's. **Transition:** cut.]
 
 ## Give them something to try   4:20 to 5:00
 
@@ -143,9 +143,12 @@ Run each one and record where the intended passage ranks.
 That's your first experiment.
 A few passages, three questions, and results you can judge yourself.
 
-[**Camera:** FULL. Close on the person. **Transition:** End card.]
+[**Camera:** FULL. Close on the person. **Transition:** cut.]
 
 ## Count
+
+Transitions: cuts throughout, 1 push (0:20), 1 white flash (3:35).
+
 
 Layouts: FULL, SMALL, NONE (three). Camera lines: 17 in five minutes. Window corner: top right throughout;
 it goes to NONE rather than moving when the article page or the results would sit under it. The face is
