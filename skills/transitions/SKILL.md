@@ -26,7 +26,9 @@ and in keeping the few soft moves short and consistent.
   inside a demonstration.
 - **Pace.** Median 2.6 shot changes a minute; with elements counted, 11.7 visible changes a minute.
 
-Numbers per video and by join type: `references/tendencies.md`. Strips of each kind from three corpus
+Numbers per video and by join type: `references/tendencies.md`. The eight most-watched videos in the
+Qdrant format, with how each joins face and screen, and a reel of their real joins (original footage, not
+re-creations): `references/models.md` and `examples/reference-joins.mp4`. Strips of each kind from three corpus
 videos, for what the labels mean: `references/classifier-check.png`.
 
 ## The rules that follow

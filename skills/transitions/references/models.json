@@ -1,0 +1,317 @@
+[
+ {
+  "id": "FwOTs4UxQS4",
+  "channel": "Jeff Su",
+  "title": "AI Agents, Clearly Explained",
+  "views": 5415272,
+  "face": 0.364,
+  "shot_per_min": 9.459681392675316,
+  "joins": 21,
+  "join_kinds": {
+   "cut": 15,
+   "other": 5,
+   "fade-white": 1
+  },
+  "soft": 0.46
+ },
+ {
+  "id": "EH5jx5qPabU",
+  "channel": "Futurepedia",
+  "title": "From Zero to Your First AI Agent in 25 Minutes (No Coding)",
+  "views": 4382627,
+  "face": 0.347,
+  "shot_per_min": 5.5865921787709505,
+  "joins": 25,
+  "join_kinds": {
+   "cut": 16,
+   "other": 4,
+   "fade-white": 2,
+   "slide": 3
+  },
+  "soft": 0.42
+ },
+ {
+  "id": "nVyD6THcvDQ",
+  "channel": "Jeff Su",
+  "title": "99% of Beginners Don't Know the Basics of AI",
+  "views": 3590846,
+  "face": 0.526,
+  "shot_per_min": 6.765811407092663,
+  "joins": 17,
+  "join_kinds": {
+   "fade-white": 3,
+   "cut": 11,
+   "other": 2,
+   "slide": 1
+  },
+  "soft": 0.48
+ },
+ {
+  "id": "Wjrdr0NU4Sk",
+  "channel": "NetworkChuck",
+  "title": "host ALL your AI locally",
+  "views": 2701446,
+  "face": 0.845,
+  "shot_per_min": 6.948060846923393,
+  "joins": 21,
+  "join_kinds": {
+   "other": 4,
+   "cut": 17
+  },
+  "soft": 0.13
+ },
+ {
+  "id": "CIRGjwYgdT4",
+  "channel": "Aaron Jack",
+  "title": "Programming vs Coding - What's the difference?",
+  "views": 2396551,
+  "face": 0.806,
+  "shot_per_min": 12.73031825795645,
+  "joins": 12,
+  "join_kinds": {
+   "other": 6,
+   "cut": 6
+  },
+  "soft": 0.14
+ },
+ {
+  "id": "pwWBcsxEoLk",
+  "channel": "NetworkChuck",
+  "title": "You SUCK at Prompting AI (Here's the secret)",
+  "views": 863258,
+  "face": 0.745,
+  "shot_per_min": 8.171774025432562,
+  "joins": 40,
+  "join_kinds": {
+   "slide": 3,
+   "cut": 24,
+   "other": 11,
+   "dissolve": 2
+  },
+  "soft": 0.23
+ },
+ {
+  "id": "Bm84BAtOfQw",
+  "channel": "Dan Martell",
+  "title": "Youre Not Behind (Yet): How to Build Your First AI Agent (Full Guide)",
+  "views": 809326,
+  "face": 0.745,
+  "shot_per_min": 17.765213509894362,
+  "joins": 54,
+  "join_kinds": {
+   "cut": 53,
+   "other": 1
+  },
+  "soft": 0.73
+ },
+ {
+  "id": "dN0lsF2cvm4",
+  "channel": "AssemblyAI",
+  "title": "Vector Databases simply explained! (Embeddings & Indexes)",
+  "views": 692801,
+  "face": 0.447,
+  "shot_per_min": 2.5152439024390247,
+  "joins": 2,
+  "join_kinds": {
+   "dissolve": 2
+  },
+  "soft": 0.2
+ },
+ {
+  "id": "tx5OapbK-8A",
+  "channel": "Dave Ebbelaar",
+  "title": "How to Build Effective AI Agents (without the hype)",
+  "views": 555028,
+  "face": 0.926,
+  "shot_per_min": 1.596071209330878,
+  "joins": 4,
+  "join_kinds": {
+   "cut": 2,
+   "other": 2
+  },
+  "soft": 0.32
+ },
+ {
+  "id": "cGuyrANVi4A",
+  "channel": "Google Cloud Tech",
+  "title": "How Model Context Protocol (MCP) actually works",
+  "views": 377956,
+  "face": 0.915,
+  "shot_per_min": 2.1347844286312263,
+  "joins": 1,
+  "join_kinds": {
+   "fade-white": 1
+  },
+  "soft": 0.35
+ },
+ {
+  "id": "4pUYfY-b5CQ",
+  "channel": "Aishwarya Srinivasan",
+  "title": "Vector Databases Explained: The Complete Guide for 2026",
+  "views": 326710,
+  "face": 0.762,
+  "shot_per_min": 7.800101300016884,
+  "joins": 20,
+  "join_kinds": {
+   "cut": 16,
+   "slide": 3,
+   "other": 1
+  },
+  "soft": 0.17
+ },
+ {
+  "id": "5fhcklZe-qE",
+  "channel": "ForrestKnight",
+  "title": "Everything You Need to Know About Coding with AI // NOT vibe coding",
+  "views": 312368,
+  "face": 0.586,
+  "shot_per_min": 7.25258121380005,
+  "joins": 21,
+  "join_kinds": {
+   "cut": 21
+  },
+  "soft": 0.18
+ },
+ {
+  "id": "3ugXM3ZDUuE",
+  "channel": "Kevin Powell",
+  "title": "A flexbox trick to improve text wrapping",
+  "views": 261754,
+  "face": 1.0,
+  "shot_per_min": 3.388704318936877,
+  "joins": 0,
+  "join_kinds": {},
+  "soft": 0.6
+ },
+ {
+  "id": "wzgJfBN_8Sk",
+  "channel": "Sajjaad Khader",
+  "title": "How To Learn To Code In 2026",
+  "views": 254103,
+  "face": 0.459,
+  "shot_per_min": 11.176320489920899,
+  "joins": 33,
+  "join_kinds": {
+   "cut": 25,
+   "fade-black": 1,
+   "other": 6,
+   "slide": 1
+  },
+  "soft": 0.31
+ },
+ {
+  "id": "cX2kD2yQf88",
+  "channel": "Matthew Berman",
+  "title": "Everything has been solved",
+  "views": 251000,
+  "face": 0.579,
+  "shot_per_min": 7.947019867549669,
+  "joins": 21,
+  "join_kinds": {
+   "other": 6,
+   "slide": 2,
+   "cut": 13
+  },
+  "soft": 0.13
+ },
+ {
+  "id": "dLPgQRbVquo",
+  "channel": "Matt Pocock",
+  "title": "Generics: The most intimidating TypeScript feature",
+  "views": 239799,
+  "face": 0.976,
+  "shot_per_min": 1.5835456862031307,
+  "joins": 0,
+  "join_kinds": {},
+  "soft": null
+ },
+ {
+  "id": "LR04bU_yV5k",
+  "channel": "Greg Baugues",
+  "title": "Cursor 3 minute demo - the most popular AI code editor",
+  "views": 189294,
+  "face": 0.327,
+  "shot_per_min": 2.471395881006865,
+  "joins": 3,
+  "join_kinds": {
+   "cut": 3
+  },
+  "soft": 0.1
+ },
+ {
+  "id": "HTNz4L2XM58",
+  "channel": "Roboverse",
+  "title": "AI Agents Explained for Beginners (And How to Build One)",
+  "views": 132488,
+  "face": 0.648,
+  "shot_per_min": 8.32498927192104,
+  "joins": 16,
+  "join_kinds": {
+   "slide": 2,
+   "cut": 8,
+   "fade-black": 2,
+   "other": 4
+  },
+  "soft": 0.5
+ },
+ {
+  "id": "OVm2AGTxYuE",
+  "channel": "Zinho Automates",
+  "title": "The Ultimate Claude Code Tutorial (Beginner to Pro)",
+  "views": 129791,
+  "face": 0.229,
+  "shot_per_min": 5.802327487297164,
+  "joins": 18,
+  "join_kinds": {
+   "cut": 14,
+   "slide": 2,
+   "other": 1,
+   "dissolve": 1
+  },
+  "soft": 1.24
+ },
+ {
+  "id": "lg1inngHGqQ",
+  "channel": "Coding with Lewis",
+  "title": "The 2 Types of Programmers",
+  "views": 120716,
+  "face": 0.547,
+  "shot_per_min": 13.185530921820304,
+  "joins": 20,
+  "join_kinds": {
+   "cut": 20
+  },
+  "soft": 0.18
+ },
+ {
+  "id": "He8tUwLzLnU",
+  "channel": "Tech With Tim",
+  "title": "MCP Servers Explained & Built",
+  "views": 86955,
+  "face": 0.298,
+  "shot_per_min": 2.481115950818768,
+  "joins": 17,
+  "join_kinds": {
+   "fade-black": 3,
+   "cut": 6,
+   "fade-white": 3,
+   "other": 4,
+   "slide": 1
+  },
+  "soft": 0.17
+ },
+ {
+  "id": "fl1DSmwQKKY",
+  "channel": "",
+  "title": "",
+  "views": 0,
+  "face": 0.284,
+  "shot_per_min": 14.717626925270963,
+  "joins": 13,
+  "join_kinds": {
+   "cut": 12,
+   "dissolve": 1
+  },
+  "soft": 0.42
+ }
+]

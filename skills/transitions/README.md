@@ -20,6 +20,12 @@ Fifty popular AI and software-development videos, every frame-to-frame change cl
 - Soft moves last about a quarter of a second. Fades to black sit at chapter boundaries.
 - Pace: 2.6 shot changes a minute; 11.7 visible changes a minute once elements are counted.
 
+## The videos to copy
+
+`references/models.md` lists the eight most-watched presenter-plus-screen videos in the corpus with how each
+one joins face and screen; `examples/reference-joins.mp4` plays their real joins back to back, labelled. The
+rules below are what those eight have in common.
+
 ## The rules in one breath
 
 Cut by default. A short push (0.3 s, one direction all video) when a card arrives over the presenter. A
