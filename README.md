@@ -28,14 +28,14 @@ Choose a skill below. New parts of the suite are marked Coming soon.
 </tr>
 <tr>
 <td width="33%" valign="top">
-<h3>Editing style</h3>
-<p>Set the pace, shot length, emphasis and overall feel of the edit.</p>
-<p><strong>Coming soon</strong></p>
+<h3><a href="skills/editing/">Editing</a></h3>
+<p>Hand over the raw take and the script; get back the clean cut, the good take of every line, eyes on the lens, with a cut list of every decision.</p>
+<p><strong>Available skill</strong></p>
 </td>
 <td width="33%" valign="top">
-<h3>Transitions</h3>
-<p>Connect sections and move clearly between the presenter, code and examples.</p>
-<p><strong>Coming soon</strong></p>
+<h3><a href="skills/transitions/">Transitions</a></h3>
+<p>How the picture gets from one shot to the next, measured from 50 watched videos: cut, one push, one flash.</p>
+<p><strong>Available skill</strong></p>
 </td>
 <td width="33%" valign="top">
 <h3><a href="skills/camera-layout/">Camera layout</a></h3>
@@ -113,7 +113,14 @@ over the presenter, a white flash only at a chapter break; dissolves, black fade
 seen there and are not used. Audits any video, renders the same join several ways on real footage, and
 writes the choice into the script's Transition field.
 
-## 5. Edit
+## 5. Editing: [editing](skills/editing/)
+
+The raw take and the script in, a clean cut out. Transcribes the recording, finds every take of every line
+and keeps the last complete one, checks eye contact on each, cuts on word boundaries, mirrors, covers the
+recording tag with matching bars, alternates a slight push between cuts, and writes a cut list of every
+decision. The camera calls, B-roll and transitions are laid onto this cut.
+
+## 6. Assemble
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
 
