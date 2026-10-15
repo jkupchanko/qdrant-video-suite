@@ -45,13 +45,13 @@ def fuzzy_eq(a, b):
     """spoken vs scripted word: exact; or, for words of 5+ letters, the same first four letters or a close spelling
     (amount/amounts, store/storing, quadrant/qdrant). Short words must match exactly, so 'the' never equals 'there'."""
     if a == b: return True
+    if len(a) >= 4 and len(b) >= 4 and a[:4] == b[:4]: return True
     if len(a) >= 5 and len(b) >= 5:
-        if a[:4] == b[:4]: return True
         import difflib
         return difflib.SequenceMatcher(None, a, b).ratio() >= 0.8
     return False
 
-def find_takes(words, line, min_cover=0.6):
+def find_takes(words, line, min_cover=0.55):
     """windows of the transcript that cover the script line: (start_idx, end_idx, coverage, extra_words).
     Alignment is a small LCS so a changed word (every/all, isn't/does) does not stall the match."""
     target = norm(line); n = len(target)
@@ -59,7 +59,7 @@ def find_takes(words, line, min_cover=0.6):
     W = [(norm(w["w"]) or [""])[0] for w in words]
     takes = []
     for i in range(len(W)):
-        if not fuzzy_eq(W[i], target[0]): continue
+        if not (fuzzy_eq(W[i], target[0]) or (n >= 4 and fuzzy_eq(W[i], target[1]))): continue
         best = None
         for L in range(max(2, int(n * 0.6)), min(len(W) - i, int(n * 1.8) + 3) + 1):
             seg = W[i:i + L]
@@ -71,7 +71,7 @@ def find_takes(words, line, min_cover=0.6):
             m = dp[L][n]; cover = m / n; extra = L - m
             if not fuzzy_eq(seg[-1], target[-1]) and cover < 0.85: continue        # a take ends on the line's last word, unless nearly every word matched (a mis-heard last word)
             sc = cover - 0.06 * extra                                                 # extra words cost; the tightest full match wins
-            if cover >= min_cover and (best is None or sc > best[4]):
+            if cover >= min_cover and sc >= 0.3 and (best is None or sc > best[4]):
                 best = (i, i + L - 1, round(cover, 2), extra, sc)
         if best: takes.append(best)
     takes.sort(key=lambda t: t[0]); out = []
@@ -79,7 +79,37 @@ def find_takes(words, line, min_cover=0.6):
         if out and t[0] <= out[-1][1]:
             if t[4] >= out[-1][4] - 0.02: out[-1] = t       # overlapping windows: the later, tighter start wins (a restart replaces its stumble)
         else: out.append(t)
-    return [t[:4] for t in out]
+    return out            # (start_idx, end_idx, cover, extra, score)
+
+def silences(path, a0, b0, min_len=0.7, noise="-42dB"):
+    """[(start, end)] of silences longer than min_len inside [a0, b0], in source seconds"""
+    import imageio_ffmpeg, re as _re
+    r = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-ss", f"{a0:.3f}", "-to", f"{b0:.3f}", "-i", path, "-af", f"silencedetect=noise={noise}:d={min_len}", "-f", "null", "-"], capture_output=True, text=True).stderr
+    starts = [float(x) for x in _re.findall(r"silence_start: ([\d.]+)", r)]; ends = [float(x) for x in _re.findall(r"silence_end: ([\d.]+)", r)]
+    out = []
+    for st in starts:
+        en = next((e for e in ends if e > st), b0 - a0)
+        out.append((a0 + st, a0 + en))
+    return out
+
+def split_on_silence(path, a0, b0, keep=0.25, min_len=0.7):
+    """pieces of [a0, b0] with long silences removed, keeping a little air on each side"""
+    cuts = [(st, en) for st, en in silences(path, a0, b0, min_len) if st - a0 > 0.4 and b0 - en > 0.4]
+    if not cuts: return [(a0, b0)]
+    pieces = []; cur = a0
+    for st, en in cuts:
+        pieces.append((cur, st + keep)); cur = en - keep
+    pieces.append((cur, b0))
+    return [(x, y) for x, y in pieces if y - x > 0.3]
+
+def speech_end(path, x1, next_start=None, air=0.25, look=1.2):
+    """the real end of speech at or after x1: the first silence that starts after x1 - 0.3, plus some air;
+    never past the next spoken word, never more than `look` s later"""
+    sil = silences(path, max(0, x1 - 0.3), x1 + look, min_len=0.25)
+    end = (sil[0][0] + air) if sil else (x1 + look)
+    end = max(end, x1)
+    if next_start is not None: end = min(end, next_start - 0.06)
+    return max(x1, end)
 
 def eye_check(path, spans, step=0.5):
     """per chosen span, the share of sampled frames with a frontal face and both eyes near centre"""
@@ -122,8 +152,14 @@ def main():
     for line in lines:
         takes = find_takes(words, line)
         if not takes: chosen.append((line, None, "NO TAKE FOUND: not said on the recording, or said too differently")); continue
-        i, j, cover, extra = takes[-1]                       # the last take is the keeper (the retake a presenter settles on)
-        note = f"take {len(takes)} of {len(takes)} at {words[i]['s']:.1f}s, cover {cover}" + (f", {extra} extra word(s)" if extra else "")
+        # retakes sit close together in time; choose the best-scoring group (within 45 s of each other), then the LAST take in it
+        groups = []
+        for t in takes:
+            if groups and words[t[0]]["s"] - words[groups[-1][-1][0]]["s"] <= 45: groups[-1].append(t)
+            else: groups.append([t])
+        g = max(groups, key=lambda gr: max(x[4] for x in gr))
+        i, j, cover, extra, _ = g[-1]
+        note = f"take {g.index(g[-1]) + 1} of {len(g)} at {words[i]['s']:.1f}s, cover {cover}" + (f", {extra} extra word(s)" if extra else "") + (f"; {len(takes) - len(g)} other match(es) elsewhere ignored" if len(takes) > len(g) else "")
         # split at silences inside the take (a presenter pausing mid-line): each piece is its own cut
         pieces = []; p0 = i
         for q in range(i, j):
@@ -132,10 +168,17 @@ def main():
         total = sum(words[q1]["e"] + a.handle_out - max(0, words[q0]["s"] - a.handle_in) for q0, q1 in pieces)
         if a.max_seconds and t_acc + total > a.max_seconds + 0.5:
             chosen.append((line, None, f"beyond --max-seconds ({a.max_seconds}); the cut stops here")); break
+        first = True
         for k_, (q0, q1) in enumerate(pieces):
             a0 = max(0, words[q0]["s"] - a.handle_in); b0 = words[q1]["e"] + a.handle_out
             said = " ".join(w["w"] for w in words[q0:q1 + 1])
-            chosen.append((line if k_ == 0 else "(same line, after a pause)", (a0, b0, said), note if k_ == 0 else f"pause of {words[q0]['s'] - words[q0 - 1]['e']:.1f} s removed")); t_acc += b0 - a0
+            nxt = words[q1 + 1]["s"] if q1 + 1 < len(words) else None
+            b0 = speech_end(a.raw, b0, nxt)
+            subs = split_on_silence(a.raw, a0, b0, min_len=a.max_gap)
+            for m_, (x0, x1) in enumerate(subs):
+                lab = line if first else "(same line, after a pause)"
+                nt = note if first else (f"pause of {words[q0]['s'] - words[q0 - 1]['e']:.1f} s removed" if (m_ == 0 and q0 > 0) else "silence inside the take removed")
+                chosen.append((lab, (x0, x1, said if first else ""), nt)); t_acc += x1 - x0; first = False
     spans = [c[1][:2] for c in chosen if c[1]]
     gaze, tiles = eye_check(a.raw, spans)
     W, H = (int(v) for v in a.size.split("x")); parts = []; rows = []; t_edit = 0.0; k = 0
