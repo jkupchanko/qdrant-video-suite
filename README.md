@@ -117,6 +117,13 @@ writes the choice into the script's Transition field.
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
 
+## A finished example, every skill applied
+
+`demos/bulk-uploads-first30/`: the first 30 seconds of the Bulk Uploads video from a raw Zoom take.
+`face_only_720.mp4` is the edit on its own (takes chosen by transcript, eye contact checked, mirrored, bars,
+push between cuts); `suite_720.mp4` adds the camera calls, the docs B-roll and the transitions. The script
+with the calls, the cut list and the key-term B-roll pass sit beside them.
+
 ## Reviewing
 
 This is open for review and use. Read the README in each skill folder, try the commands, and open an issue
