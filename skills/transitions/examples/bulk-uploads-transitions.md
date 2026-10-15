@@ -26,11 +26,17 @@ with the camera audit (7 changes a minute, many 4 s face beats), the two togethe
   current style the corpus supports.
 - Cards leave on a cut, not a reverse slide.
 - Face to card and card to face joins where the card is already up: cut.
-- Card to card inside a section: cut, or a 0.25 s dissolve when the content is the same kind.
-- The "Trade off" title cards are chapter beats; a fade to black would be allowed there, but with four of
-  them in three minutes a cut is the better choice.
+- Card to card inside a section: cut.
+- The "Trade off" title cards are chapter beats; the models mark a chapter with a white flash (Jeff Su,
+  Futurepedia), but with four of them in three minutes a cut is the better choice.
 
-## The test joins
+## The test joins (what the models use, on clean stretches)
+
+`bulk-uploads-seen-in-models.mp4`: six joins from stretches of the video with no transition or label baked
+in, rendered only with cut, push on a card arrival, and a white flash at the chapter card. Earlier reels
+below also carried dissolve and fade-to-black variants for contrast; those are not in the vocabulary.
+
+## The earlier test joins
 
 Three joins from the video's own footage, each rendered as cut, push (0.27 s) and dissolve (0.25 s), with a
 fade to black added on the card-to-card join. Play them back to back:

@@ -47,6 +47,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("video"); ap.add_argument("video_b", nargs="?"); ap.add_argument("--a", required=True); ap.add_argument("--b", required=True); ap.add_argument("--out", required=True)
     ap.add_argument("--kinds", default="cut,punch:1.12,dissolve:0.25,fadeblack:0.4,slideleft:0.3,zoomin:0.4")
+    ap.add_argument("--tag", default="", help="text put before the kind in the reel label, e.g. the join name")
+    ap.add_argument("--note", default="", help="text put after the kind in the reel label, e.g. 'rule 2' or 'avoid'")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     a0, a1 = (float(v) for v in a.a.split(",")); b0, b1 = (float(v) for v in a.b.split(","))
@@ -59,7 +61,8 @@ def main():
     # comparison reel: each variant with a label, one after another
     parts = []
     for kind, d, out in outs:
-        lab = out + ".lab.mp4"; txt = f"{kind}" + (f" {d:g}s" if kind not in ("cut",) and d else "") + (f" x{d:g}" if kind == "punch" else "")
+        lab = out + ".lab.mp4"; txt = (a.tag + "   " if a.tag else "") + f"{kind}" + (f" {d:g}s" if kind not in ("cut", "punch") and d else "") + (f" x{d:g}" if kind == "punch" else "") + (f"   {a.note}" if a.note else "")
+        txt = txt.replace("'", "").replace(":", "\:")
         run([FF, "-hide_banner", "-loglevel", "error", "-y", "-i", out, "-vf", f"drawbox=x=0:y=1000:w=1920:h=80:color=black@0.75:t=fill,drawtext=text='{txt}':x=40:y=1022:fontsize=40:fontcolor=white:fontfile=C\\\\:/Windows/Fonts/segoeuib.ttf", "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", "-c:a", "copy", lab]); parts.append(lab)
     lst = os.path.join(a.out, "_reel.txt"); open(lst, "w").write("".join(f"file '{os.path.abspath(p).replace(os.sep, '/')}'\n" for p in parts))
     reel = os.path.join(a.out, "comparison_reel.mp4"); run([FF, "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", reel]); print(f"-> {reel}")

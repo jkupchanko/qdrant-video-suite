@@ -33,33 +33,35 @@ videos, for what the labels mean: `references/classifier-check.png`.
 
 ## The rules that follow
 
-1. **Default is a cut.** Every camera call in the script (FULL, SMALL, NONE and back) is a cut unless a rule
-   below says otherwise. A cut lands on the sentence turn the camera call already sits on.
-2. **Slide or push for a card that arrives while the shot stays in mind.** When a code card, a result or a
-   checklist comes in over the presenter and will go away again, a short push (0.25 to 0.3 s, one direction
-   for the whole video) is the one soft move the corpus uses with any regularity. Use it for arriving cards,
-   not for leaving them: a card leaves on a cut.
-3. **Dissolve only between two screens of the same kind.** Page to page, card to card, when the content
-   changes but the viewer's attention does not. 0.25 s. Never between the face and a screen.
-4. **Fade to black only at a chapter boundary**, and at most once or twice in a video. 0.4 s. Never inside a
-   demonstration.
-5. **Elements are not transitions.** Labels, captions and highlights pop or slide in over the shot; they do
-   not change the shot. Keep one entrance style for them for the whole video (the motion-design rule).
-6. **One vocabulary per video.** Pick the push direction, the dissolve length and the element entrance once.
-   A video with three kinds of transition reads as edited; one with eight reads as a template.
-7. **Never more than one soft move in a row.** Soft, cut, soft is fine. Two dissolves back to back read as
-   a slideshow.
+Only what the model videos do. Nothing is added to the vocabulary that was not seen there.
+
+1. **Default is a cut.** Every camera call in the script (FULL, SMALL, NONE and back) is a cut. In the eight
+   model videos, 138 of 185 joins between the face and a screen are cuts, and all eight use it. A cut lands
+   on the sentence turn the camera call already sits on.
+2. **A short push when a card arrives over the presenter.** Seen in Futurepedia, Aishwarya and NetworkChuck
+   (7 of 185 joins): 0.25 to 0.3 s, one direction for the whole video, for a card coming in. Cards leave on a
+   cut.
+3. **A white flash at a chapter boundary.** Seen in Jeff Su (3) and Futurepedia (2): 0.3 to 0.5 s, at the
+   start of a new chapter, at most a few times in a video. Not inside a demonstration.
+4. **Animated card entrances are element work, not transitions.** The "other" joins in the models (31 of
+   185) are cards and graphics flying in with motion blur over a shot that stays. One entrance style per
+   video, built in the graphics, not at the cut.
+5. **Not seen, so not used:** dissolves between the face and a screen (4 of 185 model joins, 2 of them in a
+   voice-over video), fades to black at a join (none in the model joins), punch-in jump cuts (8 in all 50
+   videos), zooms, wipes. If one of these seems wanted, the answer is a cut.
+6. **One vocabulary per video; never two soft moves in a row.** The models use two or three kinds in a
+   whole video.
 
 ## Writing it into the script
 
-The script's `**Transition:**` field already exists. Fill it with one of: `cut`, `push left 0.3`,
-`dissolve 0.25`, `fade black 0.4`, or `element: <label> slides in`. Leave it as `cut` whenever in doubt;
-the editor reads an empty Transition field as a cut too.
+The script's `**Transition:**` field already exists. Fill it with one of: `cut`, `push left 0.3` (a card
+arriving), `white flash 0.3` (a chapter), or `element: <label> slides in`. Leave it as `cut` whenever in
+doubt; the editor reads an empty Transition field as a cut too.
 
 ## Comparing on real footage
 
 ```bash
-python <skill>/scripts/render_transitions.py VIDEO.mp4 --a 20,24 --b 40,44 --out DIR --kinds "cut,slideleft:0.27,dissolve:0.25"
+python <skill>/scripts/render_transitions.py VIDEO.mp4 --a 20,24 --b 40,44 --out DIR --kinds "cut,slideleft:0.3,fadewhite:0.3"
 ```
 
 Renders the same join each way and a labelled reel that plays them back to back. Kinds are ffmpeg xfade

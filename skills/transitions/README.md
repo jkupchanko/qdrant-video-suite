@@ -29,8 +29,9 @@ rules below are what those eight have in common.
 ## The rules in one breath
 
 Cut by default. A short push (0.3 s, one direction all video) when a card arrives over the presenter. A
-0.25 s dissolve only between two screens of the same kind. Fade to black only at a chapter break, once or
-twice. Elements pop in with one entrance style for the whole video. Never two soft moves in a row.
+white flash (0.3 s) at a chapter break, a few times at most. Elements pop in with one entrance style for the
+whole video. Dissolves, black fades, punch-ins and wipes were not seen in the model videos and are not used.
+Never two soft moves in a row.
 
 ## Use it
 
@@ -44,7 +45,8 @@ python scripts/tendencies.py --audit DIR_OF_JSONS --out habits.md               
 ## Worked example
 
 `examples/bulk-uploads-*`: the Bulk Uploads video audited (its joins are 56% slides where the corpus is 65%
-cuts), its check strips, and three test joins from its own footage rendered as cut, push and dissolve.
+cuts), its check strips, and six joins from its own clean footage rendered only with what the models use
+(`bulk-uploads-seen-in-models.mp4`).
 
 ## Files
 
