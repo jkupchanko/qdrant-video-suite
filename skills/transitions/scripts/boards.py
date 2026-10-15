@@ -38,9 +38,9 @@ for name, path, tj, when, rule in rows:
     d.line([(40 + 3 * 230 - 3, y + 8), (40 + 3 * 230 - 3, y + 142)], fill=RED, width=3)
     tx = 40 + 6 * 230 + 30
     d.text((tx, y + 10), name, font=H2, fill=INK)
-    for k, wl in enumerate(textwrap.wrap(when, 44)): d.text((tx, y + 50 + k * 28), wl, font=T, fill=INK)
-    yy = y + 50 + 28 * len(textwrap.wrap(when, 44)) + 6
-    for k, wl in enumerate(textwrap.wrap(rule, 52)): d.text((tx, yy + k * 24), wl, font=S, fill=MUTED)
+    for k, wl in enumerate(textwrap.wrap(when, 40)): d.text((tx, y + 50 + k * 28), wl, font=T, fill=INK)
+    yy = y + 50 + 28 * len(textwrap.wrap(when, 40)) + 6
+    for k, wl in enumerate(textwrap.wrap(rule, 48)): d.text((tx, yy + k * 24), wl, font=S, fill=MUTED)
     d.text((40, y + 146), "0.45 s before the join                       the join                       0.45 s after", font=S, fill=MUTED)
     y += row_h
 d.text((40, y + 10), "Frames are from the Bulk Uploads footage rendered by render_transitions.py; the counts are from references/models.md.", font=S, fill=MUTED)
