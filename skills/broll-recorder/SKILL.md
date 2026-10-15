@@ -49,6 +49,23 @@ It inspects the page, scores every heading against the line, writes a plan, reco
 `<name>_manifest.json` next to `<name>.mp4` and `<name>_sheet.png`. Read the printed `section:` and `score`,
 then open the sheet (it is an image) and check that the matched heading is on screen and the page looks right.
 
+## Which lines get B-roll at all (key terms)
+
+B-roll follows the script's key terms, not its mood. A line that names something specific (HNSW,
+quantization, a payload index, batch size, parallel workers, shards, on_disk, any identifier) gets the
+section of the page that is about that thing. A line that is general talk ("this reduces RAM", "let's get
+started", "thanks for watching", the hook) gets nothing: the person carries it. Generic words (memory,
+disk, vectors, uploads) never earn an insert on their own. One insert per section: the first line that
+names the thing gets it, later lines on the same thing hold. Run:
+
+```bash
+python <skill>/scripts/keyterms.py SCRIPT.md URL --out shotlist.md
+```
+
+It prints every line with its terms, the matching section and the call (B-ROLL, hold, none), and writes
+the B-ROLL markers the recorder reads. Read the "none" lines as the camera's: FULL, or SMALL over a card
+that is already up.
+
 ## A whole script at once
 
 When the person has a script (or an AI wrote one for them) with B-roll called out in it, don't record shot by

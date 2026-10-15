@@ -36,6 +36,9 @@ Write a call under a passage when any of these is true. If none is, write nothin
    - Code: SMALL, top right, 20% width. House rule: the person stays on while the viewer reads the code,
      because code is explained as much as read. The window lives in the top right, where a code card has
      nothing. Drop to NONE only when the code or its output runs under that corner.
+   - An insert is earned only by a line that names something specific (a feature, a setting, a term) that
+     the page has a section about; general lines stay on the person (`broll-recorder/scripts/keyterms.py`
+     makes that call line by line).
    - Results, tables, diagrams, article inserts: NONE. These are looked at, and a window would cover part of
      them. Every B-roll block implies NONE for its duration; write a call only if the camera should be
      somewhere other than hidden when the insert ends.
