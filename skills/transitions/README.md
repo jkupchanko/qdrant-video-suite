@@ -7,6 +7,14 @@ the join. It audits any video (what kinds of changes, how often, at which joins)
 habits, renders the same join several ways on real footage so you can compare, and gives the rules for
 writing a transition into the script's Transition field.
 
+## How it works, in pictures
+
+![The whole vocabulary: cut, push on a card arrival, white flash at a chapter, element entrance](assets/vocabulary-board.png)
+
+![Where a transition goes: the script's camera calls are the joins](assets/where-in-the-script.png)
+
+![What the watched videos do at a shot change](assets/numbers-board.png)
+
 ## What the audit found
 
 Fifty popular AI and software-development videos, every frame-to-frame change classified.
@@ -57,6 +65,7 @@ transitions/
   scripts/strips.py              frames around each change, to verify
   scripts/tendencies.py          many audits -> habits
   scripts/render_transitions.py  same join rendered several ways + labelled reel
+  assets/                        vocabulary-board, where-in-the-script, numbers-board
   references/tendencies.md       the 50-video report
   references/classifier-check.png  what each label looks like in three corpus videos
   references/audit_summary.csv   one row per video

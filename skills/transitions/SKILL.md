@@ -10,6 +10,9 @@ state to the next: at a camera change, at a change of card or page, and when a l
 shot that stays. The answer is nearly always a cut, and the skill's value is mostly in saying when it is not,
 and in keeping the few soft moves short and consistent.
 
+The vocabulary, the joins where each move goes, and the measured shares are drawn in `assets/vocabulary-board.png`,
+`assets/where-in-the-script.png` and `assets/numbers-board.png`.
+
 ## What the audit found (50 videos)
 
 - **Most visible changes are not shot changes.** 62% of everything that moves on screen is an element

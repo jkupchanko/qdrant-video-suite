@@ -62,7 +62,7 @@ names the thing gets it, later lines on the same thing hold. Run:
 python <skill>/scripts/keyterms.py SCRIPT.md URL --out shotlist.md
 ```
 
-It prints every line with its terms, the matching section and the call (B-ROLL, hold, none), and writes
+`assets/keyterm-board.png` shows the rule on six lines. It prints every line with its terms, the matching section and the call (B-ROLL, hold, none), and writes
 the B-ROLL markers the recorder reads. Read the "none" lines as the camera's: FULL, or SMALL over a card
 that is already up.
 
