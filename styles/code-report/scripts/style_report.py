@@ -43,6 +43,15 @@ def caption(cv, s, y, t, at, size=96, c=WHITE, x=W / 2, max_w=W - 160):
     k = back(ramp(t, at - 0.05, 0.22)); size = LN.fitsize(CAP, s, max_w, size); f = font(CAP, size); w = f.measureText(s)
     cv.save(); cv.translate(x, y); sc = 0.6 + 0.4 * min(1.2, k); cv.scale(sc, sc)
     cv.drawString(s, -w / 2, 0, f, paint(BLACK, 1, size * 0.22)); cv.drawString(s, -w / 2, 0, f, paint(c)); cv.restore()
+def plain(cv, s, cx, cy, t, at, size, max_w):
+    """black text written into a white meme panel (Drake, Expanding Brain, Gru's plan), wrapped to fit"""
+    if t < at - 0.05: return
+    k = ease(ramp(t, at - 0.05, 0.15)); f = font(CAP, size); words = s.split(); lines, cur = [], ""
+    for wd_ in words:
+        if f.measureText((cur + " " + wd_).strip()) > max_w and cur: lines.append(cur); cur = wd_
+        else: cur = (cur + " " + wd_).strip()
+    lines.append(cur); lh = size * 1.15; y0 = cy - lh * (len(lines) - 1) / 2 + size * 0.35
+    for j, l in enumerate(lines): cv.drawString(l, cx - f.measureText(l) / 2, y0 + j * lh, f, paint(BLACK, k))
 def captions(cv, t, lines):
     for s, y, at, *rest in lines: caption(cv, s, y, t, at, *(rest or []))
 
@@ -60,7 +69,10 @@ def meme(path, lines, push=0.06, labels=()):
         s = (max(W / im.width(), H / im.height()) if abs(ar - 16 / 9) < 0.35 else min((W - 120) / im.width(), (H - 80) / im.height())) * z
         w, h = im.width() * s, im.height() * s; x, y = (W - w) / 2, (H - h) / 2
         cv.drawImageRect(im, skia.Rect.MakeXYWH(x, y, w, h), skia.SamplingOptions(skia.FilterMode.kLinear))
-        for txt, fx, fy, at in labels: caption(cv, txt, y + h * fy, t, at, 110, WHITE, x + w * fx, w * 0.45)
+        for lab in labels:
+            txt, fx, fy, at = lab[:4]; size = lab[4] if len(lab) > 4 else 110; c = lab[5] if len(lab) > 5 else WHITE; mw = lab[6] if len(lab) > 6 else 0.45
+            if c == BLACK: plain(cv, txt, x + w * fx, y + h * fy, t, at, size, w * mw)
+            else: caption(cv, txt, y + h * fy, t, at, size, c, x + w * fx, w * mw)
         captions(cv, t, lines)
     return d
 def logo(path, at, h_px=260):
@@ -73,7 +85,7 @@ def stack(words):
     def d(cv, t, a, b):
         for s, fx, y, at, c in words:
             if t < at - 0.08: continue
-            k = ease(ramp(t, at - 0.08, 0.16)); f = font(HEAVY, 150); w = f.measureText(s); x = W * fx - w / 2
+            k = ease(ramp(t, at - 0.08, 0.16)); f = font(HEAVY, 150); w = f.measureText(s); x = min(max(70, W * fx - w / 2), W - 70 - w)
             cv.save(); cv.translate(x + w / 2, y); sc = 1.35 - 0.35 * k; cv.scale(sc, sc); cv.drawString(s, -w / 2, 0, f, paint(c, k)); cv.restore()
     return d
 def rule(title, sub_text, at_title, at_sub):
@@ -152,6 +164,82 @@ EDIT = [
     (L[9] + 0.05, "face", face_draw(1.0)),
     (wd(9, "storing") - 0.2, "insert", docs("option1", [("stores incoming vectors on disk from the start", wd(9, "storing"), wd(9, "disk") - 0.2)], 1.4)),
     (wd(9, "disk") - 0.15, "insert", docs("option1_code", [("memory=models.Memory.COLD", wd(9, "disk"), wd(9, "disk") + 0.8)], 1.55)),
+    # line 10-12: raw vectors eat RAM; on disk keeps RAM low; search leans on disk
+    (L[10] + 0.3, "insert", docs("option1", [("the raw vector data alone can take up a large amount of RAM", wd(10, "raw"), wd(10, "consume") + 0.2)], 1.4)),
+    (wd(10, "a") - 0.1, "insert", meme(M("pikachu.jpg"), [], 0.05, [("RAM AFTER 1,000,000 RAW VECTORS", 0.5, 0.22, wd(10, "lot") - 0.2, 66, BLACK, 0.9)])),
+    (L[11] + 0.15, "face", face_draw(1.12, [("LESS RAM AS IT GROWS", 960, wd(11, "reduce"))])),
+    (wd(11, "grow") - 0.2, "insert", docs("option1_watch", [("Search performance may depend more on disk access", wd(12, "search"), wd(12, "access") + 0.3)], 1.35)),
+    (wd(12, "potentially") - 0.1, "insert", meme(M("waiting_skeleton.jpg"), [("WAITING ON DISK ACCESS", 960, wd(12, "increasing"), 92)])),
+    # 13-16: option 2, payload indexes first
+    (wd(13, "the"), "insert", rule("OPTION 2", "payload indexes first", wd(13, "second") - 0.05, wd(13, "payload") - 0.1)),
+    (wd(13, "before") + 0.05, "face", face_draw(1.0, [("BEFORE YOU UPLOAD", 960, wd(13, "before"))])),
+    (L[14], "insert", docs("option2", [("Create payload indexes before uploading points", L[14] + 0.05, wd(14, "which")), ("which fields will be used for filtering", wd(14, "which"), wd(14, "on") + 0.2)], 1.3)),
+    (wd(14, "such") - 0.1, "insert", stack([("CATEGORY", 0.28, 330, wd(14, "categories"), WHITE), ("TENANT ID", 0.66, 560, wd(14, "tenant"), WHITE), ("SOURCE", 0.40, 800, wd(14, "sources"), RED)])),
+    (wd(14, "you", 2) - 0.1, "insert", docs("option2_code", [('field_name="category"', wd(14, "create") - 0.1, wd(14, "first") + 0.3)], 1.5)),
+    (L[15] + 0.05, "insert", docs("option2", [("If those indexes are created after a large dataset has already been uploaded", wd(15, "avoids"), wd(15, "everything") + 0.2)], 1.3)),
+    (wd(15, "everything") + 0.45, "insert", meme(M("harold.jpg"), [("REBUILDING THE INDEX AFTER 10M POINTS", 1000, wd(15, "everything") + 0.5, 70)])),
+    (L[16] + 0.05, "insert", meme(M("drake.jpg"), [], 0.04, [("INDEX EVERY FIELD", 0.75, 0.25, wd(16, "index"), 64, BLACK, 0.44), ("INDEX ONLY WHAT YOU FILTER ON", 0.75, 0.75, wd(16, "plan") - 0.2, 64, BLACK, 0.44)])),
+    # 17-21: option 3, quantization
+    (L[17] + 0.05, "insert", rule("OPTION 3", "quantization", wd(17, "final") - 0.05, wd(17, "quantization") - 0.1)),
+    (L[18] + 0.05, "insert", docs("option3", [("the original vectors stay on disk", wd(18, "original") - 0.1, wd(18, "disk") + 0.3)], 1.35)),
+    (wd(18, "while") + 0.2, "insert", stack([("SMALLER", 0.30, 330, wd(18, "smaller"), WHITE), ("COMPRESSED", 0.62, 560, wd(18, "compressed"), RED), ("FOR SEARCH", 0.42, 800, wd(18, "for"), WHITE)])),
+    (L[19] + 0.25, "face", face_draw(1.12, [("SIGNIFICANTLY LESS MEMORY", 960, wd(19, "significantly"))])),
+    (L[20], "insert", docs("option3_watch", [("lower memory usage while still keeping search performance practical", wd(20, "while"), wd(20, "practical") + 0.3)], 1.4)),
+    (L[21] + 0.05, "insert", meme(M("monkey_puppet.jpg"), [], 0.04, [("WHEN COMPRESSION QUIETLY HURTS YOUR SEARCH QUALITY", 0.5, 0.12, wd(21, "affect"), 52, BLACK, 0.92)])),
+    (wd(21, "so") - 0.15, "insert", docs("option3_watch", [("search quality and latency should be tested with real data", wd(21, "test") - 0.1, wd(21, "data") + 0.3)], 1.4)),
+    # 22-29: wrap dense, then sparse: option 4
+    (L[22] + 0.25, "face", face_draw(1.0)),
+    (wd(22, "all") - 0.15, "insert", stack([("ON DISK", 0.28, 330, wd(22, "all"), WHITE), ("PAYLOAD INDEXES", 0.62, 560, wd(22, "three"), WHITE), ("QUANTIZATION", 0.40, 800, wd(22, "options"), RED)])),
+    (L[23], "face", face_draw(1.12)),
+    (wd(23, "sparse") - 0.15, "insert", rule("SPARSE VECTORS", "", wd(23, "sparse") - 0.15, 0)),
+    (L[24] + 0.05, "face", face_draw(1.0)),
+    (wd(24, "can") - 0.1, "insert", rule("OPTION 4", "sparse index on disk", wd(24, "can") - 0.1, wd(24, "put") - 0.1)),
+    (wd(24, "our") - 0.1, "face", face_draw(1.12)),
+    (wd(25, "index") - 0.25, "insert", docs("option4", [("store the sparse vector index on disk", wd(25, "index") - 0.1, wd(25, "disk") + 0.3), ("reduce memory usage when the index becomes large", wd(26, "large") - 0.1, wd(26, "start") + 0.1)], 1.35)),
+    (wd(26, "consume") - 0.15, "insert", meme(M("disaster_girl.jpg"), [("YOUR SPARSE INDEX vs YOUR RAM", 960, wd(26, "consume"), 84)])),
+    (L[27] + 0.1, "face", face_draw(1.0, [("REDUCES RAM USAGE", 960, wd(27, "reduces"))])),
+    (L[28] + 0.05, "insert", photo(M("catalog.jpg"), [("AS YOUR SPARSE INDEX GROWS", 900, wd(28, "sparse"), 90)], 0.10)),
+    (L[29] - 0.1, "insert", docs("option4_watch", [("may slow down search because queries can depend more on disk access", wd(29, "searches"), wd(29, "performance") + 0.4)], 1.35)),
+    # 30-38: the best practices; 1 batching
+    (L[30] + 0.25, "face", face_draw(1.12)),
+    (wd(30, "best") - 0.1, "insert", meme(M("leo_cheers.jpg"), [("4 OPTIONS DOWN", 950, wd(30, "options"), 110)])),
+    (L[31] + 0.05, "face", face_draw(1.0)),
+    (wd(31, "best") - 0.1, "insert", rule("BEST PRACTICES", "for dense and sparse", wd(31, "best") - 0.1, wd(31, "for") - 0.1)),
+    (wd(32, "first") - 0.1, "insert", rule("PRACTICE 1", "batch your uploads", wd(32, "first") - 0.1, wd(32, "batching") - 0.1)),
+    (L[33] - 0.2, "insert", docs("batch", [("uploading points one at a time is slow", wd(33, "upload"), wd(35, "a") + 0.3)], 1.35)),
+    (wd(35, "one") - 0.2, "insert", photo(M("traffic.jpg"), [("ONE. AT. A. TIME.", 880, wd(35, "one"), 130)], 0.10, (0.5, 0.6))),
+    (wd(36, "creates") - 0.1, "insert", stack([("NETWORK", 0.30, 330, wd(36, "network"), WHITE), ("PROCESSING", 0.62, 560, wd(36, "processing"), WHITE), ("OVERHEAD", 0.42, 800, wd(36, "overhead"), RED)])),
+    (L[37] + 0.25, "face", face_draw(1.12)),
+    (wd(37, "64") - 0.2, "insert", rule("64-256", "points per batch", wd(37, "64") - 0.2, wd(37, "is") - 0.1)),
+    (wd(37, "good") - 0.05, "insert", docs("batch_code", [("batch_size=256", wd(37, "good"), wd(37, "point") + 0.3)], 1.6)),
+    (L[38] - 0.6, "insert", docs("batch_watch", [("increase memory usage and make retries more expensive if a request fails", wd(38, "large"), wd(38, "retry") + 0.2)], 1.35)),
+    (wd(38, "more", 1) - 0.1, "insert", meme(M("gru_plan.jpg"), [], 0.03, [("HUGE BATCHES", 0.37, 0.24, wd(38, "more", 1), 34, BLACK, 0.16), ("FAST UPLOAD", 0.87, 0.24, wd(38, "expensive"), 34, BLACK, 0.16),
+                                                                 ("ONE REQUEST FAILS", 0.37, 0.74, wd(38, "retry"), 34, BLACK, 0.16), ("RETRY ALL 10,000 POINTS", 0.87, 0.74, wd(38, "fail") - 0.1, 30, BLACK, 0.16)])),
+    # 39-43: 2 parallel workers
+    (L[39], "insert", rule("PRACTICE 2", "multiple upload workers", wd(39, "second") - 0.05, wd(39, "multiple") - 0.1)),
+    (L[40], "insert", photo(M("lanes.jpg"), [("SEVERAL BATCHES AT THE SAME TIME", 900, wd(40, "batches"), 84)], 0.12)),
+    (wd(40, "instead") - 0.1, "insert", docs("parallel", [("Two to four workers, each sending its own stream of batches", wd(40, "instead"), wd(40, "stream") + 0.3)], 1.35)),
+    (L[41] - 0.05, "insert", docs("parallel_watch", [("Start with two to four workers", L[41] + 0.05, wd(42, "workers") + 0.2)], 1.4)),
+    (wd(42, "then") - 0.15, "insert", docs("parallel_code", [("parallel=4", wd(42, "slowly"), wd(42, "increase") + 0.4)], 1.6)),
+    (L[43] + 0.05, "insert", docs("parallel_watch", [("Too much parallelism can create extra pressure on CPU, memory, disk I/O, and network resources", wd(43, "too"), wd(43, "overwhelm") + 0.4)], 1.35)),
+    (wd(43, "the") - 0.05, "insert", stack([("CPU", 0.24, 300, wd(43, "cpu"), WHITE), ("MEMORY", 0.60, 470, wd(43, "memory"), WHITE), ("DISK", 0.30, 650, wd(43, "disk"), WHITE), ("NETWORK", 0.62, 830, wd(43, "network"), RED)])),
+    # 44-47: 3 shards
+    (L[44] + 0.3, "face", face_draw(1.0)),
+    (wd(44, "consider") - 0.15, "insert", rule("PRACTICE 3", "multiple shards", wd(44, "consider") - 0.15, wd(44, "multiple") - 0.1)),
+    (L[45], "insert", docs("shards", [("Each shard has its own write-ahead log and update worker", wd(45, "each"), wd(45, "path") + 0.3), ("process writes in parallel", wd(45, "ingestion"), wd(45, "parallel") + 0.3)], 1.35)),
+    (L[46] - 0.25, "insert", docs("shards_watch", [("especially when paired with parallel upload workers", wd(46, "especially"), wd(46, "workers") + 0.3)], 1.35)),
+    (wd(46, "parallel") - 0.1, "insert", meme(M("roll_safe.jpg"), [("SHARDS + PARALLEL WORKERS", 950, wd(46, "parallel"), 92)])),
+    (L[47] + 0.05, "insert", docs("shards_watch", [("Each shard adds overhead", wd(47, "every"), wd(47, "overhead") + 0.2), ("More shards are not always better", wd(47, "more"), wd(47, "better") + 0.2)], 1.35)),
+    (wd(47, "more") - 0.1, "insert", meme(M("expanding_brain.jpg"), [], 0.03, [("2 SHARDS", 0.25, 0.125, wd(47, "more"), 44, BLACK, 0.42), ("8 SHARDS", 0.25, 0.375, wd(47, "shards", 1), 44, BLACK, 0.42),
+                                                                        ("64 SHARDS", 0.25, 0.625, wd(47, "not"), 44, BLACK, 0.42), ("1,024 SHARDS", 0.25, 0.875, wd(47, "always"), 44, BLACK, 0.42)])),
+    # 48-52: the wrap
+    (L[48] + 0.25, "face", face_draw(1.12)),
+    (wd(48, "right") - 0.15, "insert", docs("wrap", [("choose the right strategy for the workload", wd(48, "right"), wd(48, "workload") + 0.3)], 1.35)),
+    (L[49] + 0.3, "face", face_draw(1.0, [("WHAT ARE YOU OPTIMIZING FOR?", 960, wd(49, "prioritizing"))])),
+    (wd(49, "memory") - 0.15, "insert", stack([("MEMORY", 0.28, 300, wd(49, "memory"), WHITE), ("INGESTION SPEED", 0.62, 480, wd(50, "ingestion"), WHITE), ("SEARCH PERFORMANCE", 0.44, 660, wd(50, "search"), WHITE), ("OR A BALANCE", 0.50, 860, wd(50, "balance"), RED)])),
+    (wd(51, "between") - 0.2, "face", face_draw(1.12)),
+    (wd(52, "thank") - 0.05, "face", face_draw(1.0, [("THANKS FOR WATCHING", 960, wd(52, "thank"))])),
+    (wd(52, "watching") + 0.45, "insert", logo(os.path.join(ASSETS, "qdrant-logo-red-white.png"), wd(52, "watching") + 0.45)),
 ]
 
 def plan(p, t0, t1):

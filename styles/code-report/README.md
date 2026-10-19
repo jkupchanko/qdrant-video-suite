@@ -9,7 +9,7 @@ captions are heavy, and the docs highlight follows the voice word by word.
 
 ![Every device in the style, from the Bulk Uploads sample](images/devices_grid.jpg)
 
-Watch the first 41 seconds of Bulk Uploads in this style: [code_report_0-41_720.mp4](code_report_0-41_720.mp4)
+Watch the full Bulk Uploads video in this style (3:36, 89 shots, a new visual every 2.3 s on average): [bulk_uploads_code_report_full_720.mp4](bulk_uploads_code_report_full_720.mp4). The first 41 seconds are also here: [code_report_0-41_720.mp4](code_report_0-41_720.mp4)
 
 ## How the reference was studied
 
@@ -56,15 +56,18 @@ every two seconds, each starting on the word it illustrates. To choose a device 
 5. Otherwise, use the face.
 
 Eye contact (a house rule): the face is shown only while the presenter is looking at the lens. During a
-look-away, the insert before it holds. Every render is checked frame by frame: no face frames during
-look-aways, and the voice locked to the cut. The sample passes both, with 0 face frames during look-aways
-and 0 ms voice offset.
+look-away, the insert before it holds. Every render is checked frame by frame with `scripts/check_eyes.py`.
+This style puts other people's faces on screen (Drake, Disaster Girl, Roll Safe), so given the cut, the check
+compares each face it finds with the presenter's face in the cut at that frame and counts only real matches.
+Tested both ways: on the full video it finds 261 frames of other people's faces and 0 frames of the presenter
+during look-aways; on the raw cut it catches all 316 look-away frames. The voice is 0 ms off the cut throughout.
 
 ## Running it
 
 - `scripts/capture_docs.py` opens the docs page with Playwright (Chrome) and screenshots the paragraphs at
   2x. It records where each phrase sits, so the highlight can follow the words. Edit `SHOTS` for a new
-  page.
+  page. The text column is narrowed to 600 px before capture, so the paragraphs wrap into taller blocks
+  and read about 40% bigger in the video.
 - `scripts/style_report.py` holds the devices and the edit list (`EDIT`) for Bulk Uploads. Write a new
   `EDIT` for a new video. It renders with the suite's shared editing engine (`engine.py`, kept in the local
   editing-style skill), which handles the cut, the gaze-based face rule, the sound and the checks.

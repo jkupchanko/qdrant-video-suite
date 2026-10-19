@@ -9,10 +9,28 @@ SHOTS = {  # name: (first item, last item, phrases to locate)
     "no_single": (23, 24, ["there is no single configuration that works best for every bulk upload", "upload speed", "memory"]),
     "option1": (26, 29, ["Option 1: Reduce Memory Pressure", "the raw vector data alone can take up a large amount of RAM", "stores incoming vectors on disk from the start"]),
     "option1_code": (31, 31, ["memory=models.Memory.COLD"]),
+    "option1_watch": (32, 33, ["Search performance may depend more on disk access"]),
+    "option2": (34, 37, ["Create payload indexes before uploading points", "which fields will be used for filtering", "If those indexes are created after a large dataset has already been uploaded"]),
+    "option2_code": (39, 39, ["field_name=\"category\""]),
+    "option2_fit": (40, 41, ["category, tenant ID, document type, source, or user ID", "Payload indexes should be intentional"]),
+    "option3": (42, 45, ["Option 3: Quantization to Balance Memory and Search Performance", "a compressed copy of each vector pinned in RAM for search", "the original vectors stay on disk"]),
+    "option3_watch": (48, 49, ["lower memory usage while still keeping search performance practical", "search quality and latency should be tested with real data"]),
+    "option4": (50, 52, ["Option 4: Reduce Sparse Index Memory During Uploads", "store the sparse vector index on disk", "reduce memory usage when the index becomes large"]),
+    "option4_watch": (55, 56, ["the sparse index is putting pressure on memory", "may slow down search because queries can depend more on disk access"]),
+    "batch": (60, 62, ["Batch Your Uploads", "uploading points one at a time is slow", "Upload points in batches instead"]),
+    "batch_code": (63, 63, ["batch_size=256"]),
+    "batch_watch": (64, 65, ["A batch size of 64 to 256 points is a reasonable starting range", "increase memory usage and make retries more expensive if a request fails"]),
+    "parallel": (66, 68, ["Parallelize Uploads", "Two to four workers, each sending its own stream of batches"]),
+    "parallel_code": (70, 70, ["parallel=4"]),
+    "parallel_watch": (71, 72, ["Too much parallelism can create extra pressure on CPU, memory, disk I/O, and network resources", "Start with two to four workers"]),
+    "shards": (73, 75, ["Use Multiple Shards for Larger Uploads", "Each shard has its own write-ahead log and update worker", "process writes in parallel"]),
+    "shards_watch": (78, 79, ["especially when paired with parallel upload workers", "More shards are not always better", "Each shard adds overhead"]),
+    "wrap": (92, 94, ["Not One-Size-Fits-All", "memory usage, indexing behavior", "choose the right strategy for the workload"]),
 }
 with sync_playwright() as p:
     b = p.chromium.launch(channel="chrome"); pg = b.new_page(viewport={"width": 1400, "height": 900}, device_scale_factor=2, color_scheme="light"); pg.goto(URL, wait_until="networkidle", timeout=60000)
     pg.add_style_tag(content="header, nav, .cookie, [class*=cookie], [id*=cookie], #onetrust-consent-sdk, #onetrust-banner-sdk, .onetrust-pc-dark-filter, [class*=ot-sdk] {display:none !important}")
+    pg.add_style_tag(content="article p, article h1, article h2, article h3, article pre, article li, main p, main h1, main h2, main h3, main pre {max-width: 600px !important}")   # a narrow column: bigger text in the video
     out = {}
     for name, (a, z, phrases) in SHOTS.items():
         info = pg.evaluate("""([a, z, phrases]) => {
