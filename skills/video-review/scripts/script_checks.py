@@ -14,10 +14,15 @@ def mmss(s):
 
 MARK = re.compile(r"\[B-ROLL:\s*([^|\]]+)\|([^|\]]+)\|(.*?)\]")
 CALL = re.compile(r"\[\*\*Camera:\*\*\s*(FULL|SMALL|NONE)\b([^\]]*)\]")
+LOWER = re.compile(r"\[\*\*Lower third:\*\*\s*([^|\]]+)\|([^|\]]+)(?:\|([^\]]*))?\]", re.I)
+def lower_thirds_in(s):
+    """[**Lower third:** NAME | TITLE | 5 s] -> [dict(name, title, secs)]: the presenter's name card (brand-consistency)"""
+    return [dict(name=m.group(1).strip(), title=m.group(2).strip(), secs=float(re.sub(r"[^0-9.]", "", m.group(3) or "") or 5.0)) for m in LOWER.finditer(s)]
 
 def parse(path):
     text = open(path, encoding="utf-8").read(); body = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     lines, markers, calls, counts, block_first, last_line = [], [], [], {}, None, None   # block_first: the first line since the last call
+    lowers = []
     in_count = False
     for raw in body.splitlines():
         s = raw.strip()
@@ -35,6 +40,7 @@ def parse(path):
                 else: f["len"] = part
             markers.append(dict(url=m.group(1).strip(), line=m.group(2).strip(), section=f.get("section", ""), name=f.get("name", ""),
                                 secs=float(re.sub(r"[^0-9.]", "", f.get("len", "6")) or 6)))
+        for lw in lower_thirds_in(s): lowers.append(dict(lw, line=last_line))
         for m in CALL.finditer(s):
             rest = m.group(2); at = re.search(r"\bat (\d+:\d{2})", rest); to = re.search(r"\bto (\d+:\d{2}|the end)", rest); fo = re.search(r"\bfor (\d+(?:\.\d+)?) s\b", rest)
             calls.append(dict(layout=m.group(1), text=m.group(0)[:160], at=mmss(at.group(1)) if at else None,
@@ -43,7 +49,7 @@ def parse(path):
             block_first = None
         if s.startswith("["): continue
         lines.append(s); block_first = block_first or s; last_line = s
-    return dict(lines=lines, markers=markers, calls=calls, counts=counts)
+    return dict(lines=lines, markers=markers, calls=calls, counts=counts, lowers=lowers)
 
 def pieces(words_json):
     P = json.load(open(words_json))["pieces"]

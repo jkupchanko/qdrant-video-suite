@@ -26,14 +26,23 @@ builds itself: no edit list or boards drawn by hand. Give it the cut, the three-
 
   | line | on screen |
   |---|---|
-  | the hook | the title over the face, then the list building row by row |
+  | the hook | the title over the face, the presenter's name card, then the list building row by row |
   | an item's announcement | the list, its row lit |
   | the item's B-roll line | a zoom through the lit row into the docs page, so the page lands on the line |
-  | then | the docs figure (a focus box moving from its upper half to its lower half), the docs code with its key line lit |
+  | then | the docs figure (a focus box moving from its upper half to its lower half), then the docs code typed out live with its key line lit |
   | the caveat line | the TRADEOFF card |
   | a group turn | the group card |
   | the wrap-up | the list, every item ticked off, then the logo |
 
+- **The code is live**: the docs code types itself out in the brand's code card (Geist Mono, syntax colours, line
+  numbers, a cursor), indentation arriving with each line as an editor puts it, finished by about 60% of its beat; then
+  the line that matters is lit. The words typed are the page's own code, nothing else.
+
+  ![the docs code typed out live, then its key line lit](images/live_code.jpg)
+
+- **The name card**: the Qdrant lower third ([brand consistency](../../skills/brand-consistency/)) comes in where the
+  script's `[**Lower third:** NAME | TITLE | 5 s]` says, once the title card has left, on a stretch with the eyes on the
+  lens, and is gone before the list.
 - **The face** follows the suite's eye-contact rule (off whenever the eyes leave the lens). On the list and on code it sits
   in the free top-right corner and never shrinks the graphic (house rule: code keeps the presenter small, top right).
   Transitions are the script's own values: push in on a card, a white flash where a camera call says so.

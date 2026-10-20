@@ -21,9 +21,9 @@ Choose a skill below. New parts of the suite are marked Coming soon.
 <p><strong>Available skill</strong></p>
 </td>
 <td width="33%" valign="top">
-<h3>Qdrant brand consistency</h3>
-<p>Keep logos, colors and fonts aligned with the <a href="skills/broll-recorder/references/styles.md">existing production style</a>.</p>
-<p><strong>Coming soon</strong></p>
+<h3><a href="skills/brand-consistency/">Qdrant brand consistency</a></h3>
+<p>The presenter's name card on every video, the brand's logos, colors and fonts, and the questions to ask before a build.</p>
+<p><strong>Available skill</strong></p>
 </td>
 </tr>
 <tr>
@@ -143,14 +143,23 @@ Drop the clips into the timeline. More skills for this step will be added here a
 The last step, and the one that decides whether a video is ready. It watches the render, not the plan: the face on screen
 while the eyes are off the lens, a stretched face or a head cut off by its window, lip sync, text cut at the edge or spilling
 out of its card, tiny text, typos, numbers nobody gave, outdated API spellings, B-roll that is missing, late or on the wrong
-section, lines the cut lost, empty or frozen frames, loudness. Each finding comes with its frame. A self-test plants four
-faults in a real clip and fails if one is missed.
+section, lines the cut lost, a word clipped at a join, a missing or misspelled name card, empty or frozen frames,
+loudness. Each finding comes with its frame. A self-test plants faults in a real clip and in a made-up take, and fails if
+one is missed. When a person spots something the review missed, the review gets a check for it.
 
 ## 8. The whole video in one request: [video-builder](skills/video-builder/)
 
-`build.py --take RAW.mp4 --script SCRIPT.md` runs every skill above in order and ends with the review. Built from the raw
+First it asks what only the presenter knows: the name and title for the name card, the take, the script, the docs page.
+Then `build.py --take RAW.mp4 --script SCRIPT.md` runs every skill above in order and ends with the review. The script
+controls the whole video: the lines, the B-roll, the camera calls, the transitions and the name card. Built from the raw
 Bulk Uploads take, the first build's review found the six lines the cut had dropped and the B-roll lost with them; each fix
 went into the skill that caused it, and the next build came back clean.
+
+## 9. Brand consistency: [brand-consistency](skills/brand-consistency/)
+
+Every Qdrant video shows the presenter's name early: a white circle with the Qdrant brandmark slides in from the bottom
+left, a red bar unrolls with the name and title, it holds about 5 s and goes back. The script places it with
+`[**Lower third:** NAME | TITLE | 5 s]`, and the review reads it off the screen.
 
 ## A finished example, every skill applied
 

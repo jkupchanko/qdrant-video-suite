@@ -14,7 +14,9 @@ down so you can change any of them.
 1. Transcribes the recording with word timestamps.
 2. Finds every take of every script line and keeps the last complete one; stumbles and ad-libs go.
 3. Checks eye contact on every chosen take, frame by frame, and flags any take where the eyes wander.
-4. Cuts on word boundaries with short handles.
+4. Cuts on word boundaries, placed by the sound: in the pause before the first word and after the last, never into the
+   next word, never mid-word, and never with the same words twice. (Transcript times alone are up to a quarter second off;
+   they clipped a word a person heard.)
 5. Mirrors the picture if the webcam recorded a mirror image, covers the recording tag with matching bars
    top and bottom, and alternates a slight push between cuts.
 6. Fades the audio at every join and writes `cut.mp4`, `cutlist.md` and `gaze_sheet.png`.

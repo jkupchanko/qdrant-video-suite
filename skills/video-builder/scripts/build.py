@@ -1,7 +1,12 @@
 """build.py: one request, the whole video. Raw take + three-layer script -> finished, mastered, reviewed video.
 
   python build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR [--url DOCS_URL] [--style list]
-                  [--no-mirror] [--bars 72] [--from STAGE] [--only STAGE] [--redo STAGE,...]
+                  [--name "NAME" --role "TITLE"] [--no-mirror] [--bars 72] [--from STAGE] [--only STAGE] [--redo STAGE,...]
+
+The script runs the video. Before the first stage the build checks it has what only a person can give (INTAKE below):
+the presenter's name and title for the Qdrant name lower third come from the script's [**Lower third:** NAME | TITLE | 5 s];
+without one, --name and --role add it (to a copy, BUILD_DIR/script.md, on the hook's second line; the script you gave is
+never edited), and with neither the build stops and asks (exit 2).
 
 Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage whose outputs exist is skipped unless --redo):
   cut      editing          the take cut to the script: last complete take per line, eyes on the lens, word-boundary cuts,
@@ -27,6 +32,29 @@ def run(cmd, log, cwd=None):
     tail = open(log, encoding="utf-8", errors="replace").read().splitlines()[-12:]
     if r.returncode != 0: raise RuntimeError(f"{os.path.basename(str(cmd[1]))} failed ({r.returncode}); last lines of {log}:\n  " + "\n  ".join(tail))
     return tail
+
+INTAKE = """Before building, the video needs answers only the presenter has:
+  1. Your name, as it should read on the name card (lower third)?
+  2. Your title under it (e.g. Developer Relations Engineer)?
+Give them with --name "..." --role "...", or put this line in the script after the line it should come in on:
+  [**Lower third:** NAME | TITLE | 5 s]"""
+LOWER = re.compile(r"\[\*\*Lower third:\*\*", re.I)
+
+def with_lower_third(script, out_dir, name, role):
+    """a copy of the script with the name card on the hook's second spoken line (or its first, if it has one line)"""
+    L = open(script, encoding="utf-8").read().splitlines(); seen_head = False; spoken = []
+    in_comment = False
+    for k, ln in enumerate(L):
+        s_ = ln.strip()
+        if "<!--" in s_: in_comment = "-->" not in s_; continue
+        if in_comment: in_comment = "-->" not in s_; continue
+        if s_.startswith("## "):
+            if seen_head: break
+            seen_head = True; continue
+        if seen_head and s_ and not s_.startswith(("[", "#", "|")): spoken.append(k)
+    at = spoken[min(1, len(spoken) - 1)] if spoken else 0
+    L[at + 1:at + 1] = ["", f"[**Lower third:** {name} | {role} | 5 s]", ""]
+    out = os.path.join(out_dir, "script.md"); open(out, "w", encoding="utf-8").write("\n".join(L) + "\n"); return out
 
 def page_url(script):
     t = open(script, encoding="utf-8").read()
@@ -103,7 +131,7 @@ class Build:
         if self.done("review", [out]): return [out], "kept"
         cmd = [PY, os.path.join(SK, "video-review", "scripts", "review.py"), self.p("video_master.mp4"), "--out", self.p("review"), "--cut", self.p("cut", "cut.mp4"),
                "--script", self.a.script, "--words", self.p("words.json"), "--gaze", self.p("gaze.json"), "--lookaways", self.p("lookaways.json"), "--broll", self.p("broll"), "--label", self.a.label or "build",
-               "--cutlist", self.p("cut", "cutlist.md"), "--assets", self.p("page_assets", "assets.json")]
+               "--cutlist", self.p("cut", "cutlist.md"), "--assets", self.p("page_assets", "assets.json"), "--take", self.a.take]
         try: run(cmd, self.p("review.log"))
         except RuntimeError as e:
             if "failed (1)" not in str(e): raise                                       # exit 1 = there is something to fix: that is a result, not an error
@@ -115,7 +143,13 @@ def main():
     ap.add_argument("--take", required=True); ap.add_argument("--script", required=True); ap.add_argument("--out", required=True); ap.add_argument("--url")
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
-    a = ap.parse_args(); a.redo = set(filter(None, a.redo.split(","))); B = Build(a)
+    ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
+    a = ap.parse_args(); a.redo = set(filter(None, a.redo.split(",")))
+    if not LOWER.search(open(a.script, encoding="utf-8").read()):
+        if not (a.name and a.role): print(INTAKE); return 2
+        os.makedirs(a.out, exist_ok=True); a.script = with_lower_third(a.script, os.path.abspath(a.out), a.name, a.role)
+        print(f"the script has no name card: added [**Lower third:** {a.name} | {a.role} | 5 s] in {a.script}")
+    B = Build(a)
     if not B.url: sys.exit("no docs URL: give --url, or put 'Source page: URL' or a [B-ROLL: URL | ...] marker in the script")
     stages = [a.only] if a.only else STAGES[STAGES.index(a.start):] if a.start else STAGES
     print(f"building {a.out} from {a.take} + {a.script} ({B.url}), style '{a.style}': {', '.join(stages)}", flush=True)

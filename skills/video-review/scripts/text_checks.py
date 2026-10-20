@@ -101,6 +101,7 @@ def check_frame(lines, W, H, lex, in_transition=False, bgr=None, page=False):
         text = re.sub(r"\S*(\.\.+|…)\s*$", "", l["text"])                       # a word cut by "..." is the layout's, not a typo
         for tok in re.findall(r"[A-Za-z][A-Za-z']{3,}", text):
             if is_code(l["text"]) or lex.known(tok) or lex.splits(tok): continue
+            if text.rstrip().endswith(tok) and len(tok) >= 3 and any(w.startswith(tok.lower()) for w in lex.own): continue   # live code: typed partway
             if any(lex.known(tok.replace(x, y)) for x, y in (("I", "l"), ("l", "I"), ("1", "l"), ("0", "o"))): continue      # sans fonts: l / I
             low = tok.lower()
             if len(low) >= 4 and all(ord(b) - ord(a_) == 1 for a_, b in zip(low, low[1:])): continue   # "ABCDEFGH": a sequence (drawer labels), not a word
@@ -108,8 +109,10 @@ def check_frame(lines, W, H, lex, in_transition=False, bgr=None, page=False):
                 again = re.findall(r"[A-Za-z][A-Za-z']{3,}", reread(bgr, l["box"]))
                 if tok not in again: continue                                        # read differently at 2x: an OCR misread, not the screen
             out.append(("spelling", "check", f'"{tok}" is not a known word (in "{l["text"][:50]}"); suggestion: {lex.sp.correction(tok.lower()) or "none"}', l["box"]))
+        tail = re.search(r"(\d+)\s*$", l["text"])                                    # live code: a number typed partway ("size=76" of 768)
         for v in numbers_in(l["text"]):
             if v in lex.nums or (v == int(v) and int(v) in (0, 1)): continue
+            if tail and v == float(tail.group(1)) and any(f"{n:g}".startswith(tail.group(1)) for n in lex.nums): continue
             out.append(("number", "check", f'{l["text"][:60]!r}: the number {v:g} is not in the script, the transcript or the docs page', l["box"]))
     return out
 

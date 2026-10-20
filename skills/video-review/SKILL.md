@@ -1,6 +1,6 @@
 ---
 name: video-review
-description: Audit a rendered video for the small details before anyone sees it, and report every problem with its timestamp, frame number and a marked frame. Checks the presenter (face on screen while the eyes are off the lens, stretched face, head cut off by its window, lip sync, voice drift), the text on screen (words cut at the frame edge, text spilling out of its card, text too small for a phone, typos, numbers the script and docs never gave, stale API spellings, code shown without the top-right presenter window), the B-roll (missing, late against its line, the wrong docs section, ghost frames), the script (camera calls not followed, lines missing from the cut, a Count section that disagrees with itself), and the picture and sound (black or frozen frames, static stretches, dead space, loudness, clipping). Use it after every render made with the editing, editing-style, broll-recorder, camera-layout or transitions skills, and whenever the user asks to review, audit, QA, proof or check a video, to "look at the small details", "pay attention", "make sure it looks good", or asks whether a video is ready to ship, even if they do not say "review".
+description: Audit a rendered video for the small details before anyone sees it, and report every problem with its timestamp, frame number and a marked frame. Checks the presenter (face on screen while the eyes are off the lens, stretched face, head cut off by its window, lip sync, voice drift), the sound at every join of the cut (a word clipped, a piece starting or ending mid-word, words heard twice), the brand (the presenter's name lower third present, spelled as the script gives it, held, lower left), the text on screen (words cut at the frame edge, text spilling out of its card, text too small for a phone, typos, numbers the script and docs never gave, stale API spellings, code shown without the top-right presenter window), the B-roll (missing, late against its line, the wrong docs section, ghost frames), the script (camera calls not followed, lines missing from the cut, a Count section that disagrees with itself), and the picture and sound (black or frozen frames, static stretches, dead space, loudness, clipping). Use it after every render made with the editing, editing-style, broll-recorder, camera-layout or transitions skills, and whenever the user asks to review, audit, QA, proof or check a video, to "look at the small details", "pay attention", "make sure it looks good", or asks whether a video is ready to ship, even if they do not say "review".
 ---
 
 # Video review
@@ -30,6 +30,16 @@ Only the video is required. Give it everything the project has: each input switc
 | `--broll` | the broll-recorder output folder (`full_suite/broll2`) | B-roll found, timed, on its section, no ghosts; the docs page's words for spelling and numbers |
 | `--cutlist` | the editing skill's `cutlist.md` | a line it found no take of is a **fix** (missing); one it found "said in other words" is a note |
 | `--assets` | `page_assets.py`'s `assets.json` | the page's code and figure captions count as its own words and numbers (`size=768` is the docs') |
+| `--take` | the raw recording the cut was made from (with `--cutlist`) | every join heard in the take: the next word's first sound kept at an out-point, a piece ending or starting mid-word, two pieces overlapping (heard twice) |
+
+With `--script`, the name lower third is checked too: the script's `[**Lower third:** NAME | TITLE | 5 s]` must be read on
+screen (OCR) with that spelling and the title, held about its time, in the lower left, over the presenter; a script
+without one is a **fix** (brand-consistency skill).
+
+The join check exists because a person heard what the review did not: "you still cut off my audio on one of the parts".
+The first Listed Sections build kept the first 40 ms of "when" after "...dense and sparse vectors" (0:21.9), and two
+pieces overlapped so a word was heard twice. The check found 16 fixes on that cut, none on the cut after the editing
+skill placed its cut points by the sound. When a person reports something the review missed, add the check before the fix.
 
 It takes about 4 to 8 minutes for a 3.5 minute video. OCR results are cached in `REVIEW_DIR/ocr_cache.json`,
 so a re-run after a fix to the face or the B-roll is faster. `--skip ocr,face,audio,broll` leaves passes out
@@ -54,7 +64,7 @@ the edge), reviews the clip, and fails if one is missed or a fix is reported tha
 check: a check that stops firing looks exactly like a clean video.
 
 Severity:
-- **fix**: wrong, whatever the style. Face during a look-away, stretched face, desync, wrong B-roll section, ghost frames, text cut at the edge, black frames, clipping.
+- **fix**: wrong, whatever the style. A word clipped at a join, a missing or misspelled name card, face during a look-away, stretched face, desync, wrong B-roll section, ghost frames, text cut at the edge, black frames, clipping.
 - **check**: probably wrong; a person decides. An unsourced number (a joke figure on a meme may be fine; a figure on a docs card is not), a possible typo, small text, a long static hold, dead space, a camera call the edit departs from.
 - **note**: worth knowing, not wrong. Another heading visible in a B-roll frame, scroll cadence.
 

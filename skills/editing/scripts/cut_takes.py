@@ -148,14 +148,74 @@ def split_on_silence(path, a0, b0, keep=0.25, min_len=0.7):
     pieces.append((cur, b0))
     return [(x, y) for x, y in pieces if y - x > 0.3]
 
-def speech_end(path, x1, next_start=None, air=0.25, look=1.2):
-    """the real end of speech at or after x1: the first silence that starts after x1 - 0.3, plus some air;
-    never past the next spoken word, never more than `look` s later"""
+_env, _zcr = {}, {}
+def envelope(path):
+    """the take's loudness, 10 ms a step (dB), decoded once, with its quiet and voice levels (from the take's own floor and speech);
+    _zcr[path] is each step's zero-crossing rate (above about 0.25 a hiss: s, sh, ch, a breath; below 0.15 a voiced sound)"""
+    if path not in _env:
+        import imageio_ffmpeg
+        raw = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", path, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"], capture_output=True).stdout
+        x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768; n = len(x) // 160
+        fr = x[:n * 160].reshape(n, 160); env = 20 * np.log10(np.maximum(1e-6, np.sqrt((fr ** 2).mean(axis=1))))
+        _zcr[path] = (np.abs(np.diff(np.sign(fr), axis=1)) > 0).mean(axis=1)
+        floor, speech = np.percentile(env, [10, 90])
+        _env[path] = (env, floor + 0.45 * (speech - floor), floor + 0.7 * (speech - floor))
+    return _env[path]
+
+def pauses(path, a, b, n=3):
+    """(start, end) of every pause in [a, b]: n or more 10 ms steps below the take's quiet level (a stop consonant inside a
+    word is shorter or less quiet)"""
+    env, quiet, _ = envelope(path); out, run = [], 0; i0, i1 = max(0, int(a * 100)), min(len(env), int(b * 100))
+    for i in range(i0, i1):
+        if env[i] < quiet: run += 1; continue
+        if run >= n: out.append(((i - run) / 100, i / 100))
+        run = 0
+    if run >= n: out.append(((i1 - run) / 100, i1 / 100))
+    return out
+
+def voice_onset(path, a, b):
+    """where the next word really starts in [a, b]: the end of a pause that the voice rises out of (a click or a breath
+    after a pause is not a word). The transcript's word times can be a quarter of a second off, and a cut placed by
+    them alone clips the next word's first sound"""
+    env, _, loud = envelope(path)
+    for p0, p1 in pauses(path, a, b + 0.15):
+        if p1 <= b and env[int(p1 * 100):int(p1 * 100) + 12].max(initial=-120) > loud: return p1
+    return None
+
+def quietest(path, a, b):
+    env = envelope(path)[0]; i0, i1 = max(0, int(a * 100)), min(len(env), int(b * 100))
+    return (i0 + int(np.argmin(env[i0:i1]))) / 100 if i1 > i0 else a
+
+def start_point(path, words, q0, handle):
+    """the in-point: just before the first word's sound starts, with a little room tone (at most `handle`). Placed by the
+    transcript alone it started mid-sound at 20 of the first Listed Sections build's 26 joins (the word before still sounding,
+    or the first word's own first sound gone), so it is the end of the last pause up to 0.45 s before the first word;
+    with no pause (one word running into the next), the quietest moment"""
+    s0 = words[q0]["s"]; ps = pauses(path, s0 - 0.45, s0 + 0.05)
+    if not ps: return quietest(path, s0 - 0.2, s0 + 0.02)
+    p0, p1 = ps[-1]
+    return max(0, p1 - min(handle, p1 - p0))
+
+def speech_end(path, x1, next_start=None, air=0.25, look=1.2, last_end=None):
+    """the out-point: the first silence after the last word, plus some air, never more than `look` s later, and never into
+    the next word. x1 is the last word's end plus a handle; when the pause was shorter than the handle, the out-point
+    reached into the next word and kept its first sound ("...dense and sparse vectors. Wh-" at 0:21.9 of the first Listed
+    Sections build). So the next word is found by its sound: after a pause just after the last word, the voice rising
+    out of it; with no pause (one word running into the next), the quietest moment between the two. A hiss right after the
+    last word (the s of "vectors", the ch of "search": the transcript often ends a word before its last consonant) is that
+    word's tail and stays in; a voiced sound there is the next word"""
     sil = silences(path, max(0, x1 - 0.3), x1 + look, min_len=0.25)
-    end = (sil[0][0] + air) if sil else (x1 + look)
-    end = max(end, x1)
-    if next_start is not None: end = min(end, next_start - 0.06)
-    return max(x1, end)
+    end = max((sil[0][0] + air) if sil else (x1 + look), x1)
+    if last_end is None:
+        if next_start is not None: end = min(end, next_start - 0.06)
+        return max(x1, end)
+    env, quiet, _ = envelope(path); near = pauses(path, last_end - 0.05, last_end + 0.3)
+    i0, i1 = int(last_end * 100), int((near[0][0] if near else last_end + 0.3) * 100)
+    heard = [_zcr[path][i] for i in range(i0, i1) if env[i] >= quiet]
+    if heard and np.median(heard) < 0.2 and next_start is not None and next_start < last_end + 0.15:
+        return quietest(path, last_end - 0.08, last_end + 0.1)
+    on = voice_onset(path, near[0][0] if near else last_end, end + 0.05)
+    return min(end, on - 0.02) if on is not None else end
 
 def eye_check(path, spans, step=0.5):
     """per chosen span, the share of sampled frames with a frontal face and both eyes near centre"""
@@ -227,15 +287,21 @@ def main():
             chosen.append((line, None, f"beyond --max-seconds ({a.max_seconds}); the cut stops here")); break
         first = True
         for k_, (q0, q1) in enumerate(pieces):
-            a0 = max(0, words[q0]["s"] - a.handle_in); b0 = words[q1]["e"] + a.handle_out
+            a0 = start_point(a.raw, words, q0, a.handle_in); b0 = words[q1]["e"] + a.handle_out
             said = " ".join(w["w"] for w in words[q0:q1 + 1])
             nxt = words[q1 + 1]["s"] if q1 + 1 < len(words) else None
-            b0 = speech_end(a.raw, b0, nxt)
+            b0 = speech_end(a.raw, b0, nxt, last_end=words[q1]["e"])
             subs = split_on_silence(a.raw, a0, b0, min_len=a.max_gap)
             for m_, (x0, x1) in enumerate(subs):
                 lab = line if first else "(same line, after a pause)"
                 nt = note if first else (f"pause of {words[q0]['s'] - words[q0 - 1]['e']:.1f} s removed" if (m_ == 0 and q0 > 0) else "silence inside the take removed")
                 chosen.append((lab, (x0, x1, said if first else ""), nt)); t_acc += x1 - x0; first = False
+    # a piece never runs past the in-point of the piece after it in the take, or the overlap is heard twice ("before you
+    # upload. If | If you already know...": the transcript put "if" inside "upload", so both pieces kept it)
+    ks = [k for k, c in enumerate(chosen) if c[1]]
+    for k0, k1 in zip(ks, ks[1:]):
+        (l0, (x0, x1, s0), n0), y0 = chosen[k0], chosen[k1][1][0]
+        if x0 < y0 < x1: chosen[k0] = (l0, (x0, y0, s0), n0)
     spans = [c[1][:2] for c in chosen if c[1]]
     gaze, tiles = eye_check(a.raw, spans)
     W, H = (int(v) for v in a.size.split("x")); parts = []; rows = []; t_edit = 0.0; k = 0

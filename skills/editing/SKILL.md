@@ -24,8 +24,14 @@ hand, in one command, and writes down every decision so a person can change any 
    "said in other words".
 3. **Checks eye contact** on every chosen take, frame by frame: a frontal face with both eyes near centre.
    Any take under 80% is flagged in the cut list for a human look; it is not silently swapped.
-4. **Cuts on word boundaries** with a short handle before the first word and after the last, so a cut
-   never clips a syllable.
+4. **Cuts on word boundaries, placed by the sound**, so a cut never clips a syllable. The transcript's word times can be
+   a quarter of a second off, and cut points placed by them alone clipped words: the in-point started mid-sound at 20 of
+   26 joins of one build, and an out-point kept the first 40 ms of the next word ("...dense and sparse vectors. Wh-",
+   which a person heard). So the in-point is the end of the last pause before the first word (up to 0.45 s back, with a
+   little room tone), the out-point is the first silence after the last word but never past the voice rising out of a
+   pause into the next word, a hiss right after the last word (its s, ch) stays in as that word's tail, and two pieces
+   next to each other in the take never overlap (nothing is heard twice). Where one word runs straight into the next, the
+   cut takes the quietest moment between them; the review's join check lists those for a listen.
 5. **Fixes the picture**: mirrors it when the webcam recorded a mirror image (house rule: the presenter
    faces the way they do in life), covers a recording tag with a black bar at the bottom and a matching
    bar at the top so it reads as a deliberate frame, and alternates a slight push (1.00 / 1.06) between

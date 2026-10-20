@@ -12,6 +12,11 @@ Everything but VIDEO is optional; each input switches on the checks that need it
                  each camera call against what is on screen; code on screen with the top-right window; the
                  script's own Count claims; numbers on screen that the script, transcript and docs do not contain
   --broll        the recorded clips (and their *_sections.json: the docs page's own text, for numbers and spelling)
+  --take         (with --cutlist) the raw recording: every join of the cut heard in the take, a word clipped at a join,
+                 a piece starting or ending mid-word, the same words heard twice where two pieces overlap
+  (with --script) the brand: the presenter's name lower third ([**Lower third:** NAME | TITLE | 5 s]) read on screen,
+                 spelled as the script gives it, held its time, low left, with the face on screen; a script without
+                 one is a fix (Qdrant videos always show the presenter's name)
 
 Writes REVIEW_DIR/report.md (findings by time, with a frame for each), report.json, frames/*.jpg, sheet.jpg.
 Severity: fix (wrong), check (probably wrong, a person decides), note (worth knowing).
@@ -343,6 +348,43 @@ def camera_pass(v, calls, faces, F, hide=()):
     return res
 
 # ---------------------------------------------------------------- report
+def brand_pass(v, res, script, faces, F):
+    """the name lower third: read on screen (OCR), spelled as the script gives it, held its time, low left, over the face"""
+    import difflib
+    lowers = script.get("lowers", []) if script else []
+    if not lowers:
+        F.add("brand", "fix", 0, "no name lower third: Qdrant videos show the presenter's name and title (add [**Lower third:** NAME | TITLE | 5 s] after the line it comes in on)")
+        return "no lower third in the script"
+    fr_by_i = {r["i"]: r for r in faces} if faces else {}; fis = sorted(fr_by_i); out = []
+    def face_near(i):
+        if not fis: return None
+        j = min(fis, key=lambda j_: abs(j_ - i)); return fr_by_i[j] if abs(j - i) <= 6 else None
+    for lw in lowers:
+        want, title = TX.norm(lw["name"]), TX.norm(lw["title"]); seen, near = [], []
+        for i in sorted(res):
+            for l in res[i]:
+                got = TX.norm(l["text"])
+                if not got: continue
+                r = difflib.SequenceMatcher(None, got, want).ratio()
+                if want in got or r >= 0.93: seen.append((i, l))
+                elif r >= 0.75: near.append((i, l, r))
+        if not seen:
+            if near:
+                i, l, r = max(near, key=lambda x: x[2]); F.add("brand", "fix", i / v.fps, f'the name card reads "{l["text"]}", not "{lw["name"]}"', l["box"], frame=i)
+            else: F.add("brand", "fix", 0, f'the name lower third ("{lw["name"]}, {lw["title"]}") never appears on screen')
+            out.append(f'{lw["name"]}: not found'); continue
+        i0, i1 = seen[0][0], seen[-1][0]; held = (i1 - i0) / v.fps + 1.0                      # read about once a second: first to last, plus a step
+        if not any(title in TX.norm(" ".join(l["text"] for l in res[i])) for i, _ in seen):
+            F.add("brand", "fix", i0 / v.fps, f'the name card shows the name but not the title "{lw["title"]}"', seen[0][1]["box"], frame=i0)
+        if held < lw["secs"] - 1.5: F.add("brand", "check", i0 / v.fps, f'the name card is on screen about {held:.0f} s; the script asks for {lw["secs"]:g} s', seen[0][1]["box"], t1=i1 / v.fps, frame=i0)
+        bx = seen[0][1]["box"]
+        if not (bx[0] < v.W * 0.45 and bx[1] > v.H * 0.55): F.add("brand", "check", i0 / v.fps, "the name card is not in the lower left", bx, frame=i0)
+        off = [i for i, _ in seen if face_near(i) is not None and not face_near(i).get("presenter")]
+        if off: F.add("brand", "check", off[0] / v.fps, f"the name card is up while the presenter is not on screen ({len(off)} of {len(seen)} reads)", bx, frame=off[0])
+        if i0 / v.fps > 60: F.add("brand", "check", i0 / v.fps, "the name card comes in after the first minute: viewers meet the presenter in the opening")
+        out.append(f'{lw["name"]} on screen {ts(i0 / v.fps)} to {ts(i1 / v.fps)} (about {held:.0f} s)')
+    return "; ".join(out)
+
 def annotate(v, f, out_path):
     fr = v.frame(f["frame"]) if f.get("frame") is not None else v.frame(int(f["t"] * v.fps))
     if fr is None: return None
@@ -387,6 +429,7 @@ def main():
     ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--broll"); ap.add_argument("--label"); ap.add_argument("--skip", default="")
     ap.add_argument("--cutlist", help="the editing skill's cut list: a line it found no take for is reported missing, not guessed at")
     ap.add_argument("--assets", help="page_assets.py's assets.json: the page's code and captions are its own words and numbers too")
+    ap.add_argument("--take", help="the raw recording the cut was made from (with --cutlist): the sound at every join")
     ap.add_argument("--ocr-every", type=float, default=1.0); ap.add_argument("--face-step", type=int, default=2)
     a = ap.parse_args(); skip = set(filter(None, a.skip.split(","))); os.makedirs(a.out, exist_ok=True)
     v = Video(a.video); F = Findings(); stats = collections.OrderedDict(); T0 = time.time()
@@ -398,7 +441,7 @@ def main():
     stats["frames"] = f"{v.n} frames; moving {100 * (motion > 0.12).mean():.0f}% of the time; black {sum(1 for f in F.items if f['kind'] == 'black')} stretches"
     script = SC.parse(a.script) if a.script else None; pcs = SC.pieces(a.words) if a.words else None
     texts = []
-    if script: texts += script["lines"] + [m["section"] for m in script["markers"]] + [c["text"] for c in script["calls"]]
+    if script: texts += script["lines"] + [m["section"] for m in script["markers"]] + [c["text"] for c in script["calls"]] + [f'{lw["name"]} {lw["title"]}' for lw in script.get("lowers", [])]
     if pcs: texts += [" ".join(p[2]) for p in pcs]
     sections = None
     if a.broll:
@@ -438,6 +481,7 @@ def main():
         res = text_pass(v, F, lex, trans, faces, a.ocr_every, cache, windows, sections, held_off(look))
         json.dump(cache, open(cp, "w"))
         stats["text"] = f"{len(res)} frames read"
+        if script: stats["brand"] = brand_pass(v, res, script, faces, F)
         for w in windows:                                             # the section each B-roll shows: the page scrolls continuously, so it
             state = None                                              # stays the last heading that crossed the middle until another one does
             for t, sec, how, others, i in sorted(w.get("seen", [])):
@@ -468,6 +512,10 @@ def main():
                 what = f"nearly the whole frame ({pct}) is empty" if cur[0][1] == "all" else f"the {cur[0][1]} {pct} of the frame is empty, edge to edge"
                 F.add("dead", "check", cur[0][0] / v.fps, f"{what} for {(cur[-1][0] - cur[0][0]) / v.fps:.1f} s", t1=cur[-1][0] / v.fps, frame=cur[0][0])
             cur = [(i, key, frac)] if (i is not None and key) else []
+    if a.take and a.cutlist and os.path.exists(a.cutlist) and "joins" not in skip:
+        step("joins"); import join_checks as JC; J = JC.joins(a.take, a.cutlist)
+        for j in J: F.add("join", j["sev"], j["t"], j["msg"])
+        stats["joins"] = f"{len(JC.rows(a.cutlist))} pieces; " + (", ".join(f"{sum(1 for j in J if j['sev'] == s_)} {s_}" for s_ in ("fix", "check", "note")) if J else "every join clean")
     if script:
         if pcs:
             missing = [(l, SC.find_line(l, pcs)) for l in script["lines"]]

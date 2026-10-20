@@ -60,11 +60,30 @@ of them: the list took the B-roll's place at 1:12.86.
 Black frames, long still holds ("more movement than not"), a whole side of the frame left empty, loudness against
 YouTube's -14 LUFS, peaks and clipping.
 
+### Every join, heard in the raw take
+With the raw recording (`--take`) and the cut list, the review listens to each piece's in-point and out-point in the take.
+It reports these as fixes:
+
+- an out-point that keeps the first sound of the next word;
+- a piece that starts or ends mid-word when there was a pause to cut in;
+- two pieces that overlap, so the same words are heard twice.
+
+The check exists because a person heard what the review did not: "you still cut off my audio on one of the parts". The
+build kept the first 40 ms of "when" after "...dense and sparse vectors". On that cut the check found 16 joins to fix.
+On the cut after the editing skill placed its cut points by the sound, it found none. It leaves 5 joins as checks,
+where one word runs straight into the next with no pause to cut in.
+
+### The name card
+The script's `[**Lower third:** NAME | TITLE | 5 s]` is read off the screen. These are fixes: a script without one, a
+card that never appears, a different spelling, or no title. A card held much shorter than asked, out of the lower left,
+or up while the presenter is off screen is a check. See [brand consistency](../brand-consistency/).
+
 ## Proving it still works
 
 `scripts/selftest.py CUT.mp4` plants four faults in ten seconds of a real cut: empty frames, a 10% stretch, the picture 3
 frames behind the voice and a caption off the edge. It passes only if all four are caught where they were planted and
-nothing else is reported as a fix. A check that stops firing looks exactly like a clean video, so run it after any change.
+nothing else is reported as a fix. It also plants two bad joins in a made-up take: a piece keeping the next word's first
+40 ms and a piece starting mid-word. A check that stops firing looks exactly like a clean video, so run it after any change.
 
 ![the four planted faults, found](images/selftest_sheet.jpg)
 

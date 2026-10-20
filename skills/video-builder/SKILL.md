@@ -9,15 +9,37 @@ One request in, a finished and reviewed video out. Each step is a skill that alr
 right order, hands each one the files the previous ones made, and ends with the review, so nothing reaches a person
 unchecked.
 
+## Ask first
+
+Before running anything, ask the person what only they can answer, in one message, and wait (the brand-consistency
+skill's `references/intake.md` says why each one matters):
+
+1. Your **name**, as it should read on the name card (lower third)?
+2. Your **title** under it?
+3. Where is the **raw take**?
+4. Is there a **script** (three-layer form), or should one be written and shown first?
+5. Which **docs page** is it about?
+6. Which **style** (listed sections by default)?
+
+Skip a question the conversation, the script or memory already answers, and say what you are using instead ("name
+card: John Kupchanko, Developer Relations Engineer, from the script"). The build itself refuses to start without a name
+card: with no `[**Lower third:** ...]` in the script and no `--name`/`--role`, it prints these questions and exits 2.
+
+**The script controls the video.** Every direction lives in it: the lines, the B-roll markers, the camera calls and their
+transitions, the name card. To change the video, change the script and re-run from the stage it affects. The skills can
+still be run one by one for a quick fix, but the build is the script's.
+
 ## What it needs
 
 - **The raw take**: the presenter's recording (Zoom, webcam). Retakes and stumbles are fine: the editing skill keeps the
   last complete take of each line. Nothing here can replace the recording; if there is none, stop and say so.
 - **The script**, in the three-layer form (see the script-three-layers memory): `## Section   m:ss to m:ss` headings, the
   spoken lines, `[B-ROLL: url | line | section: X | 6s | name: n]` markers, `[**Camera:** FULL / SMALL / NONE ...]` calls
-  with their **Transition:** values. A `<!-- Source page: URL -->` note names the docs page. If the person has only a
-  topic, write the script first and show it (script + camera calls + transitions, inline) before building.
-- Optionally `--url` (else the script's Source page or first marker) and `--style` (default `list`).
+  with their **Transition:** values, and the name card `[**Lower third:** NAME | TITLE | 5 s]` after the line it comes in
+  on. A `<!-- Source page: URL -->` note names the docs page. If the person has only a topic, write the script first and
+  show it (script + camera calls + transitions, inline) before building.
+- Optionally `--url` (else the script's Source page or first marker), `--style` (default `list`), and `--name`/`--role`
+  when the script has no name card (added to a copy, `BUILD_DIR/script.md`; the given script is never edited).
 
 ## Run it
 
@@ -31,16 +53,16 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 
 | stage | skill | makes |
 |---|---|---|
-| cut | editing | `cut/cut.mp4`, `cut/cutlist.md` (which take each line came from), `cut/words.json` |
+| cut | editing | `cut/cut.mp4`, `cut/cutlist.md` (which take each line came from), `cut/words.json`; every cut point placed by the sound, never mid-word |
 | words | (glue) | `words.json`: the cut's words at cut time, one piece per line |
 | gaze | editing (gaze.py) | `gaze.json`, `lookaways.json`: where the face must be off screen |
 | camera | camera-layout | `camera_plan.md`: the planner's plan, as a check on the script's own calls |
 | keyterms | broll-recorder | `keyterms.md`: which lines the key-term rule gives B-roll, against the script's markers |
 | broll | broll-recorder | `broll/`: every marker recorded (readthrough, 1.4x page zoom, section pinned) |
 | assets | broll-recorder | `page_assets/`: the page's figures and code (2x, sharp) and its Best fit / Watch for lines |
-| style | editing-style | `video.mp4` (style `list`: master list, numbered items, docs figures, code, tradeoff cards) |
+| style | editing-style + brand-consistency | `video.mp4` (style `list`: master list, numbered items, docs figures, live-typed code, tradeoff cards) with the Qdrant name lower third; `video_overlays.json` says when it is up |
 | master | editing-style | `video_master.mp4` at about -14 LUFS |
-| review | video-review | `review/report.md`, `review/sheet.jpg`, `review/frames/` |
+| review | video-review | `review/report.md`, `review/sheet.jpg`, `review/frames/`; also hears every join in the raw take (`--take`) and reads the name card |
 
 `BUILD.md` sums it up: each stage, its skill, what it did, how long it took, and the review's counts.
 
@@ -48,8 +70,11 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 
 1. Read `review/report.md` and look at `review/sheet.jpg` and every fix frame yourself.
 2. For each **fix**, find the stage that caused it (the report's fix line names the skill), fix it there, and re-run from
-   that stage (`--from STAGE --redo STAGE`): a retake left in the cut is the cut stage; a late or wrong-section B-roll is
-   the broll stage; an empty or stretched frame is the style stage.
+   that stage (`--from STAGE --redo STAGE`): a retake left in the cut or a word clipped at a join is the cut stage; a late
+   or wrong-section B-roll is the broll stage; an empty or stretched frame, or a missing name card, is the style stage
+   (and the script, if the directive is missing).
+   When the person reports something the review did not find ("you still cut off my audio"), find it, fix it, and add a
+   check that finds it next time before re-running: that is how the review grew its join check.
 3. Report to the person: the video's path, what the review found (from `report.json`, not memory), what was fixed, what
    is left to check (with frames), and how long each stage took.
 
