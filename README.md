@@ -55,9 +55,23 @@ Choose a skill below. New parts of the suite are marked Coming soon.
 <p><strong>Coming soon</strong></p>
 </td>
 <td width="33%" valign="top">
-<h3>Final review</h3>
-<p>Check the finished video for clarity, accuracy and visual consistency.</p>
-<p><strong>Coming soon</strong></p>
+<h3><a href="skills/video-review/">Final review</a></h3>
+<p>Watch the finished video frame by frame and report every problem with its time and frame: the face, the text, the B-roll, the script, the sound.</p>
+<p><strong>Available skill</strong></p>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<h3><a href="skills/video-builder/">Build the whole video</a></h3>
+<p>One request: the raw take and the script in, every skill in order, the finished video out with its review.</p>
+<p><strong>Available skill</strong></p>
+</td>
+<td width="33%" valign="top">
+<h3><a href="styles/">Editing styles</a></h3>
+<p>Finished looks for the cut: Animated Board, Code Report, and Listed Sections, which builds itself from the script and the docs.</p>
+<p><strong>Available</strong></p>
+</td>
+<td width="33%" valign="top">
 </td>
 </tr>
 </table>
@@ -123,6 +137,20 @@ decision. The camera calls, B-roll and transitions are laid onto this cut.
 ## 6. Assemble
 
 Drop the clips into the timeline. More skills for this step will be added here as they are ready.
+
+## 7. Review: [video-review](skills/video-review/)
+
+The last step, and the one that decides whether a video is ready. It watches the render, not the plan: the face on screen
+while the eyes are off the lens, a stretched face or a head cut off by its window, lip sync, text cut at the edge or spilling
+out of its card, tiny text, typos, numbers nobody gave, outdated API spellings, B-roll that is missing, late or on the wrong
+section, lines the cut lost, empty or frozen frames, loudness. Each finding comes with its frame. A self-test plants four
+faults in a real clip and fails if one is missed.
+
+## 8. The whole video in one request: [video-builder](skills/video-builder/)
+
+`build.py --take RAW.mp4 --script SCRIPT.md` runs every skill above in order and ends with the review. Built from the raw
+Bulk Uploads take, the first build's review found the six lines the cut had dropped and the B-roll lost with them; each fix
+went into the skill that caused it, and the next build came back clean.
 
 ## A finished example, every skill applied
 

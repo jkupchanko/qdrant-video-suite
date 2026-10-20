@@ -77,6 +77,13 @@ with each marker followed by its clip's file name. Run with `--dry-run` first an
 fix any "match weak" rows by adding `section:` to that marker, then record. Marker syntax is in
 `references/script-markers.md`; tell script writers about it so their drafts come out ready to record.
 
+For docs pages cut into an edit full frame, record raw with the readable settings:
+`script_broll.py script.md --out <folder> --raw --style readthrough --zoom 1.4`. `--zoom` is CSS zoom on the page: the
+text renders 1.4x bigger and stays sharp (about 22 px body text at 1080 instead of 16, which a phone can read), and the
+docs layout still fits 1920 with the header on one line (1.5 wraps "Log in"). `--scale` does NOT do this: Playwright
+records CSS pixels, so a higher device scale only pads the video. `--style readthrough` opens with the section's heading
+just under the site header and reads down the section, stopping before the next heading rises past the middle.
+
 ## Judging the match, and fixing it
 
 - Score above 1.0: the heading itself matched; use it.
@@ -179,7 +186,12 @@ account, land on the dashboard" record the person's real Chrome instead:
 
 ## Rules that keep the clips good
 
-- 4-8 seconds. Start about half a screen above the section so the scroll reveals the heading.
+- 4-8 seconds. For a reveal, start about half a screen above the section so the scroll reveals the heading. When the
+  line is about the section from its first word (docs evidence), use readthrough instead: a reveal shows the end of
+  the section before for its first 1-2 s, and near the top of a page it starts on the hero image (both happened).
+- Check what the viewer sees, not what the manifest says: the manifest records the section the recorder aimed at.
+  The video-review skill reads the heading off the frames, every half second, and reports a clip that shows
+  another section.
 - One scroll, one hover, one click. Eased, unhurried. The cursor parks on the subject.
 - The review must say OK (duration, 1080p, not black, has motion). If it fails, look at the sheet before re-recording;
   a blank clip usually means the page needed a login or the section is below a lazy-loading boundary.

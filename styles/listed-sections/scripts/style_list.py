@@ -1,0 +1,462 @@
+"""LISTED SECTIONS: the video as a numbered list, built by itself from the script, the docs page and the cut.
+
+Copied from the most-watched list videos (camera_audit/peers/peer_list_layouts.jpg):
+  ByteByteGo  a MASTER LIST of every item (number, picture, name, one line), shown whole at the start and coming
+              back with the current item lit before each one; the presenter in a framed window
+  Fireship    a numbered card per item, then the TRADEOFF: green BEST FOR and red WATCH FOR chips, with evidence
+  NeetCode    a group card when the list turns to a new kind of item
+
+Nothing is drawn by hand for a video. The list is the script's B-roll sections whose docs section has a "Best fit"
+line (page_assets.py); the groups are the page's own tags ("Dense vectors", "Sparse vectors", "Dense & sparse
+vectors"); the pictures are the page's own figures and code, captured sharp; every word on a chip is the page's own
+("Best fit:", "Watch for:"). Each script line gets one beat, in order:
+  the hook        the title over the face, then the master list building row by row on its last line
+  an item         announcement lines: the list with its row lit; the B-roll line: the list (0.8 s), zooming through
+                  the lit row into the page; then the docs figure, the docs code (face small top right, house rule),
+                  and on the caveat line the TRADEOFF card (best fit / watch for)
+  a group line    the group card (the list, that group lit)
+  the wrap-up     the list again, every item ticked off; the last line ends on the logo
+Lines with no beat are the face. The engine then applies eye contact (protect_eyes), the face layouts on every
+graphic while the eyes are on the lens (direct_face; B-roll stays faceless), and no empty screen (hold_over_empty).
+Transitions come from the script's own values: push in (zoom, 0.5 s) on a card arriving, a white flash where a
+camera call says so.
+
+  python style_list.py CONFIG.json            render (CONFIG from video-builder: cut, cutlist, words, lookaways,
+  python style_list.py CONFIG.json 0 60       script, assets, broll, out)
+  python style_list.py CONFIG.json stills 3 30 60
+"""
+import os, sys, json, re, math, argparse
+import numpy as np, skia
+from PIL import Image
+import engine as E
+import broll_layer as BL
+sys.path.insert(0, os.path.expanduser(r"~/.claude/skills/video-review/scripts")); import script_checks as SC
+
+W, H = E.W, E.H
+FONTS = r"C:\Users\ADMIN\camera_audit\fonts"; ASSETS = r"C:\Users\ADMIN\camera_audit\assets"
+BG = (11, 15, 25); CARD = (17, 24, 36); CARD2 = (22, 29, 46); BORDER = (78, 83, 102); TXT = (240, 243, 250); MUTED = (150, 156, 178)
+RED = (220, 36, 76); VIOLET = (96, 71, 255); VIOLET_L = (180, 168, 255); TEAL = (0, 150, 136); TEAL_L = (79, 209, 197); ORANGE = (255, 152, 0)
+GROUP_COL = [VIOLET, RED, TEAL, ORANGE]
+F_HEAD = "MonaSansCondensed-Black.ttf"; F_LABEL = "MonaSansCondensed-BlackItalic.ttf"; F_BOLD = "MonaSans-Bold.ttf"; F_REG = "MonaSans-Medium.ttf"
+
+# ---------------------------------------------------------------- drawing
+_tf, _im = {}, {}
+def font(name, size):
+    if name not in _tf: _tf[name] = skia.Typeface.MakeFromFile(os.path.join(FONTS, name))
+    return skia.Font(_tf[name], size)
+def col(c, a=1.0): return skia.Color(int(c[0]), int(c[1]), int(c[2]), int(255 * max(0.0, min(1.0, a))))
+def paint(c, a=1.0, stroke=0.0, blur=0.0):
+    p = skia.Paint(AntiAlias=True, Color=col(c, a))
+    if stroke: p.setStyle(skia.Paint.kStroke_Style); p.setStrokeWidth(stroke)
+    if blur: p.setMaskFilter(skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, blur))
+    return p
+def ramp(t, t0, d): return max(0.0, min(1.0, (t - t0) / max(1e-6, d)))
+def ease(x): return E.ease(max(0.0, min(1.0, x)))
+def img(path):
+    if path not in _im: _im[path] = skia.Image.open(path)
+    return _im[path]
+def text(cv, s, x, y, f, c, a=1.0, align="left"):
+    w = f.measureText(s); x = x - w / 2 if align == "center" else (x - w if align == "right" else x)
+    cv.drawString(s, x, y, f, paint(c, a)); return w
+def wrap(s, f, max_w, max_lines=3):
+    words, lines, cur = s.split(), [], ""
+    for w_ in words:
+        if f.measureText((cur + " " + w_).strip()) > max_w and cur: lines.append(cur); cur = w_
+        else: cur = (cur + " " + w_).strip()
+    if cur: lines.append(cur)
+    return lines[:max_lines], len(lines) > max_lines
+def fit_lines(s, name, size, min_size, max_w, max_lines):
+    """the largest size from `size` down to `min_size` at which s fits in max_lines; at min_size it is cut at a sentence end"""
+    for sz in range(size, min_size - 1, -2):
+        lines, over = wrap(s, font(name, sz), max_w, max_lines)
+        if not over: return lines, sz
+    first = re.split(r"(?<=[.;])\s", s)[0]                                            # a sentence, never "..."
+    return wrap(first, font(name, min_size), max_w, max_lines)[0], min_size
+def rrect(cv, x, y, w, h, r, fill=None, a=1.0, stroke=None, sw=2.0, shadow=False):
+    R = skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(x, y, w, h), r, r)
+    if shadow: cv.drawRRect(skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(x, y + 14, w, h), r, r), paint((0, 0, 0), 0.55 * a, blur=26))
+    if fill is not None: cv.drawRRect(R, paint(fill, a))
+    if stroke is not None: cv.drawRRect(R, paint(stroke, a, sw))
+def picture(cv, path, x, y, w, h, a=1.0, mode="contain", focus=(0.5, 0.5), radius=14):
+    """an image fitted into the box: contain (all of it) or cover (fill, cropped round focus)"""
+    im = img(path); iw, ih = im.width(), im.height(); s = (min if mode == "contain" else max)(w / iw, h / ih)
+    dw, dh = iw * s, ih * s; dx, dy = x + (w - dw) * (0.5 if mode == "contain" else focus[0]), y + (h - dh) * (0.5 if mode == "contain" else focus[1])
+    cv.save(); cv.clipRRect(skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(x, y, w, h), radius, radius), doAntiAlias=True)
+    cv.drawImageRect(im, skia.Rect.MakeXYWH(dx, dy, dw, dh), skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear), paint((255, 255, 255), a)); cv.restore()
+    return (dx, dy, dw, dh) if mode == "contain" else (x, y, w, h)
+_thumb = {}
+def thumb(path):
+    """a row's picture: the figure softened (its 13 px diagram text is picture, not reading: sharp, OCR and viewers try to read it)"""
+    if path not in _thumb:
+        from PIL import ImageFilter, ImageEnhance
+        im = Image.open(path).convert("RGB"); im = im.resize((im.width // 3, im.height // 3), Image.LANCZOS).filter(ImageFilter.GaussianBlur(1.6))
+        out = path.replace(".png", "_thumb.png"); ImageEnhance.Contrast(im).enhance(0.9).save(out); _thumb[path] = out
+    return _thumb[path]
+
+_trim = {}
+def trimmed(path, pad=36):
+    """a code block captured full width with its code in the left half: crop to the text (plus a margin), cached as a png"""
+    if path in _trim: return _trim[path]
+    im = Image.open(path).convert("RGB"); a = np.asarray(im).astype(np.int16); bgc = np.median(a.reshape(-1, 3), axis=0)
+    ink = (np.abs(a - bgc).max(axis=2) > 40); ink[:, int(a.shape[1] * 0.93):] = False                   # not the copy button at the far right
+    ys, xs = np.where(ink)
+    if len(xs) == 0: _trim[path] = path; return path
+    box = (max(0, xs.min() - pad), max(0, ys.min() - pad), min(a.shape[1], xs.max() + pad), min(a.shape[0], ys.max() + pad))
+    out = path.replace(".png", "_trim.png"); im.crop(box).save(out); _trim[path] = out; return out
+
+def surface():
+    s = skia.Surface(W, H); cv = s.getCanvas(); cv.clear(col(BG)); return s, cv
+def to_pil(s): return Image.fromarray(s.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType)).convert("RGBA")
+def chip(cv, s, x, y, c, size=26, a=1.0, fill_a=1.0):
+    f = font(F_BOLD, size); w = f.measureText(s); rrect(cv, x, y, w + 28, size + 18, 10, c, a * fill_a); text(cv, s, x + 14, y + size + 3, f, (255, 255, 255), a); return w + 28
+def number_chip(cv, n, x, y, s, c, a=1.0):
+    rrect(cv, x, y, s, s, s * 0.22, c, a); f = font(F_HEAD, s * 0.62); text(cv, str(n), x + s / 2, y + s * 0.73, f, (255, 255, 255), a, "center")
+def tick(cv, x, y, s, c, k):
+    if k <= 0: return
+    p = skia.Path(); p.moveTo(x, y + s * 0.55); p.lineTo(x + s * 0.4, y + s * 0.92); p.lineTo(x + s, y + s * 0.1)
+    meas = skia.PathMeasure(p, False); seg = skia.Path(); meas.getSegment(0, meas.getLength() * min(1, k), seg, True)
+    pt = paint(c, 1.0, s * 0.16); pt.setStrokeCap(skia.Paint.kRound_Cap); pt.setStrokeJoin(skia.Paint.kRound_Join); cv.drawPath(seg, pt)
+
+# ---------------------------------------------------------------- the plan's data
+class Build:
+    def __init__(self, cfg):
+        self.cfg = cfg; self.p = E.Project(base=cfg["cut"], cutlist=cfg["cutlist"], lookaways=cfg["lookaways"], words=cfg["raw_words"])
+        self.pcs = SC.pieces(cfg["words"]); A = json.load(open(cfg["assets"], encoding="utf-8")); self.page = A
+        here = os.path.dirname(os.path.abspath(cfg["assets"]))                         # a relative picture path is next to assets.json
+        for sec in A["sections"]:
+            for f in sec.get("figures", []) + sec.get("code", []):
+                if not os.path.isabs(f["png"]): f["png"] = os.path.join(here, os.path.basename(f["png"]))
+        self.title = cfg.get("title") or re.sub(r"\s*[-|]\s*Qdrant.*$", "", A.get("title", "")).strip()
+        self.sections = self.script_sections(cfg["script"]); self.items, self.groups = self.list_items()
+        self.windows = {w["name"]: w for w in BL.windows(cfg["script"], cfg["broll"], words=cfg["words"], cut=cfg["cut"])}
+    def script_sections(self, path):
+        """[{heading, lines: [{text, t0, t1, piece}], markers: [...], calls: [...]}] with every line placed in the cut"""
+        text_ = re.sub(r"<!--.*?-->", "", open(path, encoding="utf-8").read(), flags=re.S); secs = []; cur = None; self.unplaced = []; self.last_t = None
+        for raw in text_.splitlines():
+            s = raw.strip()
+            if s.startswith("## "):
+                head = re.sub(r"\s+\d+:\d{2}.*$", "", s[3:]).strip(); cur = None
+                if head.lower().startswith(("count", "notes", "sources")): continue
+                cur = dict(heading=head, lines=[], markers=[], calls=[]); secs.append(cur); continue
+            if cur is None or not s or s.startswith(("#", "|")): continue
+            for m in SC.MARK.finditer(s):
+                f = {}
+                for part in [x.strip() for x in m.group(3).split("|") if x.strip()]:
+                    if ":" in part: k, v = part.split(":", 1); f[k.strip()] = v.strip()
+                cur["markers"].append(dict(line=m.group(2).strip(), section=f.get("section", ""), name=f.get("name", ""), after=len(cur["lines"])))
+            for m in SC.CALL.finditer(s): cur["calls"].append(dict(text=m.group(0), after=len(cur["lines"])))
+            if s.startswith("["): continue
+            i, t0, r = SC.line_time(s, self.pcs, self.cfg["cut"])
+            if i is None: continue
+            if r < 0.38 and SC.recall(s, self.pcs, i) < 0.5: self.unplaced.append(s); continue          # not in the cut: no beat for it
+            if self.last_t is not None and t0 < self.last_t - 0.5: self.unplaced.append(s); continue    # out of order: a match elsewhere
+            self.last_t = t0
+            cur["lines"].append(dict(text=s, piece=i, t0=round(t0, 2), t1=round(self.pcs[i][1], 2), match=round(r, 2)))
+        for sec in secs:
+            for m in sec["markers"]:
+                m["line_index"] = next((k for k, l in enumerate(sec["lines"]) if SC._norm_words(l["text"]) == SC._norm_words(m["line"])), max(0, m["after"] - 1))
+        return [s_ for s_ in secs if s_["lines"]]
+    def page_section(self, heading):
+        n = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())
+        return next((s for s in self.page["sections"] if n(s["heading"]).startswith(n(heading)[:24])), None)
+    def list_items(self):
+        items, groups = [], []
+        for si, sec in enumerate(self.sections):
+            for m in sec["markers"]:
+                ps = self.page_section(m["section"]) if m["section"] else None
+                if not ps or not ps.get("best_fit") or not ps.get("figures"): continue
+                tag = ps.get("tag") or "More"
+                if tag not in groups: groups.append(tag)
+                title = re.sub(r"^(option|step|tip)\s*\d+\s*[:.-]\s*", "", sec["heading"], flags=re.I).strip()
+                sub = re.sub(r"^(option|step|tip)\s*\d+\s*[:.-]\s*", "", ps["heading"], flags=re.I).strip()
+                items.append(dict(n=len(items) + 1, title=title, sub=sub if sub.lower() != title.lower() else "", group=tag, gi=groups.index(tag), section=si, marker=m, page=ps,
+                                  figure=ps["figures"][0]["png"], code=(ps["code"][0]["png"] if ps.get("code") else None), best=ps["best_fit"], watch=ps.get("watch_for", "")))
+        return items, groups
+
+# ---------------------------------------------------------------- devices: each a draw(lt, dur, ctx) -> RGBA frame
+def group_word(g): return "both" if "&" in g or " and " in g.lower() else g.split()[0].lower()
+def counts(B): return " · ".join(f"{sum(1 for it in B.items if it['group'] == g)} for {group_word(g)}" for g in B.groups)
+
+def list_layout(B):
+    """where each row sits: two columns, the groups in order, balanced"""
+    rows = []; half = math.ceil(len(B.items) / 2)
+    col_items = [[], []]; k = 0                                                       # whole groups per column, the first holding about half
+    for gi, g in enumerate(B.groups):
+        its = [it for it in B.items if it["group"] == g]
+        if k == 0 and len(col_items[0]) + len(its) > half and col_items[0]: k = 1
+        col_items[k].extend(its)
+    x0s = (60, 790); cw = 700; y_top = 190; rh = 178; gap = 18                          # x 1490..1920 stays free: the presenter's window
+    for c, its in enumerate(col_items):
+        y = y_top; last_g = None
+        for it in its:
+            if it["group"] != last_g: rows.append(dict(kind="group", group=it["group"], gi=it["gi"], x=x0s[c], y=y, w=cw)); y += 50; last_g = it["group"]
+            rows.append(dict(kind="item", item=it, x=x0s[c], y=y, w=cw, h=rh)); y += rh + gap
+    return rows
+
+def draw_list(cv, B, t, lit=None, lit_group=None, build=None, ticks=None, a_all=1.0):
+    """the master list. lit: the item number lit (others dimmed); lit_group: a whole group lit; build: {n: t_in}; ticks: {n: t}"""
+    bm = img(os.path.join(ASSETS, "qdrant-brandmark-red.png")); cv.drawImageRect(bm, skia.Rect.MakeXYWH(60, 68, 60, 60 * bm.height() / bm.width()), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), a_all))
+    lines, sz = fit_lines(B.title.upper(), F_HEAD, 64, 44, 1330, 1); text(cv, lines[0], 140, 120, font(F_HEAD, sz), TXT, a_all)
+    text(cv, counts(B), 142, 162, font(F_REG, 28), MUTED, a_all)
+    for r in list_layout(B):
+        if r["kind"] == "group":
+            c = GROUP_COL[r["gi"] % len(GROUP_COL)]; on = lit_group is None or lit_group == r["group"]
+            a = a_all * (1.0 if on else 0.35)
+            if build is not None:
+                first = min((build.get(it["n"], 1e9) for it in B.items if it["group"] == r["group"]), default=0); a *= ease(ramp(t, first - 0.1, 0.3))
+            text(cv, r["group"].upper(), r["x"] + 4, r["y"] + 34, font(F_LABEL, 30), c, a); continue
+        it = r["item"]; c = GROUP_COL[it["gi"] % len(GROUP_COL)]; x, y, w, h = r["x"], r["y"], r["w"], r["h"]
+        on = (lit is None and lit_group is None) or lit == it["n"] or lit_group == it["group"]; a = a_all * (1.0 if on else 0.32); dy = 0.0
+        if build is not None:
+            k = ease(ramp(t, build.get(it["n"], 0), 0.35)); a *= k; dy = 30 * (1 - k)
+        if a <= 0.01: continue
+        cv.save(); cv.translate(0, dy)
+        hot = lit == it["n"]
+        if hot: rrect(cv, x - 6, y - 6, w + 12, h + 12, 22, None, a, c, 5)
+        rrect(cv, x, y, w, h, 18, CARD, a, BORDER if not hot else c, 2 if not hot else 3, shadow=hot)
+        done = ticks and it["n"] in ticks and t >= ticks[it["n"]]
+        if done:                                                                          # ticked off: the check takes the number's place
+            rrect(cv, x + 22, y + (h - 84) / 2, 84, 84, 84 * 0.22, TEAL, a); tick(cv, x + 22 + 20, y + (h - 84) / 2 + 22, 44, (255, 255, 255), ease(ramp(t, ticks[it["n"]], 0.35)))
+        else: number_chip(cv, it["n"], x + 22, y + (h - 84) / 2, 84, c, a)
+        picture(cv, thumb(it["figure"]), x + 124, y + 20, 238, h - 40, a, mode="cover", focus=(0.5, 0.3), radius=10)
+        tx = x + 384; tw = w - 384 - 24
+        lines, sz = fit_lines(it["title"], F_BOLD, 38, 30, tw, 2); block = [(ln, F_BOLD, sz, TXT) for ln in lines]
+        if it["sub"]:
+            room = 2 if len(lines) == 1 else 1                                        # never more than the row holds
+            sl, over = wrap(it["sub"], font(F_REG, 24), tw, room)
+            if not over: block += [(ln, F_REG, 24, MUTED) for ln in sl]
+        hh = sum(b[2] * 1.2 for b in block); ty = y + (h - hh) / 2
+        for ln, fn, fs, c_ in block: ty += fs * 1.2; text(cv, ln, tx, ty - fs * 0.25, font(fn, fs), c_, a)
+        cv.restore()
+
+def row_rect(B, n):
+    r = next(r for r in list_layout(B) if r["kind"] == "item" and r["item"]["n"] == n); return (r["x"], r["y"], r["w"], r["h"])
+
+def d_list(B, **kw):
+    def d(lt, dur, ctx):
+        s, cv = surface(); draw_list(cv, B, ctx["t"], **kw); return to_pil(s)
+    return d
+
+def d_title_over_face(B, t_in, t_out):
+    """over the face: the video's title, low and big, gone before it can cover a look away"""
+    def d(lt, dur, ctx):
+        t = ctx["t"]; k = ease(ramp(t, t_in, 0.4)) * (1 - ease(ramp(t, t_out - 0.4, 0.4)))
+        s = skia.Surface(W, H); cv = s.getCanvas(); cv.clear(skia.Color(0, 0, 0, 0))
+        if k > 0:
+            sh = skia.Paint(Shader=skia.GradientShader.MakeLinear([(0, H * 0.55), (0, H)], [col((0, 0, 0), 0), col((0, 0, 0), 0.82 * k)])); cv.drawRect(skia.Rect(0, H * 0.55, W, H), sh)
+            f = font(F_HEAD, 104); lines, _ = wrap(B.title.upper(), f, W - 200, 2); y = H - 150 - 100 * (len(lines) - 1) + 40 * (1 - k)
+            for ln in lines: text(cv, ln, 100, y, f, TXT, k); y += 100
+            chip(cv, counts(B), 102, H - 118 + 30 * (1 - k), RED, 30, k)
+        return to_pil(s)
+    return d
+
+def d_broll_badge(B, it, w, lead=0.0):
+    """the B-roll page full frame, the item's badge over the page's left navigation (never over the docs column)"""
+    def d(lt, dur, ctx):
+        t = ctx["t"] - w["t0"] - lead; fr = BL.frame(w, max(0.0, t)).convert("RGBA")
+        k = ease(ramp(t, 0.15, 0.35)) * (1 - ease(ramp(t, (w["t1"] - w["t0"]) - 0.6, 0.4)))
+        if k > 0 and it is not None:
+            s = skia.Surface(W, H); cv = s.getCanvas(); cv.clear(skia.Color(0, 0, 0, 0)); c = GROUP_COL[it["gi"] % len(GROUP_COL)]
+            x, y, bw, bh = 24, H - 330, 330, 290; rrect(cv, x, y, bw, bh, 18, BG, 0.94 * k, c, 3, shadow=True)
+            number_chip(cv, it["n"], x + 22, y + 22, 70, c, k); text(cv, it["group"].upper(), x + 108, y + 66, font(F_LABEL, 24), c, k)
+            lines, sz = fit_lines(it["title"], F_BOLD, 38, 28, bw - 44, 3); ty = y + 140
+            for ln in lines: text(cv, ln, x + 22, ty, font(F_BOLD, sz), TXT, k); ty += sz * 1.18
+            fr.alpha_composite(to_pil(s))
+        return fr
+    return d
+
+def d_list_into_broll(B, it, w, lead=0.8, pre=0.4):
+    """the list with this item lit, then a zoom through its row's picture into the page: the B-roll still lands on its line.
+    The picture is 16:9 like the page, so the page grows out of it without being stretched."""
+    page = d_broll_badge(B, it, w, lead - pre)
+    def d(lt, dur, ctx):
+        t = ctx["t"] - (w["t0"] - pre)
+        if t >= lead: return page(lt, dur, ctx)
+        s_, cv = surface(); draw_list(cv, B, ctx["t"], lit=it["n"]); im = to_pil(s_)
+        k = ease(ramp(t, lead - 0.42, 0.42))
+        if k <= 0: return im
+        x, y, rw, rh = row_rect(B, it["n"]); px, py, pw, ph = x + 124, y + 20, 238, rh - 40          # the row's picture
+        tw = pw + (W - pw) * k; z = tw / pw; tx, ty = px + (0 - px) * k, py + (0 - py) * k            # its rect now, growing to the frame
+        sx0, sy0 = px - tx / z, py - ty / z                                                         # the part of the list still in view
+        crop = im.crop((int(sx0), int(sy0), int(sx0 + W / z), int(sy0 + H / z))).resize((W, H), Image.BILINEAR)
+        pg = page(lt, dur, dict(ctx, t=w["t0"] - pre + lead)).resize((max(2, int(tw)), max(2, int(tw * H / W))), Image.BILINEAR)
+        pg.putalpha(pg.getchannel("A").point(lambda v: int(v * min(1.0, k * 1.6)))); crop.alpha_composite(pg, (int(tx), int(ty))); return crop
+    return d
+
+def item_header(cv, it, label, a=1.0, right=W - 60):
+    c = GROUP_COL[it["gi"] % len(GROUP_COL)]; number_chip(cv, it["n"], 60, 46, 76, c, a)
+    lab_w = font(F_LABEL, 34).measureText(label); lines, sz = fit_lines(it["title"], F_HEAD, 62, 44, right - 156 - lab_w - 60, 1)
+    text(cv, lines[0].upper(), 156, 104, font(F_HEAD, sz), TXT, a); text(cv, label, right, 100, font(F_LABEL, 34), c, a, "right")
+
+def d_figure(B, it, t_in):
+    """the docs figure, large, panning slowly across it (a still card for 5 s reads as frozen: the review's static check)"""
+    def d(lt, dur, ctx):
+        t = ctx["t"]; s_, cv = surface(); item_header(cv, it, "FROM THE DOCS")
+        im = img(it["figure"]); bw = W - 200; bh = bw * im.height() / im.width()
+        if bh > H - 280: bh = H - 280; bw = bh * im.width() / im.height()
+        x, y = (W - bw) / 2, 175 + (H - 230 - bh) / 2
+        rrect(cv, x - 30, y - 30, bw + 60, bh + 60, 24, CARD, 1.0, BORDER, 2, shadow=True)
+        picture(cv, it["figure"], x, y, bw, bh, 1.0)                                    # whole: a pan or a push would cut its words at the card's edge
+        # the movement is a focus box going from the figure's upper half to its lower half (docs figures read top to bottom: the
+        # default, then the option), the rest dimmed a little
+        c = GROUP_COL[it["gi"] % len(GROUP_COL)]; k = E.inout(ramp(t, t_in + max(1.0, dur * 0.45), 0.8)); a_in = ease(ramp(t, t_in + 0.4, 0.4))
+        fy = y + (bh / 2) * k; fh = bh / 2
+        if a_in > 0:
+            dim = paint(BG, 0.45 * a_in); cv.drawRect(skia.Rect(x, y, x + bw, fy - 6), dim); cv.drawRect(skia.Rect(x, fy + fh + 6, x + bw, y + bh), dim)
+            rrect(cv, x - 10, fy - 6, bw + 20, fh + 12, 14, None, a_in, c, 4)
+        return to_pil(s_)
+    return d
+
+def key_line(it, B):
+    """which line of the code is the point: the script's own `backticks` for that section if one is in the code, else the line
+    sharing most words with the item's title and its docs heading"""
+    code = it["page"]["code"][0]["text"].splitlines() if it["page"].get("code") else []
+    if not code: return None, 0
+    ticks = [m for c in B.sections[it["section"]]["calls"] for m in re.findall(r"`([^`]+)`", c["text"])]
+    for tk in ticks:
+        core = re.split(r"[=(]", tk)[0].strip()
+        for k, ln in enumerate(code):
+            if core and core in ln: return k, len(code)
+    tw = set(re.findall(r"[a-z]{4,}", it["title"].lower())); hw = set(re.findall(r"[a-z]{4,}", it["page"]["heading"].lower())) - tw
+    best = max(range(len(code)), key=lambda k: 3 * sum(1 for w in tw if w[:5] in code[k].lower()) + sum(1 for w in hw if w[:5] in code[k].lower()))   # the title counts most
+    return best, len(code)
+
+def d_code(B, it, t_in):
+    """the docs code, the card hugging it, the point of it highlighted; the top right stays clear for the presenter"""
+    kl, nl = key_line(it, B)
+    def d(lt, dur, ctx):
+        t = ctx["t"]; s_, cv = surface(); item_header(cv, it, "IN CODE", right=W - 420)
+        cp = trimmed(it["code"]); im = img(cp); bw = W - 560; bh = bw * im.height() / im.width()
+        if bh > H - 300: bh = H - 300; bw = bh * im.width() / im.height()
+        bw, bh = min(bw, im.width() * 1.4), min(bh, im.height() * 1.4)
+        x, y = 80, 190 + max(0, (H - 250 - bh) / 2 - 40)
+        rrect(cv, x - 24, y - 24, bw + 48, bh + 48, 22, (25, 33, 54), 1.0, BORDER, 2, shadow=True); picture(cv, cp, x, y, bw, bh, 1.0)
+        if kl is not None and nl:
+            pad = 36 * bh / im.height(); pitch = (bh - 2 * pad) / nl; ly = y + pad + kl * pitch
+            k = ease(ramp(t, t_in + 0.8, 0.5)); c = GROUP_COL[it["gi"] % len(GROUP_COL)]
+            rrect(cv, x - 12, ly - pitch * 0.12, (bw + 24) * k, pitch * 1.24, 8, c, 0.22 * k); rrect(cv, x - 12, ly - pitch * 0.12, 6, pitch * 1.24, 3, c, k)
+        return to_pil(s_)
+    return d
+
+def d_tradeoff(B, it, t_in, t_watch):
+    """Fireship's TRADEOFF, side by side: the page's own 'Best fit' (teal) and 'Watch for' (red); the figure under them as evidence"""
+    def d(lt, dur, ctx):
+        t = ctx["t"]; s, cv = surface(); item_header(cv, it, "TRADEOFF")
+        pairs = [(lab, body, c, at) for lab, body, c, at in (("BEST FOR", it["best"], TEAL, t_in), ("WATCH FOR", it["watch"], RED, t_watch)) if body]
+        cw = (W - 160 - 40 * (len(pairs) - 1)) / max(1, len(pairs))
+        one = min((fit_lines(body, F_BOLD, 54, 36, cw - 70, 8)[1] for _, body, _, _ in pairs), default=54)   # one size for both sides
+        for j, (lab, body, c, at) in enumerate(pairs):
+            kk = 1.0 if j == 0 else ease(ramp(t, at, 0.35)); x, y = 80 + j * (cw + 40), 230 + 30 * (1 - kk)
+            text(cv, lab, x, y + 66, font(F_LABEL, 72), c, kk); rrect(cv, x, y + 100, cw, 620, 24, c, kk * 0.16, c, 3)
+            lines, sz = fit_lines(body, F_BOLD, one, one, cw - 70, 8); ty = y + 100 + (620 - len(lines) * sz * 1.25) / 2 + sz * 0.9
+            for ln in lines: text(cv, ln, x + 35, ty, font(F_BOLD, sz), TXT, kk); ty += sz * 1.25
+        return to_pil(s)
+    return d
+
+def d_end(B, t_in):
+    def d(lt, dur, ctx):
+        t = ctx["t"]; k = ease(ramp(t, t_in, 0.5)); s = skia.Surface(W, H); cv = s.getCanvas(); cv.clear(skia.Color(0, 0, 0, 0))
+        if k > 0:
+            lg = img(os.path.join(ASSETS, "qdrant-logo-red-white.png")); lw = 420 * (0.9 + 0.1 * k); lh = lw * lg.height() / lg.width()
+            rrect(cv, W - lw - 120, H - lh - 110, lw + 60, lh + 60, 20, BG, 0.85 * k)
+            cv.drawImageRect(lg, skia.Rect.MakeXYWH(W - lw - 90, H - lh - 80, lw, lh), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), k))
+        return to_pil(s)
+    return d
+
+# ---------------------------------------------------------------- the plan
+CAVEAT = re.compile(r"\b(may|might|can affect|more expensive|too much|overhead|not always|depend|careful|only)\b", re.I)
+def plan(B, t0=0.0, t1=None):
+    p = B.p; beats = []                                                               # (t, kind, draw, tr, extra)
+    flash_at = []
+    for sec in B.sections:
+        for c in sec["calls"]:
+            if "white flash" in c["text"].lower():
+                k = min(c["after"], len(sec["lines"])) - 1; flash_at.append(sec["lines"][max(0, k)]["t0"])
+    items_by_sec = {}
+    for it in B.items: items_by_sec.setdefault(it["section"], []).append(it)
+    group_of_sec = {}
+    for si, sec in enumerate(B.sections):                                            # a section with no item that names a group: the group card
+        if si in items_by_sec: continue
+        nxt = next((B.items[k] for k in range(len(B.items)) if B.items[k]["section"] > si), None)
+        if nxt and si > B.items[0]["section"] and any(w_ in " ".join(l["text"] for l in sec["lines"]).lower() for w_ in ("both", "best practice", nxt["group"].split()[0].lower())):
+            group_of_sec[si] = nxt["group"]                                          # only between items: the intro is not a group turn
+    for si, sec in enumerate(B.sections):
+        L = sec["lines"]
+        if si == 0:                                                                   # the hook: title over the face, then the list builds
+            beats.append((L[0]["t0"], "face", d_title_over_face(B, L[0]["t0"] + 0.3, min(L[0]["t1"] + 2.5, L[-1]["t0"])), "cut", {}))
+            last = L[-1]; n = len(B.items); build = {it["n"]: last["t0"] + 0.3 + (last["t1"] - last["t0"] - 0.8) * k / max(1, n) for k, it in enumerate(B.items)}
+            beats.append((last["t0"], "graphic", d_list(B, build=build), "zoom", dict(scene="list", corner_only=True)))
+            continue
+        its = items_by_sec.get(si, [])
+        if si == len(B.sections) - 1 and not its:                                    # the wrap-up: every item ticked off, then the logo
+            ticks = {it["n"]: L[0]["t0"] + 0.5 + 0.35 * k for k, it in enumerate(B.items)}
+            beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), "zoom", dict(scene="list", corner_only=True)))
+            if len(L) > 1: beats.append((L[-1]["t0"], "face", d_end(B, L[-1]["t0"] + 0.2), "cut", {}))
+            continue
+        if not its:
+            for m in sec["markers"]:                                                  # B-roll that is not a list item (context)
+                w = B.windows.get(m["name"])
+                if w: beats.append((w["t0"], "broll", d_broll_badge(B, None, w), "zoom", dict(window=w)))
+            if si in group_of_sec:
+                k = next((k for k, l in enumerate(L) if any(w_ in l["text"].lower() for w_ in ("both", "best practice", "let's cover"))), len(L) - 1)
+                beats.append((L[k]["t0"], "graphic", d_list(B, lit_group=group_of_sec[si]), "zoom", dict(scene="list", corner_only=True)))
+            continue
+        it = its[0]; w = B.windows.get(it["marker"]["name"]); mk = it["marker"]["line_index"]
+        if mk > 0: beats.append((L[0]["t0"], "graphic", d_list(B, lit=it["n"]), "zoom", dict(scene="list", corner_only=True)))     # announcement: the row lit
+        if w:
+            if mk == 0: beats.append((w["t0"] - 0.4, "broll", d_list_into_broll(B, it, w), "cut", dict(window=w, lead=0.4)))
+            else: beats.append((w["t0"], "broll", d_broll_badge(B, it, w), "zoom", dict(window=w)))
+        after = L[mk + 1:]; t_free = (w["t1"] + (0.4 if mk == 0 else 0.0)) if w else L[mk]["t1"]
+        if not after: continue
+        cav = max((k for k, l in enumerate(after) if CAVEAT.search(l["text"])), default=len(after) - 1)
+        rest = [l for k, l in enumerate(after) if k != cav]; devs = [("figure", d_figure), ("code", d_code)]
+        for l, (name, fn) in zip(rest, devs):
+            if name == "code" and not it["code"]: continue
+            ts = max(l["t0"], t_free); beats.append((ts, "graphic", fn(B, it, ts), "zoom", dict(scene=f"item{it['n']}", corner_only=(name == "code"))))
+        lc = after[cav]; ts = max(lc["t0"], t_free) - (0.0 if lc["t0"] >= t_free else 0)
+        beats.append((ts, "graphic", d_tradeoff(B, it, ts, ts + 0.6), "zoom", dict(scene=f"item{it['n']}")))
+    beats.sort(key=lambda b: b[0])
+    # beats to shots: each runs to the next; B-roll runs its window; a line with no beat is the face
+    S = []; dur = p.dur if t1 is None else min(p.dur, t1)
+    starts = [b[0] for b in beats] + [p.dur]
+    cur_t = 0.0
+    for k, (ts, kind, draw, tr, ex) in enumerate(beats):
+        if ts > cur_t + 0.05 and not S:                                             # before the first beat: the face
+            S.append(dict(t0=cur_t, t1=ts, kind="face", tr="cut"))
+        end = starts[k + 1]
+        if kind == "broll":
+            w = ex["window"]; bend = w["t1"] + ex.get("lead", 0.0)
+            if S and S[-1]["t1"] > ts: S[-1]["t1"] = ts
+            S.append(dict(t0=ts, t1=min(end, bend) if end > ts else bend, kind="graphic", draw=draw, tr=tr, face=None, no_face=True, shows_face=False, scene="broll:" + w["name"]))
+            if end > bend + 0.05: S.append(dict(t0=bend, t1=end, kind="face", tr="cut"))
+            continue
+        if S and S[-1]["t1"] > ts: S[-1]["t1"] = ts
+        if kind == "face": S.append(dict(t0=ts, t1=end, kind="face", draw=draw, tr=tr))
+        else: S.append(dict(t0=ts, t1=end, kind="graphic", draw=(lambda d_: lambda lt, du, ctx: d_(lt, du, ctx))(draw), tr=tr, face=None, scene=ex.get("scene"),
+                            corner_only=bool(ex.get("corner_only"))))
+        cur_t = S[-1]["t1"]
+    S = [s_ for s_ in S if s_["t1"] - s_["t0"] > 0.02]
+    for s_ in S:                                                                       # the script's chapter flashes
+        if any(abs(s_["t0"] - fa) < 0.6 for fa in flash_at): s_["tr"] = "flash"
+    if t1 is not None: S = [s_ for s_ in S if s_["t0"] < t1]
+    S = E.protect_eyes(S, p.look, board_at=E.nearest_graphic(S), recenter_px=0, bg=BG)
+    S = E.direct_face(S, p.look, project=p, bg=BG, border=(BORDER, 3))              # figures and tradeoffs: the face layouts
+    S = E.invite_face(S, p.look, project=p, bg=BG, border=(BORDER, 3))              # lists and code: a window over the free corner
+    S = E.hold_over_empty(S, p, BG)
+    sfx = [(s_["t0"] - 0.05, E.whoosh(0.03, 0.4)) for s_ in S if s_.get("tr") in ("zoom", "push_up", "morph")]
+    sfx += [(s_["t0"], E.tone(0.6, 1200, 1800, 0.05, noise=0.3, decay=6)) for s_ in S if s_.get("tr") == "flash"]
+    return S, sfx
+
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument("config"); ap.add_argument("rest", nargs="*"); a = ap.parse_args()
+    cfg = json.load(open(a.config, encoding="utf-8")); B = Build(cfg); out = cfg["out"]
+    print(f"{len(B.items)} items in {len(B.groups)} groups: " + "; ".join(f"{it['n']}. {it['title']} ({it['group']})" for it in B.items))
+    if a.rest[:1] == ["stills"]:
+        ts = [float(x) for x in a.rest[1:]]; S, sfx = plan(B, 0, max(ts) + 3); r = E.Renderer(B.p, S, 0, B.p.dur, out, sfx, BG); print(r.stills(ts, out.replace(".mp4", "_sheet.png"), cols=4)); return
+    t0, t1 = (float(a.rest[0]), float(a.rest[1])) if len(a.rest) >= 2 else (0.0, B.p.dur)
+    S, sfx = plan(B, t0, t1 if (t0, t1) != (0.0, B.p.dur) else None)
+    json.dump([dict(t0=round(s_["t0"], 2), t1=round(s_["t1"], 2), kind=s_["kind"], tr=s_.get("tr"), scene=s_.get("scene"), face=(s_.get("face") or [None])[0]) for s_ in S], open(out.replace(".mp4", "_shots.json"), "w"), indent=0)
+    E.Renderer(B.p, S, t0, t1, out if (t0, t1) == (0.0, B.p.dur) else out.replace(".mp4", f"_{int(t0)}-{int(t1)}.mp4"), sfx, BG).render()
+
+if __name__ == "__main__":
+    main()

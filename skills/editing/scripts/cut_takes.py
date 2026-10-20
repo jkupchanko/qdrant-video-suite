@@ -20,10 +20,15 @@ import numpy as np
 
 def norm(s): return re.sub(r"[^a-z0-9 ]+", " ", s.lower().replace("’", "").replace("'", "")).split()
 
+NOT_SPOKEN = ("count", "notes", "sources", "references", "checks")
 def script_lines(path):
-    out = []
-    for l in open(path, encoding="utf-8"):
+    """the lines meant to be said: not headings, [directions], tables, <!-- notes --> (however many lines they run), and
+    nothing under a ## Count / Notes / Sources section (the three-layer script ends with a Count of its own layers)"""
+    text = re.sub(r"<!--.*?-->", "", open(path, encoding="utf-8").read(), flags=re.S); out = []; skip = False
+    for l in text.splitlines():
         l = l.strip()
+        if l.startswith("## "): skip = l[3:].strip().lower().startswith(NOT_SPOKEN); continue
+        if skip or l.startswith("|"): continue
         if not l or l.startswith(("#", "[", "**", "🎥", "🎙", "💻", "✅", "⚖", "```", "<")) or l.isupper() or len(l.split()) < 3: continue
         if re.match(r"^(🎥|🎙|💻|✅|⚖)", l): continue
         out.append(l)
@@ -80,6 +85,47 @@ def find_takes(words, line, min_cover=0.55):
             if t[4] >= out[-1][4] - 0.02: out[-1] = t       # overlapping windows: the later, tighter start wins (a restart replaces its stumble)
         else: out.append(t)
     return out            # (start_idx, end_idx, cover, extra, score)
+
+STOP = set("a an the and or but so to of for in on at is are was were be been being can could it its this that these those you your we "
+            "our they their with as by from if then than when while which what into just also more most very not no do does did "
+            "have has had will would should may might there here now well let lets gonna going".split())
+def content_words(ws): return [w for w in ws if w and w not in STOP and len(w) > 2]
+
+def find_in_gap(words, line, lo, hi):
+    """a line said in other words: the presenter's wording wins, so a line the strict match missed is looked for only where
+    it must be, between the takes of the lines either side of it. A run of the take counts when it says at least half of
+    the line's content words; runs that start and end at a pause (whole spoken sentences) are preferred, and of several
+    attempts the last one, as in the strict match. -> (start_idx, end_idx, recall, extra, score) or None"""
+    target = norm(line); tc = sorted(set(content_words(target)))
+    if len(tc) < 2 or hi - lo < 2: return None
+    Wd = [(norm(w["w"]) or [""])[0] for w in words]; n = len(target); cands = []
+    pause_before = lambda i: i == 0 or words[i]["s"] - words[i - 1]["e"] >= 0.25
+    pause_after = lambda j: j + 1 >= len(words) or words[j + 1]["s"] - words[j]["e"] >= 0.25
+    for i in range(lo, hi + 1):
+        for j in range(i + max(2, n // 2) - 1, min(hi, i + 2 * n + 4) + 1):
+            seg = Wd[i:j + 1]; hit = sum(1 for c in tc if any(fuzzy_eq(c, x) for x in seg))
+            if hit < 2 or hit / len(tc) < 0.5: continue
+            extra = len(seg) - hit; sc = hit / len(tc) - 0.02 * extra + 0.08 * pause_before(i) + 0.08 * pause_after(j)
+            cands.append((i, j, round(hit / len(tc), 2), extra, sc))
+    if not cands: return None
+    top = max(c[4] for c in cands); near = [c for c in cands if c[4] >= top - 0.05]
+    last = max(near, key=lambda c: c[0]); i, j, rec, extra, sc = max([c for c in near if c[0] >= last[0] - 2], key=lambda c: c[4])
+    # the whole spoken sentence: trim to the first and last words the line has, then out to the transcript's own sentence ends
+    # (its punctuation), never into the takes either side
+    tw = set(target); hits = [q for q in range(i, j + 1) if any(fuzzy_eq(Wd[q], t) for t in tc)]      # the line's content words, not "now" ~ "on"
+    i, j = hits[0], hits[-1]
+    end = lambda q: words[q]["w"].rstrip().endswith((".", "?", "!")) or (q + 1 < len(words) and words[q + 1]["s"] - words[q]["e"] >= 0.35)   # a full stop, or a pause
+    own = lambda q: Wd[q] in tw
+    while i > lo and i > hits[0] - 8 and (not end(i - 1) or own(i - 1)): i -= 1                      # back to the start of what was said
+    j0 = j
+    ahead = lambda q: any(Wd[r] in tc for r in range(q + 1, min(hi, q + 8) + 1))                      # more of the line still to come (a few words on)
+    while j < hi and j < hits[-1] + 14 and (not end(j) or ahead(j)): j += 1                           # on to the end of the sentence
+    while j > j0 and Wd[j] in ("now", "so", "but", "and", "because", "then", "okay"): j -= 1          # not the next sentence's first word
+    half = i + max(2, (j - i) // 2); restart = i                                                      # a restart ("this avoids this avoids"):
+    for p in range(i, half):                                                                          # start at the last time the line began
+        for q in range(p + 2, min(j, half + 2)):
+            if Wd[p] == Wd[q] and Wd[p + 1] == Wd[q + 1]: restart = max(restart, q)
+    return (restart, j, rec, extra, sc)
 
 def silences(path, a0, b0, min_len=0.7, noise="-42dB"):
     """[(start, end)] of silences longer than min_len inside [a0, b0], in source seconds"""
@@ -148,10 +194,10 @@ def main():
     tp = os.path.join(a.out, "words.json")
     words = json.load(open(tp)) if os.path.exists(tp) else transcribe(a.raw, a.model)
     json.dump(words, open(tp, "w"))
-    lines = script_lines(a.script); chosen = []; t_acc = 0.0
+    lines = script_lines(a.script); chosen = []; t_acc = 0.0; picks = []
     for line in lines:
         takes = find_takes(words, line)
-        if not takes: chosen.append((line, None, "NO TAKE FOUND: not said on the recording, or said too differently")); continue
+        if not takes: picks.append([line, None, None]); continue
         # retakes sit close together in time; choose the best-scoring group (within 45 s of each other), then the LAST take in it
         groups = []
         for t in takes:
@@ -160,6 +206,17 @@ def main():
         g = max(groups, key=lambda gr: max(x[4] for x in gr))
         i, j, cover, extra, _ = g[-1]
         note = f"take {g.index(g[-1]) + 1} of {len(g)} at {words[i]['s']:.1f}s, cover {cover}" + (f", {extra} extra word(s)" if extra else "") + (f"; {len(takes) - len(g)} other match(es) elsewhere ignored" if len(takes) > len(g) else "")
+        picks.append([line, (i, j), note])
+    for k, (line, tk, note) in enumerate(picks):                                   # second pass: lines said in other words
+        if tk: continue
+        lo = next((picks[q][1][1] + 1 for q in range(k - 1, -1, -1) if picks[q][1]), 0)
+        hi = next((picks[q][1][0] - 1 for q in range(k + 1, len(picks)) if picks[q][1]), len(words) - 1)
+        g = find_in_gap(words, line, lo, hi)
+        if g: picks[k][1] = (g[0], g[1]); picks[k][2] = f"said in other words at {words[g[0]]['s']:.1f}s ({g[2]:.0%} of its key words), found between its neighbours' takes"
+        else: picks[k][2] = "NO TAKE FOUND: not said on the recording, or said too differently"
+    for line, tk, note in picks:
+        if not tk: chosen.append((line, None, note)); continue
+        i, j = tk
         # split at silences inside the take (a presenter pausing mid-line): each piece is its own cut
         pieces = []; p0 = i
         for q in range(i, j):
@@ -184,20 +241,25 @@ def main():
     W, H = (int(v) for v in a.size.split("x")); parts = []; rows = []; t_edit = 0.0; k = 0
     import cv2
     src = cv2.VideoCapture(a.raw); sw, sh = int(src.get(cv2.CAP_PROP_FRAME_WIDTH)), int(src.get(cv2.CAP_PROP_FRAME_HEIGHT)); src.release()
-    gi = 0
+    # every piece is cut with exactly its frames and 1600 samples a frame and joined by assemble.py, so the voice
+    # and the lips stay locked; the old per-piece AAC + concat copy drifted about 27 ms a join (1.4 s over 53)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from assemble import assemble
+    gi = 0; spans, vfs, pend = [], [], []
     for line, span, note in chosen:
-        if not span: rows.append(("", "", "", line, "", note)); continue
+        if not span: pend.append((None, line, note)); continue
         a0, b0, said = span; push = 1.0 if (k % 2 == 0 or a.push <= 1.0) else a.push; k += 1
         cw, ch = int(sw / push), int(sh / push); cx, cy = (sw - cw) // 2, (sh - ch) // 2
-        vf = (("hflip," if a.mirror else "") + f"crop={cw}:{ch}:{cx}:{cy},scale={W}:{H}:flags=lanczos" +
-              (f",drawbox=x=0:y=0:w={W}:h={a.bars}:color=black:t=fill,drawbox=x=0:y={H - a.bars}:w={W}:h={a.bars}:color=black:t=fill" if a.bars else "") + ",fps=30,format=yuv420p")
-        d = b0 - a0; p = os.path.join(a.out, f"part_{len(parts):02d}.mp4")
-        subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{a0:.3f}", "-to", f"{b0:.3f}", "-i", a.raw, "-vf", vf, "-af", f"afade=t=in:st=0:d=0.02,afade=t=out:st={d - 0.02:.3f}:d=0.02",
-                        "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-c:a", "aac", "-ar", "48000", "-ac", "2", "-b:a", "192k", p], check=True)
-        parts.append(p); g = gaze[gi]; gi += 1
-        rows.append((f"{t_edit:.2f}", f"{a0:.2f}-{b0:.2f}", f"x{push:.2f}", line, said, note + f"; eyes on lens {int(g * 100)}%" + ("" if g >= 0.8 else "  <- CHECK"))); t_edit += d
-    lst = os.path.join(a.out, "parts.txt"); open(lst, "w").write("".join(f"file '{os.path.abspath(p).replace(os.sep, '/')}'\n" for p in parts))
-    out = os.path.join(a.out, "cut.mp4"); subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", "-movflags", "+faststart", out], check=True)
+        vfs.append(("hflip," if a.mirror else "") + f"crop={cw}:{ch}:{cx}:{cy},scale={W}:{H}:flags=lanczos" +
+                   (f",drawbox=x=0:y=0:w={W}:h={a.bars}:color=black:t=fill,drawbox=x=0:y={H - a.bars}:w={W}:h={a.bars}:color=black:t=fill" if a.bars else ""))
+        spans.append((a0, b0)); pend.append(((a0, b0, said, push), line, note))
+    out = os.path.join(a.out, "cut.mp4")
+    times = assemble(a.raw, spans, out, vf_for=lambda q: vfs[q]) if spans else []
+    q = 0
+    for sp, line, note in pend:
+        if sp is None: rows.append(("", "", "", line, "", note)); continue
+        a0, b0, said, push = sp; g = gaze[gi]; gi += 1; parts.append(q)
+        rows.append((f"{times[q]:.2f}", f"{a0:.2f}-{b0:.2f}", f"x{push:.2f}", line, said, note + f"; eyes on lens {int(g * 100)}%" + ("" if g >= 0.8 else "  <- CHECK"))); q += 1
+    t_edit = (times[-1] + (spans[-1][1] - spans[-1][0])) if spans else 0.0
     if tiles:
         cols = 10; rows_img = [np.hstack(tiles[i:i + cols] + [np.zeros((160, 160, 3), np.uint8)] * (cols - len(tiles[i:i + cols]))) for i in range(0, len(tiles), cols)]
         cv2.imwrite(os.path.join(a.out, "gaze_sheet.png"), np.vstack(rows_img))

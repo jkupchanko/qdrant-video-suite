@@ -15,6 +15,13 @@ hand, in one command, and writes down every decision so a person can change any 
 2. **Finds every take of every script line.** A line said five times is five takes; the last complete one
    is kept, because that is the one a presenter settles on. Stumbles, half-lines and ad-libs between lines
    are dropped. If a line was never said, the cut list says so instead of guessing.
+   **A line said in other words is still found.** The strict match wants the line's first and last words; a
+   presenter who says "Now we just went through all three options for dense vectors" for "Those first three
+   options were for dense vectors." misses it. So a line the strict pass misses is looked for again, only where it
+   must be (between the takes of the lines either side), as the run that says at least half its content words,
+   cut to the whole spoken sentence (the transcript's full stops and pauses), from the last restart. The first
+   end-to-end build lost 6 of 42 lines (53 s of the video) to the strict match alone; the cut list marks these
+   "said in other words".
 3. **Checks eye contact** on every chosen take, frame by frame: a frontal face with both eyes near centre.
    Any take under 80% is flagged in the cut list for a human look; it is not silently swapped.
 4. **Cuts on word boundaries** with a short handle before the first word and after the last, so a cut
@@ -23,7 +30,9 @@ hand, in one command, and writes down every decision so a person can change any 
    faces the way they do in life), covers a recording tag with a black bar at the bottom and a matching
    bar at the top so it reads as a deliberate frame, and alternates a slight push (1.00 / 1.06) between
    cuts so each jump reads as a cut rather than a glitch.
-6. **Fades the audio** 20 ms at every join. No clicks.
+6. **Fades the audio** 20 ms at every join. No clicks. **Joins with the voice locked to the lips**
+   (`scripts/assemble.py`): every piece is exact to the frame in both picture and sound, so nothing drifts
+   however many joins there are. Stitching per-piece AAC files with `-c copy` drifted 1.4 s over 53 joins.
 7. **Writes it down**: `cut.mp4`, `cutlist.md` (edit time, source time, push, script line, what was actually
    said, which take of how many, eye-contact score), and `gaze_sheet.png` (the eyes on every chosen take).
 
@@ -40,8 +49,11 @@ over 0.7 s removed), the picture and sound, and what to check before shipping. T
 
 - **Spoken wording wins.** If the presenter said "all workflows" and the script says "every workload", the
   cut keeps the words that were said; the cut list shows the difference so the writer can decide.
-- **Looking at the lens is not negotiable.** A take where the eyes wander is flagged, not used quietly.
-  The only exception is a passage where the script has the presenter looking at something on screen.
+- **Looking at the lens is not negotiable.** `scripts/gaze.py` tracks the irises frame by frame and learns
+  the presenter's lens position from clusters of gaze, not the median (reading to the side is its own
+  cluster). Any look-away of 0.25 s or more, or any clear glance, is swapped for a clean take. If no clean take
+  exists, it is listed in `lookaways.json`, measured on the finished cut with `--lookaways`, so the styling
+  pass takes the face off screen there. Demos, where the presenter is meant to look at the screen, are exempt.
 - **Cut on the word, never on the breath.** In-point 0.08 s before the first word; out-point where the voice
   actually stops plus 0.25 s, never into the next word. Silences over 0.7 s inside a line are removed.
 - **Nothing added.** No music, no labels, no B-roll. Those are other skills, laid on this cut afterwards.

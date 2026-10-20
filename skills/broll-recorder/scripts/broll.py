@@ -136,12 +136,17 @@ def open_page(ctx, url, a, extra_hide=()):
     for sel in getattr(a, "pre_click", None) or []:
         try: page.locator(sel).first.click(timeout=2500); time.sleep(0.5)
         except Exception as e: print(f"pre-click {sel} failed: {str(e)[:80]}", file=sys.stderr)
+    z = float(getattr(a, "zoom", 1.0) or 1.0)
+    if z != 1.0:                       # CSS zoom: the page lays out narrower and renders its text bigger at full sharpness
+        page.evaluate(f"document.documentElement.style.zoom = '{z}'"); time.sleep(0.3)
     time.sleep(0.4)
     return page
 
 def add_common(sp):
     sp.add_argument("--width", type=int, default=1920); sp.add_argument("--height", type=int, default=1080)
     sp.add_argument("--scale", type=float, default=1.0, help="device scale factor (1 = crisp 1080p, 2 = retina look, heavier)")
+    sp.add_argument("--zoom", type=float, default=1.0, help="CSS zoom on the page: 1.4 makes docs text readable on a phone (~22 px at 1080) and stays sharp; "
+                    "the video is still the viewport size (Playwright records CSS px, so --scale does not add pixels)")
     sp.add_argument("--light", action="store_true", help="light color scheme (default dark)")
     sp.add_argument("--channel", default="chrome", help="chrome | msedge | chromium")
     sp.add_argument("--state", default=None, help="Playwright storage_state JSON for pages that need a login (you create it)")
@@ -200,8 +205,13 @@ def build_plan(data, sec, a):
     cx = min(W - 200, max(300, (sec["left"] if sec else W * 0.35) + 360))
     steps, t = [], 0.3
     if style == "readthrough":
-        start = max(0, top - int(H * 0.5))
-        steps = [{"t": 0.3, "move": [cx, int(H * 0.55)], "dur": 0.8}, {"t": 1.0, "scroll": start + int(110 * (dur - 1.4)), "dur": dur - 1.4}]
+        # opens with the heading just under the site header (so the frame is this section, not the end of the one before),
+        # reads down it, and stops with the section's end at the frame's bottom; a short section only drifts, its next heading kept below the middle
+        start = max(0, top - int(H * 0.17)); dist = int(110 * (dur - 1.4))
+        if sec and sec.get("height"):
+            end = top + int(sec["height"]); room_end = end - H + 40 - start; room_mid = end - start - int(H * 0.5) - 20
+            dist = max(0, min(dist, room_end if room_end >= 40 else min(room_mid, 120)))
+        steps = [{"t": 0.3, "move": [cx, int(H * 0.55)], "dur": 0.8}] + ([{"t": 1.0, "scroll": start + dist, "dur": dur - 1.4}] if dist >= 20 else [])
         return {"start_y": start, "steps": steps}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
@@ -256,7 +266,7 @@ def do_plan(a):
     if chosen and score < 0.35 and not getattr(a, "section", None) and a.match:
         print(f"WARNING: weak match ({score}); best guess is '{chosen['text']}'. Run `inspect --table` and pass --section to pin it.", file=sys.stderr)
     plan = {"url": a.url, "match": a.match, "section": chosen, "match_score": score, "style": a.style, "duration": a.duration,
-            "width": a.width, "height": a.height, "scale": a.scale, "light": a.light, "hide": a.hide, "state": a.state, "channel": a.channel, "pre_click": getattr(a, "pre_click", [])}
+            "width": a.width, "height": a.height, "scale": a.scale, "zoom": getattr(a, "zoom", 1.0), "light": a.light, "hide": a.hide, "state": a.state, "channel": a.channel, "pre_click": getattr(a, "pre_click", [])}
     plan.update(build_plan(data, chosen, a))
     out = a.out or "plan.json"
     json.dump(plan, open(out, "w"), indent=1)
@@ -276,7 +286,7 @@ LAST_BOX = {}   # filled by do_record: where the matched section sat on screen a
 def do_record(a):
     from playwright.sync_api import sync_playwright
     plan = json.load(open(a.plan)) if isinstance(a.plan, str) else a.plan
-    for k in ("width", "height", "scale", "light", "hide", "state", "channel", "pre_click"):
+    for k in ("width", "height", "scale", "zoom", "light", "hide", "state", "channel", "pre_click"):
         if plan.get(k) is not None and getattr(a, k, None) in (None, [], False, 1920, 1080, 1.0, "chrome"):
             setattr(a, k, plan[k])
     W, H, dur = a.width, a.height, plan.get("duration", 6)
@@ -381,7 +391,7 @@ def do_record(a):
     out = a.out
     os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
     subprocess.run([ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{trim:.2f}", "-i", os.path.join(tmp, webm[0]), "-t", str(dur),
-                    "-vf", f"scale={W}:{H}" + (f",minterpolate=fps={a.fps}:mi_mode=mci:mc_mode=obmc:me_mode=bidir:search_param=16" if (a.fps > 40 and not getattr(a, "no_interp", False)) else ""),
+                    "-vf", f"scale={W}:{H}" + (f",minterpolate=fps={a.fps}:mi_mode=mci:mc_mode=obmc:me_mode=bidir:search_param=16" if (a.fps > 40 and getattr(a, "interp", False)) else f",fps={a.fps}"),   # interpolation is opt-in (--interp): it ghosts and doubles scrolling text
                     "-r", str(a.fps), "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-pix_fmt", "yuv420p", "-an", out], check=True)
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"recorded -> {out}  ({dur}s, {W}x{H}, {a.fps} fps)")
@@ -504,14 +514,14 @@ def main():
     s = sub.add_parser("inspect"); s.add_argument("url"); s.add_argument("--out"); s.add_argument("--table", action="store_true"); add_common(s)
     s = sub.add_parser("plan"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look"])
     s.add_argument("--duration", type=float, default=6); s.add_argument("--out"); s.add_argument("--verbose", action="store_true"); add_common(s)
-    s = sub.add_parser("record"); s.add_argument("plan"); s.add_argument("--out", required=True); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="skip motion interpolation when upsampling the capture to 60 fps"); add_common(s)
+    s = sub.add_parser("record"); s.add_argument("plan"); s.add_argument("--out", required=True); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="(default now) no motion interpolation"); s.add_argument("--interp", action="store_true", help="motion-interpolate the capture up to 60 fps: smoother, but it ghosts and doubles scrolling text, so not for docs"); add_common(s)
     s = sub.add_parser("review"); s.add_argument("clip"); s.add_argument("--sheet"); s.add_argument("--out")
     s = sub.add_parser("auto"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look"])
-    s.add_argument("--duration", type=float, default=6); s.add_argument("--out", required=True); s.add_argument("--name"); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="skip motion interpolation when upsampling the capture to 60 fps"); s.add_argument("--verbose", action="store_true")
+    s.add_argument("--duration", type=float, default=6); s.add_argument("--out", required=True); s.add_argument("--name"); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="(default now) no motion interpolation"); s.add_argument("--interp", action="store_true", help="motion-interpolate the capture up to 60 fps: smoother, but it ghosts and doubles scrolling text, so not for docs"); s.add_argument("--verbose", action="store_true")
     s.add_argument("--compose", choices=["fullscreen", "fullscreen-pip", "evidence-card", "window"], help="also bake a finished, editor-agnostic file in this style")
     s.add_argument("--presenter", help="presenter video for --compose (PiP + audio)"); s.add_argument("--at", type=float, default=0.0, help="where the clip sits in the presenter video (s)")
     add_common(s)
-    s = sub.add_parser("batch"); s.add_argument("jobs"); s.add_argument("--out", required=True); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="skip motion interpolation when upsampling the capture to 60 fps"); add_common(s)
+    s = sub.add_parser("batch"); s.add_argument("jobs"); s.add_argument("--out", required=True); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="(default now) no motion interpolation"); s.add_argument("--interp", action="store_true", help="motion-interpolate the capture up to 60 fps: smoother, but it ghosts and doubles scrolling text, so not for docs"); add_common(s)
     a = ap.parse_args()
     {"inspect": do_inspect, "plan": do_plan, "record": do_record, "review": do_review, "auto": do_auto, "batch": do_batch}[a.cmd](a)
 

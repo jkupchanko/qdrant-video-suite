@@ -38,7 +38,7 @@ def shot_docs(a, highlight=False):
     name = a.name or re.sub(r"[^a-z0-9]+", "_", (a.says or a.url)[:36].lower()).strip("_")
     style = "highlight" if highlight else "reveal"
     dur = a.duration or 7
-    run([PY, f"{HERE}/broll.py", "auto", a.url, "--match", a.says or "", "--duration", dur, "--style", style, "--out", a.out, "--name", name])
+    run([PY, f"{HERE}/broll.py", "auto", a.url, "--match", a.says or "", "--duration", dur, "--style", style, "--out", a.out, "--name", name] + (["--section", a.section] if getattr(a, "section", None) else []))
     cx, cy = section_focus(os.path.join(a.out, name + "_plan.json"))
     t_in = 2.2; t_out = dur - 1.3
     run([PY, f"{HERE}/compose.py", os.path.join(a.out, name + ".mp4"), "--style", "clean", "--card-bg", BG,
@@ -65,7 +65,7 @@ def shot_look(a):
     need = round(t_out + spd + 0.9, 1)
     dur = a.duration or need
     if dur < need: print(f"  note: --duration {dur} is too short for the sequence; using {need}s"); dur = need
-    run([PY, f"{HERE}/broll.py", "auto", a.url, "--match", a.says or "", "--duration", dur, "--style", "look", "--out", a.out, "--name", name])
+    run([PY, f"{HERE}/broll.py", "auto", a.url, "--match", a.says or "", "--duration", dur, "--style", "look", "--out", a.out, "--name", name] + (["--section", a.section] if getattr(a, "section", None) else []))
     man = json.load(open(os.path.join(a.out, name + "_manifest.json")))
     box = (man.get("section_box") or {}).get(a.target)
     cw = 1920 * 0.80; ch = cw * 9 / 16; px, py = (1920 - cw) / 2, (1080 - ch) / 2; k = cw / 1920
@@ -148,7 +148,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="kind", required=True)
     for k in ("docs", "article", "site", "look"):
-        s = sub.add_parser(k); s.add_argument("url"); s.add_argument("--says", default=""); s.add_argument("--out", required=True); s.add_argument("--name"); s.add_argument("--duration", type=float); s.add_argument("--zoom-speed", default="slow", choices=["slow", "normal", "fast", "snap"])
+        s = sub.add_parser(k); s.add_argument("url"); s.add_argument("--says", default=""); s.add_argument("--section", help="pin the page section by its heading; the spoken line alone can match the wrong section when several sections share words"); s.add_argument("--out", required=True); s.add_argument("--name"); s.add_argument("--duration", type=float); s.add_argument("--zoom-speed", default="slow", choices=["slow", "normal", "fast", "snap"])
         if k == "look":
             s.add_argument("--mark", default="box", choices=["box", "underline", "circle", "none"]); s.add_argument("--target", default="block", choices=["block", "heading"], help="frame the heading plus its text/code (block) or just the heading"); s.add_argument("--hold", type=float, help="seconds to sit on the marked spot before the swoop out (default 2.5)")
             s.add_argument("--zoom", type=float, help="push amount (default 1.6)"); s.add_argument("--mark-color", default="#DC244C")

@@ -9,3 +9,4 @@ frame by frame.
 |---|---|---|
 | [Animated Board](animated-board/) | one board per section that builds piece by piece on the words, with the face moving between half, card, full and corner layouts; five looks (brand, whiteboard, paper, neon, code editor) | ![](animated-board/images/look_brand.jpg) |
 | [Code Report](code-report/) | copied from Fireship: real docs with a highlight synced to the voice, stock photos and memes with heavy captions, red title cards, a new visual every ~2 s | ![](code-report/images/docs_highlight.jpg) |
+| [Listed Sections](listed-sections/) | the video as a numbered list (ByteByteGo, Fireship, NeetCode): a master list with the current item lit, the docs page's own figures and code, TRADEOFF chips in the docs' words; builds itself from the script and the page, the video builder's default | ![](listed-sections/images/devices.jpg) |

@@ -93,6 +93,8 @@ def main():
     ap.add_argument("--compose", choices=["fullscreen", "fullscreen-pip", "evidence-card", "window"], help="also bake each clip in this style")
     ap.add_argument("--presenter", help="presenter video for --compose fullscreen-pip"); ap.add_argument("--light", action="store_true")
     ap.add_argument("--raw", action="store_true", help="record only; skip the house-style finishing (shot.py)")
+    ap.add_argument("--style", choices=["reveal", "hover", "highlight", "readthrough", "look"], help="one recording style for every marker (readthrough: opens on the section and reads down it)")
+    ap.add_argument("--zoom", type=float, help="CSS page zoom for every recording (1.4 = docs text readable on a phone)")
     a = ap.parse_args()
     text = open(a.script, encoding="utf-8").read()
     jobs = parse(text, a.default_duration)
@@ -105,14 +107,16 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     results = []
     for j in jobs:
+        if a.style: j["style"] = a.style
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]
         if a.light: cmd.append("--light")
+        if a.zoom: cmd += ["--zoom", str(a.zoom)]
         if a.compose: cmd += ["--compose", a.compose] + (["--presenter", a.presenter] if a.presenter else [])
         elif not getattr(a, "raw", False):
             # house default: finish each clip as a suite shot (clean card, push in, swoop out)
             kind = {"highlight": "article", "readthrough": "site", "look": "look"}.get(j["style"], "docs")
-            cmd = [sys.executable, os.path.join(HERE, "shot.py"), kind, j["url"], "--out", a.out, "--name", j["name"], "--duration", str(j["duration"])] + (["--says", j["match"]] if kind != "site" else [])
+            cmd = [sys.executable, os.path.join(HERE, "shot.py"), kind, j["url"], "--out", a.out, "--name", j["name"], "--duration", str(j["duration"])] + (["--says", j["match"]] if kind != "site" else []) + (["--section", j["section"]] if j["section"] and kind != "site" else [])   # keep the pin: it was dropped here before
         print(f"\n=== {j['name']}: {j['url']}")
         r = subprocess.run(cmd, capture_output=True, text=True)
         tail = "\n".join(l for l in (r.stdout + r.stderr).splitlines() if l.strip().startswith(("plan", "recorded", "review", "manifest", "composed", "->", "WARNING")) or "FAIL" in l)
