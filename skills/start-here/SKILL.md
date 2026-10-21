@@ -170,6 +170,9 @@ to the script's lines, and for every line with a look-away over about a second w
 screen, write what is shown instead (a small window and what stays up: the code, the card, the B-roll, the list). One
 line per change, approved. Mark every look-away over about a second in the script itself, under its line:
 `[**Not looking:** 0:41 to 0:46. Face not shown here.]`, so anyone reading the script knows the face is off there.
+Only when there are any: many takes have none. Reading from the script is fine and expected (the point is that the
+presenter can record the words without worrying about the lens; the edit covers the glances), so never ask them to
+re-record for it.
 
 **7b. A preview (a few minutes).** Ask:
 
