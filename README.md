@@ -4,9 +4,116 @@ Skills that take a technical video from idea to edit with less hand work.
 Write the script, plan the camera layout, record selected supporting scenes, then edit.
 The script leads the full sequence; each available skill also works on its own.
 
-## Choose a part of the video
+## Start here
 
-Choose a skill below. New parts of the suite are marked Coming soon.
+Everything in this suite runs from one thing: **the script**. The script says who the video is for, what it teaches, what
+shows on screen and when, where the B-roll goes, how the camera moves and how each shot changes to the next. Every skill
+reads the script and does its part. To change the video, you change the script.
+
+So the path below is mostly about getting the script right. Once it is right, the rest follows from what the skills have
+already learned.
+
+```mermaid
+flowchart TD
+    A["1. Tell Claude what you have"] --> B{"Do you have a script?"}
+    B -- "Yes: a script, a video, or both" --> C["2a. Review the script you have"]
+    B -- "No: starting from scratch" --> D["2b. Explain what you want to teach"]
+    C --> E["3. Answer the script questions"]
+    D --> E
+    E --> F["4. Read and approve the script"]
+    F --> G["5. Pick an editing style"]
+    G --> H["6. Record, or hand over the take"]
+    H --> I["7. Build the video"]
+    I --> J["8. Read the review"]
+    J -- "Something to fix" --> F
+```
+
+### 1. Tell Claude what you have
+
+Start a session with the skills installed (see [Using a skill with Claude](#using-a-skill-with-claude)) and say what you
+are working with. For example:
+
+> I want to make a video about bulk uploads in Qdrant. I have a script and a raw Zoom recording.
+
+> I want to make a video about hybrid search. I have nothing yet, just the docs page.
+
+There are two ways in, and both end at the same script.
+
+### 2a. You already have a script (or a video)
+
+Hand it over. Claude reads it and checks it before anything is built:
+
+- **Who is it for, and what should they get from it?** If the script does not make that clear, you will be asked.
+- **Is it in the suite's form?** Each passage needs its lines, and where it helps, a B-roll marker, a camera call and a
+  transition. Anything missing is filled in from the skills' rules and shown to you.
+- **Does it need changes?** A line nobody can follow, a section that runs long, B-roll on a line that names nothing
+  specific: you get the suggested change and the reason, and you decide.
+
+If you only have a recording and no script, the recording is transcribed and the script is written from what you said.
+
+### 2b. You are starting from scratch
+
+Explain what you want to teach in your own words. A few sentences, a list of notes, a docs link or a rough recording all
+work. Do not worry about structure yet; that comes from the questions next.
+
+### 3. Answer the script questions
+
+These are the questions that decide what the video becomes. Claude asks only the ones your material does not already
+answer ([why each one matters](skills/technical-video-script-library/Audience%20and%20Purpose.md)):
+
+1. **Who is watching?** A developer, a customer, someone new to Qdrant?
+2. **What do they already know** about this subject?
+3. **What is the goal?** Should they understand something, choose between options, or be able to do a task?
+4. **How long** should the video be?
+5. **Which docs page** is it about? The B-roll and the on-screen figures come from it.
+6. **Your name and title** for the name card at the start.
+
+From the answers, Claude picks one of the [ten story structures](skills/technical-video-script-library/) (the practical
+tip, the guided process, the comparison and choice, and others) and says why.
+
+### 4. Read and approve the script
+
+You get the script in three layers, all in one place:
+
+- **The lines** you will say.
+- **The B-roll**: which lines get a recording of the docs page, and which section. Only lines that name something specific
+  get one ([how it decides](skills/broll-recorder/)).
+- **The camera calls and transitions**: when your face is full screen, in a small window, or off screen, and how each shot
+  changes to the next ([camera](skills/camera-layout/), [transitions](skills/transitions/)).
+
+You do not have to plan any of this yourself. The skills fill it in from what they have measured in popular technical
+videos. Read it, change what you want, and approve it. This is the last point where changes are cheap.
+
+### 5. Pick an editing style
+
+How the finished video looks. Each one takes the same script and the same recording:
+
+| style | what it looks like |
+|---|---|
+| [Listed Sections](styles/listed-sections/) (default) | the video as a numbered list, the current item lit, the docs page's own figures and code |
+| [Animated Board](styles/animated-board/) | one board per section that builds as you speak, five looks |
+| [Code Report](styles/code-report/) | fast and visual: the real docs with highlights, captions and title cards |
+
+### 6. Record, or hand over the take
+
+Record yourself reading the approved script. Retakes and stumbles are fine: the [editing](skills/editing/) skill keeps
+the last good take of every line and checks that you are looking at the lens.
+
+### 7. Build the video
+
+One request builds the whole thing: the cut, the B-roll recordings, the camera, the transitions, the style, the name
+card and the sound ([video builder](skills/video-builder/)).
+
+> Build the video from this take and this script.
+
+### 8. Read the review
+
+Every build ends with a [review](skills/video-review/) that watches the finished video frame by frame and lists each
+problem with its time and a picture. Most fixes go back into the script, and the build runs again from that point.
+
+## Or jump to one part
+
+Already know what you need? Each skill below also works on its own. New parts of the suite are marked Coming soon.
 
 <table>
 <tr>
