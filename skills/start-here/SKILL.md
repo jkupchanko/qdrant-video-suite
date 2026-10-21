@@ -172,7 +172,7 @@ list, code and trade-off cards start at the first item), so a 30 s preview shows
 own folder:
 
 ```bash
-python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR_preview --label "Topic, style" --style list --preview 30
+python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR_preview --label "Topic, style" --style list --preview 60 --cut-from BUILD_DIR
 ```
 
 Show it and ask whether the direction is right. A change of direction goes into the script (step 4) and the preview
