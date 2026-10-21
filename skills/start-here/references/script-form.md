@@ -43,6 +43,7 @@ Because they're indexed differently, they create different memory and performanc
 | name card | `[**Lower third:** NAME \| TITLE \| 5 s]` | after the line it comes in on, near the start | brand-consistency; the build refuses to start without one |
 | camera call | `[**Camera:** FULL / SMALL / NONE ... **Transition:** ...]` | under a passage where the camera changes | camera-layout's `references/camera-markers.md`; between calls the camera holds |
 | transition | `**Transition:** ...` inside every camera call | | transitions skill; Qdrant house rule: soft, about 0.8 s, into and out of cards; cuts between face takes. The style applies that rule by itself and reads only `white flash` (a chapter) from the field, so the rest is for the people reading the script |
+| not looking | `[**Not looking:** 0:41 to 0:46. Face not shown here.]` | under the line, after the raw edit | where the eyes leave the lens in the approved cut; the face is hidden there and something else stays on screen |
 | B-roll | `[B-ROLL: URL \| spoken line \| section: X \| 5s \| name: n]` | right after the line it illustrates | broll-recorder's `references/script-markers.md`; only on lines that name something specific |
 
 ## Mistakes that have cost a build

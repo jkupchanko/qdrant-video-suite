@@ -168,7 +168,8 @@ in the cut and cut again (minutes), nothing else is rebuilt.
 **After the raw edit is approved: the visuals.** Only now, run `--only words` and `--only gaze`, match `lookaways.json`
 to the script's lines, and for every line with a look-away over about a second whose camera call shows the face full
 screen, write what is shown instead (a small window and what stays up: the code, the card, the B-roll, the list). One
-line per change, approved.
+line per change, approved. Mark every look-away over about a second in the script itself, under its line:
+`[**Not looking:** 0:41 to 0:46. Face not shown here.]`, so anyone reading the script knows the face is off there.
 
 **7b. A preview (a few minutes).** Ask:
 
