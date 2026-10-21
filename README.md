@@ -31,7 +31,8 @@ flowchart TD
 ### 1. Tell Claude what you have
 
 Start a session with the skills installed (see [Using a skill with Claude](#using-a-skill-with-claude)) and say what you
-are working with. For example:
+are working with. The [start-here](skills/start-here/) skill takes it from there: it walks you through every step below,
+in order, and says which step you are on. For example:
 
 > I want to make a video about bulk uploads in Qdrant. I have a script and a raw Zoom recording.
 
