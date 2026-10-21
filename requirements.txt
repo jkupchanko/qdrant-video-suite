@@ -1,0 +1,19 @@
+# The video suite's Python packages (tested on Python 3.14, Windows, 2026-10-21)
+numpy
+opencv-contrib-python<5   # 5.0 dropped the face-detector files the cut uses
+opencv-python<5
+pillow
+scikit-learn
+pygments
+imageio-ffmpeg
+faster-whisper
+mediapipe
+playwright
+pyloudnorm
+rapidocr-onnxruntime
+pyspellchecker
+skia-python
+rembg
+python-docx
+python-pptx
+openpyxl

@@ -4,6 +4,10 @@ Skills that take a technical video from idea to edit with less hand work.
 Write the script, plan the camera layout, record selected supporting scenes, then edit.
 The script leads the full sequence; each available skill also works on its own.
 
+![What it makes: Bulk Uploading Data to Qdrant, built with this suite from one Zoom take](docs/images/step7-finished-video.jpg)
+
+*What it makes: one raw Zoom recording and one script in, this video out (Bulk Uploading Data to Qdrant, 3:17).*
+
 ## Start here
 
 Everything in this suite runs from one thing: **the script**. You decide who the video is for, what it should do, how
@@ -26,8 +30,8 @@ flowchart TD
     J -- "Ready to go" --> K["Done"]
 ```
 
-Say "I want to make a video" with the skills installed (see [Using a skill with Claude](#using-a-skill-with-claude)),
-and the [start-here](skills/start-here/) skill walks you through these steps, showing which one you are on.
+**First time?** [Set it up](#set-up) once (about 15 minutes). Then open Claude Code and say **"I want to make a video"**:
+the [start-here](skills/start-here/) skill walks you through these steps, one at a time, with a small map of where you are.
 
 ### 1. Tell Claude what you have
 
@@ -72,8 +76,12 @@ With nothing written yet, you also explain what you want to teach, in your own w
 ### 4. Read and approve the script
 
 You see the whole script: your lines, plus the B-roll, the camera and the transitions the skills filled in
-([B-roll](skills/broll-recorder/), [camera](skills/camera-layout/), [transitions](skills/transitions/)). Change anything
-you want, then approve it. This is the last point where changes are cheap.
+([B-roll](skills/broll-recorder/), [camera](skills/camera-layout/), [transitions](skills/transitions/)). Every visual
+supports what you are saying at that moment: a setting you name gets its docs section, an idea you explain gets an
+animation that draws it, and a click into the docs only where you say where to find something. Change anything you
+want, then approve it. This is the last point where changes are cheap.
+
+![The script: what you say, plus the visual, camera, docs clip and notes the skills filled in](docs/images/step4-script.png)
 
 ### 5. Pick an editing style
 
@@ -83,21 +91,32 @@ you want, then approve it. This is the last point where changes are cheap.
 | [Animated Board](styles/animated-board/) | one board per section that builds as you speak, five looks |
 | [Code Report](styles/code-report/) | fast and visual: the real docs with highlights, captions and title cards |
 
+Each style's look (B-roll, the presenter's window, transitions, zoom, reading pace) is set in its **style sheet**
+([`engine/style_list.json`](engine/style_list.json) for Listed Sections), not clip by clip.
+
+![The three editing styles](docs/images/step5-styles.jpg)
+
 ### 6. Record, or hand over the take
 
 Read the approved script. Retakes and stumbles are fine: the [editing](skills/editing/) skill keeps the last good take
 of every line and checks that you are looking at the lens.
 
-### 7. Build the video, in three short checks
+![Your raw Zoom take, and the raw edit made from it](docs/images/step6-raw-edit.jpg)
+
+### 7. Build the video: the raw edit first, then the visuals
 
 Nobody should wait an hour and a half to find out something is wrong, so the build ([video builder](skills/video-builder/))
-goes in three pieces, each shown to you before the next:
+goes in pieces, each shown to you before the next:
 
 1. **The raw edit, on its own** (a few minutes a round): your recording cut to the script, the best take of every line,
-   clean joins, a couple of small zoom-ins. No B-roll, cards or animations yet. Small fixes until you approve it.
-2. **A preview** of the first 30 seconds (a few minutes): the style, the name card, the first B-roll. You approve the
-   direction.
-3. **The whole video.**
+   clean joins, a couple of small zoom-ins. No B-roll, cards or animations yet. Small fixes (a pause, a false start, a
+   word clipped) until you approve it.
+2. **A preview** of the first minute (about 15 minutes), built on that approved raw edit: the style, the name card, the
+   first visuals. You approve the direction. Where you looked away from the lens is marked in the script; reading from
+   it is fine, the edit covers it.
+3. **The whole video** (about an hour and a half).
+
+![The finished video: name card, title, the list, an idea drawn, the docs, the code](docs/images/step7-finished-video.jpg)
 
 ### 8. Small edits, until it is ready
 
@@ -105,6 +124,8 @@ The [review](skills/video-review/) watches the finished video frame by frame and
 picture; you add your own notes. Then the fixes go in as **small edits**: each one re-renders only the seconds it
 touches, in minutes, and you see just that moment, not the whole video again. Repeat until the list is empty, then one
 last full check, and the question: **ready to go?**
+
+![The review: every problem with its time and the frame it is in](docs/images/step8-review.jpg)
 
 If you do not like the video as a whole, that is not a small edit: go back to the script (step 4) or the style (step 5).
 
@@ -138,7 +159,7 @@ Already know what you need? Each skill below also works on its own. New parts of
 </td>
 <td width="33%" valign="top">
 <h3><a href="skills/transitions/">Transitions</a></h3>
-<p>How the picture gets from one shot to the next, measured from 50 watched videos: cut, one push, one flash.</p>
+<p>How the picture gets from one shot to the next: soft 0.8 s changes into and out of cards, a flash at a chapter.</p>
 <p><strong>Available skill</strong></p>
 </td>
 <td width="33%" valign="top">
@@ -227,20 +248,22 @@ Demo: `demos/broll_skill_pitch.mp4` (77 s).
 How the picture gets from one shot to the next, measured from the same 50 videos: 62% of visible changes
 are labels and cards over a held shot, and among real shot changes 65% are cuts. Rules, taken only from what the
 eight most-watched presenter-plus-screen videos do: cut by default, a 0.3 s push only for a card arriving
-over the presenter, a white flash only at a chapter break; dissolves, black fades and punch-ins were not
-seen there and are not used. Audits any video, renders the same join several ways on real footage, and
-writes the choice into the script's Transition field.
+over the presenter, a white flash only at a chapter break. Qdrant's own house rule goes softer: about 0.8 s into and
+out of every card (the quick changes read as abrupt), cuts only between takes of the face. Audits any video, renders
+the same join several ways on real footage, and writes the choice into the script's Transition field.
 
 ## 5. Editing: [editing](skills/editing/)
 
 The raw take and the script in, a clean cut out. Transcribes the recording, finds every take of every line
 and keeps the last complete one, checks eye contact on each, cuts on word boundaries, mirrors, covers the
-recording tag with matching bars, alternates a slight push between cuts, and writes a cut list of every
-decision. The camera calls, B-roll and transitions are laid onto this cut.
+recording tag with matching bars, holds one small zoom-in for a stretch (never one at every cut), and writes a cut
+list of every decision. `respan.py` makes a small fix to an approved cut (a pause, a false start, a clipped word)
+without cutting again. The camera calls, B-roll and transitions are laid onto this cut.
 
-## 6. Assemble
+## 6. The look: [editing styles](styles/)
 
-Drop the clips into the timeline. More skills for this step will be added here as they are ready.
+The finished look laid onto the cut. Listed Sections builds itself from the script and the docs page, and its style
+sheet sets its B-roll, presenter window, transitions and zoom.
 
 ## 7. Review: [video-review](skills/video-review/)
 
@@ -277,7 +300,22 @@ with the calls, the cut list and the key-term B-roll pass sit beside them.
 This is open for review and use. Read the README in each skill folder, try the commands, and open an issue
 or a pull request with what broke or what you would change. MIT licensed.
 
-## Using a skill with Claude
+## Set up
 
-Copy the skill folder into `~/.claude/skills/` (or point Claude Code at it) and ask in plain words. The
-SKILL.md or README.md in each folder is what Claude follows.
+Once per computer, about 15 minutes. You need Claude Code, Python 3.12+, Google Chrome and FFmpeg.
+
+1. **Get the repo:** `git clone https://github.com/jkupchanko/qdrant-video-suite.git`
+2. **Install the skills:** copy every folder in `skills/` into `~/.claude/skills/`.
+3. **Install the Python packages:** `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt`
+   (Mac/Linux: `.venv/bin/pip`).
+4. **Point the builder at the engine:** make `~/camera_audit/styles` a link to this repo's `engine/` folder and
+   `~/camera_audit/assets` a link to `engine/assets/`, and put the fonts in `~/camera_audit/fonts`
+   ([details](engine/README.md)).
+5. **Check it:** `python skills/video-review/scripts/selftest.py demos/bulk-uploads-first30/face_only_720.mp4` ends with
+   `SELF-TEST PASSED`.
+
+Then open Claude Code and say **"I want to make a video"**.
+
+## Using a skill on its own
+
+Ask in plain words; the SKILL.md or README.md in each folder is what Claude follows.
