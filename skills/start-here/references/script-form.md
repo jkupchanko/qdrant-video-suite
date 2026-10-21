@@ -26,7 +26,7 @@ Dense vectors typically use HNSW, while sparse vectors use a separate sparse ind
 
 [**Camera:** NONE. The two index names must be read. **Show:** the "Why Vector Type Matters" section. **Transition:** soft 0.8 s into the card; soft back to the face.]
 
-[B-ROLL: https://qdrant.tech/documentation/production-operations/bulk-data-import/ | dense vectors use HNSW while sparse vectors use a separate sparse index | section: Why Vector Type Matters | 4s | name: dense_vs_sparse]
+[B-ROLL: https://qdrant.tech/documentation/production-operations/bulk-data-import/ | dense vectors use HNSW while sparse vectors use a separate sparse index | section: Why Vector Type Matters | 3s | name: dense_vs_sparse]
 
 Because they're indexed differently, they create different memory and performance considerations during bulk uploads.
 

@@ -235,14 +235,14 @@ def build_plan(data, sec, a):
         # its section, then a slight slow scroll down it.
         # 2026-10-21, quicker again: about 4 s, the script's marker sets it ("3 seconds would be probably even better...
         # you don't have to go too slow"). The click, the section, a short scroll; the same every time.
-        k = dur / 4.0
+        k = dur / 3.0                                                                          # then 3 s, no slow drift at the end
         parts = urlparse(a.url); up = parts.path.rstrip("/").rsplit("/", 1)[0] + "/"
         from_url = f"{parts.scheme}://{parts.netloc}{up}" if up.count("/") > 2 else None   # never the site root: that is not where it is found
         spec = {"link": parts.path.rstrip("/") + "/"} if from_url else {"nav": path}
         land = max(0, top - int(H * 0.24)) if sec else 0
-        steps = [{"t": 0.1 * k, "hover": spec, "dur": 0.6 * k}, {"t": 0.75 * k, "hover": spec, "click": True, "navigate": bool(from_url), "dur": 0.1},
-                 {"t": 1.05 * k, "scroll": land, "dur": 0.55 * k, "js": True}, {"t": 1.7 * k, "move": [cx, int(H * 0.62)], "dur": 0.4 * k},
-                 {"t": 1.7 * k, "scroll": land + int(H * 0.07), "dur": 2.1 * k, "js": True}]   # short: the heading stays on screen
+        steps = [{"t": 0.1 * k, "hover": spec, "dur": 0.5 * k}, {"t": 0.6 * k, "hover": spec, "click": True, "navigate": bool(from_url), "dur": 0.1},
+                 {"t": 0.85 * k, "scroll": land, "dur": 0.5 * k, "js": True}, {"t": 1.4 * k, "move": [cx, int(H * 0.62)], "dur": 0.3 * k},
+                 {"t": 1.4 * k, "scroll": land + int(H * 0.08), "dur": 1.0 * k, "js": True}]   # short and brisk: the heading stays on screen
         return {"start_y": 0, "steps": steps, **({"from_url": from_url} if from_url else {})}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":

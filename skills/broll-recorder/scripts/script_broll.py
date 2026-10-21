@@ -34,7 +34,7 @@ PATTERNS = [
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
 STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
-ARRIVE_MIN = 3.0    # the floor, not the length: the script's marker sets it (John, 2026-10-21: about 4 s, quick); a click needs 3
+ARRIVE_MIN = 3.0    # the floor, not the length: the script's marker sets it (John, 2026-10-21: about 3 s, quick, no slow end); a click needs 3
 
 def prev_sentence(text, pos):
     before = text[:pos]
