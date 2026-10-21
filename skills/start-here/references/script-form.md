@@ -49,6 +49,9 @@ Because they're indexed differently, they create different memory and performanc
 
 - **A B-roll marker without `name:`.** The recorder names the clip from the line, but the style looks for the name in the
   marker, finds none, and the clip never reaches the video (laptop test build, 2026-10-20). Always give `name:`.
+- **A marker placed after a later line than the one it quotes.** The clip lands on the quoted line, the list card for the
+  later line lands on top of it, and the B-roll shows for 0.05 s (Bulk Uploads preview, 2026-10-21). Put each marker
+  directly under the line it quotes.
 - **Bold around the label: `[**B-ROLL: ...]`.** The recorder does not see it as a marker. Write `[B-ROLL: ...]`.
 - **Fewer than two fields after the URL.** The style and the review need at least `URL | spoken line | ...`.
 - **Notes written as plain text.** An introduction or production note in plain sentences is read as a spoken line, and

@@ -634,6 +634,7 @@ class Renderer:
         prev = self.prev_shot(s)
         if prev is None: return fr, shows
         pf = prev_last if prev["kind"] != "face" else full_face(face_im)  # a face keeps talking while it is pushed out
+        if pf is None: return fr, shows                                  # the shot before never drew a frame (under one frame long)
         pshows = prev["kind"] == "face" or bool(prev.get("face")) or bool(prev.get("shows_face"))
         if tr in ("push_left", "push_up"):
             comp = blank(self.bg)

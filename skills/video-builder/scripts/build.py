@@ -69,6 +69,36 @@ def preview_script(script, out_dir, secs):
         keep.append(s); words += len(re.sub(r"(?s)<!--.*?-->|\[.*?\]|^#.*$", " ", s, flags=re.M).split())
     out = os.path.join(out_dir, "script_preview.md"); open(out, "w", encoding="utf-8").write(head + "".join(keep)); return out, len(keep)
 
+def preview_from_cut(main, out, script):
+    """a preview made from the approved cut, not a new one: its first pieces, up to the last line of the preview script,
+    with the eye contact as measured on the whole cut. A short clip calibrates the lens differently (Bulk Uploads: the
+    preview's own gaze pass found 4 targets instead of 3 and hid the face through the whole hook)"""
+    import cv2, imageio_ffmpeg; FF = imageio_ffmpeg.get_ffmpeg_exe()
+    sys.path.insert(0, os.path.join(SK, "video-review", "scripts")); import script_checks as SC
+    norm = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())
+    want = {norm(l if isinstance(l, str) else l.get("text", "")) for l in SC.parse(script)["lines"]}
+    L = open(os.path.join(main, "cut", "cutlist.md"), encoding="utf-8").read().splitlines()
+    rows = [k for k, l in enumerate(L) if re.match(r"^\| [\d.]+ \| [\d.]+-[\d.]+ \|", l)]
+    keep, ok = [], False
+    for k in rows:
+        line = L[k].strip("|").split("|")[3].strip()
+        ok = ok if line.startswith("(same line") else norm(line) in want
+        if not ok: break
+        keep.append(k)
+    c = cv2.VideoCapture(os.path.join(main, "cut", "cut.mp4")); fps = c.get(cv2.CAP_PROP_FPS) or 30; total = c.get(cv2.CAP_PROP_FRAME_COUNT) / fps; c.release()
+    t_end = float(L[rows[len(keep)]].split("|")[1]) if len(keep) < len(rows) else total
+    os.makedirs(os.path.join(out, "cut"), exist_ok=True)
+    subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", "-i", os.path.join(main, "cut", "cut.mp4"), "-frames:v", str(round(t_end * fps)), "-t", f"{t_end:.3f}",
+                    "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", os.path.join(out, "cut", "cut.mp4")], check=True)
+    head = L[:rows[0]]; open(os.path.join(out, "cut", "cutlist.md"), "w", encoding="utf-8").write("\n".join(head + [L[k] for k in keep] + ["", f"Total {t_end:.1f} s, {len(keep)} cuts: the first part of the approved cut in {main}."]) + "\n")
+    shutil.copy(os.path.join(main, "cut", "words.json"), os.path.join(out, "cut", "words.json"))
+    g = json.load(open(os.path.join(main, "gaze.json")))
+    g["frames"] = [f for f in g["frames"] if f["t"] < t_end]; g["lookaways"] = [dict(w, end=min(w["end"], t_end)) for w in g["lookaways"] if w["start"] < t_end]
+    json.dump(g, open(os.path.join(out, "gaze.json"), "w"), indent=0)
+    lk = [dict(w, edit_end=min(w["edit_end"], t_end)) for w in json.load(open(os.path.join(main, "lookaways.json"))) if w["edit_start"] < t_end]
+    json.dump(lk, open(os.path.join(out, "lookaways.json"), "w"), indent=1)
+    return t_end, len(keep)
+
 def page_url(script):
     t = open(script, encoding="utf-8").read()
     m = re.search(r"Source page:\s*(https?://\S+)", t) or re.search(r"\[B-ROLL:\s*(https?://[^\s|]+)", t)
@@ -195,6 +225,7 @@ def main():
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
+    ap.add_argument("--cut-from", metavar="BUILD_DIR", help="with --preview: take the cut and its eye contact from this build's approved cut instead of cutting again")
     ap.add_argument("--take-is-edited", action="store_true", help="build from a take that is already cut (a test); normally refused, it gets cut twice")
     ap.add_argument("--patch", type=float, nargs=2, metavar=("T0", "T1"), help="a small edit to a finished build: re-render only T0-T1 s (grown to whole shots) with the script as it is now, splice it in and master; minutes, not hours")
     ap.add_argument("--preview", type=float, metavar="SECONDS", help="build only the sections that start in the first SECONDS (try 30): minutes instead of hours, to check the direction first")
@@ -214,6 +245,9 @@ def main():
         os.makedirs(a.out, exist_ok=True); full = a.script; a.script, n = preview_script(full, os.path.abspath(a.out), a.preview)
         a.label = f"{a.label or os.path.basename(a.out)} (preview, first {a.preview:.0f} s)"
         print(f"preview: the first {n} section(s) of {full} -> {a.script}")
+        if a.cut_from:
+            t_end, n_cuts = preview_from_cut(os.path.abspath(a.cut_from), os.path.abspath(a.out), a.script)
+            print(f"preview: the approved cut's first {t_end:.1f} s ({n_cuts} cuts) and its eye contact, from {a.cut_from}")
     B = Build(a)
     if not B.url: sys.exit("no docs URL: give --url, or put 'Source page: URL' or a [B-ROLL: URL | ...] marker in the script")
     if a.patch: return patch(B, a)

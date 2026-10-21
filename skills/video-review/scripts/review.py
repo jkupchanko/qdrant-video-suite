@@ -512,6 +512,9 @@ def main():
         for w in windows:                                             # the section each B-roll shows: the page scrolls continuously, so it
             state = None                                              # stays the last heading that crossed the middle until another one does
             title = TX.norm(page_titles.get((w.get("url") or "").split("#")[0].rstrip("/"), ""))
+            man = os.path.join(a.broll or "", w["name"] + "_manifest.json")
+            if os.path.exists(man) and json.load(open(man)).get("style") == "arrive": continue   # it clicks into the page and holds its top:
+                                                                                               # the page, not a section, is what it shows
             for t, sec, how, others, i in sorted(w.get("seen", [])):
                 if how.startswith("heading"): state = sec
                 elif state: sec, how = state, "the last heading that crossed the middle"
