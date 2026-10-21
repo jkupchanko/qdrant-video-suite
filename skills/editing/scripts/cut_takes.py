@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """cut_takes.py: turn a raw talking-head recording and its script into a clean cut.
 
-  python cut_takes.py RAW.mp4 SCRIPT.md --out DIR [--max-seconds 30] [--mirror] [--bars 72] [--push 1.06]
+  python cut_takes.py RAW.mp4 SCRIPT.md --out DIR [--max-seconds 30] [--mirror] [--bars 72] [--push 1.04] [--push-blocks 3]
                       [--handle-in 0.08 --handle-out 0.3] [--model small.en]
 
 What it does, in order:
@@ -10,7 +10,7 @@ What it does, in order:
   3. checks eye contact on every chosen take, frame by frame, and reports any look-away
   4. cuts each take on word boundaries with short handles; drops ad-libs between lines
   5. mirrors the picture (--mirror), covers a recording tag with matching bars top and bottom (--bars N px),
-     alternates a slight push between cuts (--push), fades the audio 20 ms at every join
+     zooms in slightly (--push) for a stretch and back out, only a couple of times (--push-blocks), fades the audio 20 ms at every join
   6. writes cut.mp4, cutlist.md (which take each line came from), gaze_sheet.png (the eyes on every take)
 Stops at --max-seconds on a sentence boundary when given. Spoken wording wins over the script: the cut keeps
 what was said; the cut list shows where it differs.
@@ -256,7 +256,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("raw"); ap.add_argument("script"); ap.add_argument("--out", required=True)
     ap.add_argument("--max-seconds", type=float); ap.add_argument("--mirror", action="store_true"); ap.add_argument("--bars", type=int, default=0, help="bar height in output px, top and bottom")
-    ap.add_argument("--push", type=float, default=1.06, help="alternate 1.0 and this scale between cuts; 1.0 disables"); ap.add_argument("--handle-in", type=float, default=0.08); ap.add_argument("--handle-out", type=float, default=0.3)
+    ap.add_argument("--push", type=float, default=1.04, help="the zoomed-in scale; 1.0 disables"); ap.add_argument("--push-blocks", type=int, default=3, help="the video in this many stretches, out / in / out (3 = one zoom-in held in the middle); 0 = alternate at every cut"); ap.add_argument("--handle-in", type=float, default=0.08); ap.add_argument("--handle-out", type=float, default=0.3)
     ap.add_argument("--model", default="small.en"); ap.add_argument("--size", default="1920x1080"); ap.add_argument("--max-gap", type=float, default=0.8, help="a silence longer than this inside a take is cut out")
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
     import imageio_ffmpeg; FF = imageio_ffmpeg.get_ffmpeg_exe()
@@ -320,9 +320,17 @@ def main():
     # and the lips stay locked; the old per-piece AAC + concat copy drifted about 27 ms a join (1.4 s over 53)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from assemble import assemble
     gi = 0; spans, vfs, pend = [], [], []
+    # the push: John, 2026-10-21, "a little too many small zoom-ins... one or two, keep it in and then keep it out". The
+    # video is split into --push-blocks stretches at the cuts nearest the even marks; the zoom changes only there
+    durs = [c[1][1] - c[1][0] for c in chosen if c[1]]; starts = np.cumsum([0.0] + durs[:-1]); total_d = sum(durs)
+    flips = sorted({int(np.argmin(np.abs(starts - total_d * j / a.push_blocks))) for j in range(1, a.push_blocks)}) if a.push_blocks > 1 else []
     for line, span, note in chosen:
         if not span: pend.append((None, line, note)); continue
-        a0, b0, said = span; push = 1.0 if (k % 2 == 0 or a.push <= 1.0) else a.push; k += 1
+        a0, b0, said = span
+        if a.push <= 1.0: push = 1.0
+        elif a.push_blocks > 1: push = a.push if sum(1 for f in flips if f <= k) % 2 == 1 else 1.0
+        else: push = 1.0 if k % 2 == 0 else a.push
+        k += 1
         cw, ch = int(sw / push), int(sh / push); cx, cy = (sw - cw) // 2, (sh - ch) // 2
         vfs.append(("hflip," if a.mirror else "") + f"crop={cw}:{ch}:{cx}:{cy},scale={W}:{H}:flags=lanczos" +
                    (f",drawbox=x=0:y=0:w={W}:h={a.bars}:color=black:t=fill,drawbox=x=0:y={H - a.bars}:w={W}:h={a.bars}:color=black:t=fill" if a.bars else ""))
@@ -341,7 +349,7 @@ def main():
     with open(os.path.join(a.out, "cutlist.md"), "w", encoding="utf-8") as fh:
         fh.write(f"# Cut list: {os.path.basename(a.raw)}\n\n| edit time | source | push | script line | said | take and eyes |\n|---|---|---|---|---|---|\n")
         for r in rows: fh.write("| " + " | ".join(r) + " |\n")
-        fh.write(f"\nTotal {t_edit:.1f} s, {len(parts)} cuts. " + ("Mirrored. " if a.mirror else "") + (f"Bars {a.bars} px top and bottom. " if a.bars else "") + (f"Push alternates 1.00 / {a.push:.2f}. " if a.push > 1 else "") + "20 ms audio fades at every join.\n")
+        fh.write(f"\nTotal {t_edit:.1f} s, {len(parts)} cuts. " + ("Mirrored. " if a.mirror else "") + (f"Bars {a.bars} px top and bottom. " if a.bars else "") + ((f"Push x{a.push:.2f} held in stretch {', '.join(str(i + 2) for i in range(0, max(0, a.push_blocks - 1), 2))} of {a.push_blocks}, changing at {len(flips)} cuts. " if a.push_blocks > 1 else f"Push alternates 1.00 / {a.push:.2f}. ") if a.push > 1 else "") + "20 ms audio fades at every join.\n")
     print(f"-> {out}  {t_edit:.1f} s, {len(parts)} cuts; cutlist.md, gaze_sheet.png")
     for r in rows:
         if "CHECK" in r[5] or "NO TAKE" in r[5] or "beyond" in r[5]: print("   note:", r[3][:60], "|", r[5])

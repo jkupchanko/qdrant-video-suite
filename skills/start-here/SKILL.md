@@ -157,6 +157,12 @@ Show `BUILD_DIR/cut/cut.mp4` and a short table from `cut/cutlist.md`: which take
 take, and where the words said differ from the script. Ask whether the cut is right. A wrong take or a clipped word is
 fixed in the cut (editing skill) and cut again; nothing else has been built yet, so this is cheap.
 
+Then the look-aways: run `--only words`, then `--only gaze`, and match `lookaways.json` to the script's lines. Presenters
+look at their notes; that is fine, but the script must say what is on screen instead. Every line with a look-away over
+about a second whose camera call shows the face full screen gets a new call: a small window and what stays up (the code,
+the card, the B-roll, the list). Shorter glances are hidden by the engine on its own. Show the person one line per
+change, not the whole script, and get a yes.
+
 **7b. A preview (a few minutes).** Ask:
 
 > Preview the first 30 seconds (a few minutes), or build the whole video?
