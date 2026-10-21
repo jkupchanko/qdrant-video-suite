@@ -10,6 +10,10 @@ Builds a 10 s clip from the cut's first 10 s with known faults, reviews it, and 
 and that nothing else is reported as a fix. Then the joins, on a made-up take (words as voiced bursts) and its cut list:
   a piece that keeps the first 40 ms of the next word, and one that starts in the middle of a word -> join (fix),
   a piece cut cleanly in the pauses -> nothing.
+And the reading pace, on a made-up card track (OCR reads, no video) where the picture never stops moving:
+  two cards of 30 words, 2 s each, back to back -> read (fix) on each; a card typed in over 10 s -> nothing.
+  Cards split by motion merge all three into one long card and miss both (build 4, 0:43-0:53).
+Without CUT.mp4 only the joins and the reading pace run (they need no video).
 Run it after changing any check. Exit 1 if a fault is missed or a fix is invented.
 """
 import os, sys, json, argparse, subprocess, cv2, imageio_ffmpeg
@@ -52,9 +56,33 @@ def joins_selftest(out):
     for j in extra: print(f"  INVENTED  join at {j['t']:.2f} s: {j['msg'][:80]}")
     return ok and not extra
 
+def reading_selftest(fps=30, H=1080):
+    """a 16 s card track read once a second: the face, two short cards, then a card typed in line by line. The picture moves
+    throughout (live typing), so only the words on screen tell the cards apart"""
+    import numpy as np, string, pace_checks as PC, text_checks as TX
+    small = np.full((16 * fps, 90, 160), 30, np.uint8); small[:2 * fps] = 150                  # face for the first 2 s, then graphics
+    motion = np.full(len(small), 4.0)
+    def words(c, n): return [c + a + b for a in string.ascii_lowercase for b in string.ascii_lowercase][:n]
+    def lines(ws): return [dict(text=" ".join(ws[k:k + 6]), score=0.95, box=[200, 300 + 40 * k, 1500, 328 + 40 * k], h=28) for k in range(0, len(ws), 6)]
+    res = {}
+    for t in (2, 3): res[t * fps] = lines(words("q", 30))
+    for t in (4, 5): res[t * fps] = lines(words("r", 30))
+    for t in range(6, 16): res[t * fps] = lines(words("s", min(25, 13 + 2 * (t - 6))))          # typed in: 13 words, then 2 more a second
+    rd = PC.reading(small, motion, fps, res, H, TX.is_code)
+    ok = True
+    for t0, what in [(2, "a 2 s card of 30 words"), (4, "the next 2 s card, straight after")]:
+        hit = [r for r in rd if r[0] == "fix" and abs(r[1] - t0) < 0.6 and r[2] < t0 + 1.6]
+        print(f"  {'caught' if hit else 'MISSED'}  read    {what}" + (f"  -> {hit[0][4][:80]}" if hit else "")); ok &= bool(hit)
+    extra = [r for r in rd if r[2] >= 5.6]
+    for r in extra: print(f"  INVENTED  read at {r[1]:.1f}-{r[2]:.1f} s: {r[4][:80]}")
+    return ok and not extra
+
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("cut"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
-    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out); clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)
+    ap = argparse.ArgumentParser(); ap.add_argument("cut", nargs="?"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
+    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest()
+    if not a.cut:
+        print("  (no CUT.mp4: the planted-clip checks did not run)"); print("SELF-TEST PASSED" if joins_ok else "SELF-TEST FAILED"); return 0 if joins_ok else 1
+    clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)
     cmd = [sys.executable, os.path.join(HERE, "review.py"), clip, "--out", os.path.join(a.out, "report"), "--cut", a.cut, "--label", "self-test"]
     if a.gaze and a.lookaways: cmd += ["--gaze", a.gaze, "--lookaways", a.lookaways]
     subprocess.run(cmd, capture_output=True)

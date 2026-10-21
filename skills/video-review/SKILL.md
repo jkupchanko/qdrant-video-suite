@@ -71,8 +71,9 @@ python ~/.claude/skills/video-review/scripts/selftest.py CUT.mp4 --gaze GAZE.jso
 ```
 
 Plants four faults in the cut's first 10 s (empty frames, a 10% stretch, the picture 3 frames behind the voice, a caption off
-the edge), reviews the clip, and fails if one is missed or a fix is reported that was not planted. Run it after changing any
-check: a check that stops firing looks exactly like a clean video.
+the edge), reviews the clip, and fails if one is missed or a fix is reported that was not planted. It also checks the joins
+and the reading pace (two 2 s cards back to back on a moving picture must each be flagged), which need no video: without
+CUT.mp4 only those run. Run it after changing any check: a check that stops firing looks exactly like a clean video.
 
 Severity:
 - **fix**: wrong, whatever the style. A word clipped at a join, a missing or misspelled name card, face during a look-away, stretched face, desync, wrong B-roll section, ghost frames, text cut at the edge, black frames, clipping.

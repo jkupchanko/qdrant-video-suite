@@ -90,7 +90,10 @@ or up while the presenter is off screen is a check. See [brand consistency](../b
 `scripts/selftest.py CUT.mp4` plants four faults in ten seconds of a real cut: empty frames, a 10% stretch, the picture 3
 frames behind the voice and a caption off the edge. It passes only if all four are caught where they were planted and
 nothing else is reported as a fix. It also plants two bad joins in a made-up take: a piece keeping the next word's first
-40 ms and a piece starting mid-word. A check that stops firing looks exactly like a clean video, so run it after any change.
+40 ms and a piece starting mid-word. And it plants two 2 s cards back to back on a picture that never stops moving: each must
+be flagged as too fast to read (cards are told apart by their words, not by motion). The joins and the reading pace need no
+video, so `selftest.py` with no CUT.mp4 runs just those. A check that stops firing looks exactly like a clean video, so run
+it after any change.
 
 ![the four planted faults, found](images/selftest_sheet.jpg)
 
