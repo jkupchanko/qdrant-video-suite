@@ -64,7 +64,7 @@ def find_line(line, pieces=None):
             if r > best[0]: best = (r, i, pieces[i][3][0] if pieces[i][3] else pieces[i][0])
     return best[1], best[2], best[0]
 
-def windows(path=SCRIPT, broll=BROLL, words=None, cut=None):
+def windows(path=SCRIPT, broll=BROLL, words=None, cut=None, lead=ARRIVE_LEAD):
     """words / cut: another build's cut-time word pieces and cut (default: the v2 Bulk Uploads cut)"""
     pcs = _pieces(words); out = []
     for m in markers(path):
@@ -73,7 +73,7 @@ def windows(path=SCRIPT, broll=BROLL, words=None, cut=None):
         i, t0, r = find_line(m["line"], pcs); t0 = max(0.0, onset(pcs[i][0], t0 + 0.01, path=cut or CUT) - 0.05)   # lands with the first sound of the line
         mj = json.load(open(man)) if os.path.exists(man) else {}
         arrive = mj.get("style") == "arrive"
-        if arrive: t0 = max(0.0, t0 - ARRIVE_LEAD)                                    # the click-through is a lead-in: the section is up on the line
+        if arrive: t0 = max(0.0, t0 - lead)                                    # the click-through is a lead-in: the section is up on the line
         dur = mj.get("duration", m["secs"]) if arrive else min(m["secs"], mj.get("duration", m["secs"]))   # the click-through runs whole
         out.append(dict(name=m["name"], t0=round(t0, 2), t1=round(t0 + dur, 2), path=clip, section=m["section"], line=m["line"],
                         piece=i, match=round(r, 2), box=mj.get("section_box", {}).get("block")))

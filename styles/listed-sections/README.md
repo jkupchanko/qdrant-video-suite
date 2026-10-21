@@ -62,3 +62,10 @@ builds itself: no edit list or boards drawn by hand. Give it the cut, the three-
 
 `scripts/style_list.py CONFIG.json` (render), `CONFIG.json 0 60` (a range), `CONFIG.json stills 3 30 60` (a contact sheet).
 The config comes from the video builder. It runs on the suite's shared rendering engine, which stays on the editing machine.
+
+## The style sheet
+
+[`engine/style_list.json`](../../engine/style_list.json) sets how every Listed Sections video looks: the B-roll (the first
+clip of a page clicks into it, 1.5 s before its line, then holds the section; the rest are 3 s), the presenter's window
+(size, first-choice corner), the transitions (0.8 s, soft), the zoom (one small zoom-in held in the middle third) and the
+reading pace of the cards. The build reads it; change a value there and the next build follows it.

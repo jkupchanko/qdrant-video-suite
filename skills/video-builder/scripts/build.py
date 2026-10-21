@@ -109,6 +109,9 @@ class Build:
         self.a = a; self.d = os.path.abspath(a.out); os.makedirs(self.d, exist_ok=True); self.state_p = os.path.join(self.d, "build.json")
         self.state = json.load(open(self.state_p)) if os.path.exists(self.state_p) else {}
         self.url = a.url or page_url(a.script); self.p = lambda *x: os.path.join(self.d, *x)
+        sp = os.path.join(STYLES, f"style_{a.style}.json")                              # the style sheet: the style sets the B-roll,
+        self.sheet_path = sp if os.path.exists(sp) else None                             # camera, transitions and zoom
+        self.sheet = json.load(open(sp, encoding="utf-8")) if self.sheet_path else {}
     def save(self): json.dump(self.state, open(self.state_p, "w"), indent=1)
     def done(self, stage, outs): return all(os.path.exists(o) for o in outs) and stage not in self.a.redo
     # ---------------------------------------------------------------- stages
@@ -117,6 +120,8 @@ class Build:
         if self.done("cut", outs): return outs, "kept"
         cmd = [PY, os.path.join(SK, "editing", "scripts", "cut_takes.py"), self.a.take, self.a.script, "--out", self.p("cut"), "--bars", self.a.bars]
         if self.a.mirror: cmd.append("--mirror")
+        z = self.sheet.get("zoom", {})
+        if z: cmd += ["--push", str(z.get("scale", 1.04)), "--push-blocks", str(z.get("stretches", 3))]
         run(cmd, self.p("cut.log")); return outs, "cut from the take"
     def words(self):
         out = self.p("words.json")
@@ -150,7 +155,12 @@ class Build:
     def broll(self):
         outs = [self.p("broll", "shotlist.md")]
         if self.done("broll", outs): return outs, "kept"
-        run([PY, os.path.join(SK, "broll-recorder", "scripts", "script_broll.py"), self.a.script, "--out", self.p("broll"), "--raw", "--style", "readthrough", "--arrive-first", "--zoom", "1.4"], self.p("broll.log"))
+        b = self.sheet.get("broll", {})
+        cmd = [PY, os.path.join(SK, "broll-recorder", "scripts", "script_broll.py"), self.a.script, "--out", self.p("broll"), "--raw",
+               "--style", b.get("other_clips", "readthrough"), "--zoom", str(b.get("page_zoom", 1.4)), "--lead-in", str(b.get("lead_in_seconds", 1.5)),
+               "--default-duration", str(b.get("default_seconds", 6))]
+        if b.get("first_clip_of_a_page", "arrive") == "arrive": cmd.append("--arrive-first")
+        run(cmd, self.p("broll.log"))
         return outs, f"{len(glob.glob(self.p('broll', '*_manifest.json')))} clips"
     def assets(self):
         out = self.p("page_assets", "assets.json")
@@ -161,7 +171,8 @@ class Build:
         out = self.p("video.mp4")
         if self.done("style", [out]): return [out], "kept"
         cfg = dict(cut=self.p("cut", "cut.mp4"), cutlist=self.p("cut", "cutlist.md"), raw_words=self.p("cut", "words.json"), words=self.p("words.json"),
-                   lookaways=self.p("lookaways.json"), script=os.path.abspath(self.a.script), assets=self.p("page_assets", "assets.json"), broll=self.p("broll"), out=out)
+                   lookaways=self.p("lookaways.json"), script=os.path.abspath(self.a.script), assets=self.p("page_assets", "assets.json"), broll=self.p("broll"), out=out,
+                   sheet=self.sheet_path)
         json.dump(cfg, open(self.p("style_config.json"), "w"), indent=1)
         tail = run([PY, os.path.join(STYLES, f"style_{self.a.style}.py"), self.p("style_config.json")], self.p("style.log"), cwd=STYLES)
         return [out], next((l.strip() for l in tail if l.startswith("->")), "rendered")

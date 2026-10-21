@@ -127,7 +127,10 @@ Always ask. Default to Listed Sections if they have no preference:
 | Animated Board | one board per section that builds as they speak; five looks | planned by hand for this video, takes longer |
 | Code Report | fast and visual: real docs with highlights, captions, title cards | planned by hand for this video, takes longer |
 
-The style pages are in the suite repo under `styles/`.
+The style pages are in the suite repo under `styles/`. A style that builds itself has a **style sheet** the build reads
+(`engine/style_list.json` for Listed Sections): its B-roll (the click-through on a page's first clip, the lead-in, clip
+length, page zoom), the presenter's window, transition length, zoom and reading pace. Directions come from the sheet,
+not from tuning clips one by one: to change how every video in a style looks, change its sheet.
 
 ## Step 6 of 8: record, or hand over the take
 

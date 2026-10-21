@@ -97,6 +97,7 @@ def main():
     ap.add_argument("--style", choices=["reveal", "hover", "highlight", "readthrough", "look", "arrive"], help="one recording style for every marker (readthrough: opens on the section and reads down it)")
     ap.add_argument("--arrive-first", action="store_true", help="the first marker of each page arrives on it (page top, the article clicked in the docs menu, the title, the section clicked in On this page); the rest use --style")
     ap.add_argument("--zoom", type=float, help="CSS page zoom for every recording (1.4 = docs text readable on a phone)")
+    ap.add_argument("--lead-in", type=float, default=ARRIVE_LEAD, help="seconds the click-through plays before its line (the style sheet's broll.lead_in_seconds)")
     a = ap.parse_args()
     text = open(a.script, encoding="utf-8").read()
     jobs = parse(text, a.default_duration)
@@ -113,7 +114,7 @@ def main():
         if a.style: j["style"] = a.style
         page_key = j["url"].split("#")[0].rstrip("/")
         if a.arrive_first and page_key not in seen_pages:                                  # the viewer is shown where this page is, once:
-            j["style"] = "arrive"; j["duration"] = float(j["duration"]) + ARRIVE_LEAD   # the click before the line, then the section on it
+            j["style"] = "arrive"; j["duration"] = float(j["duration"]) + a.lead_in   # the click before the line, then the section on it
         seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]

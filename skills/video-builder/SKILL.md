@@ -53,6 +53,10 @@ sections that start in the first 30 s (their lines, B-roll, name card and review
 the person can judge the direction before the long build. Before either, `--only cut` makes just the raw edit for
 the person to approve.
 
+The style sheet: `style_<style>.json` beside the style's script in the engine folder (`engine/style_list.json` for
+Listed Sections). The build reads it for the cut's zoom, the B-roll recording (click-through first, lead-in, length, page
+zoom) and passes it to the style for transitions, reading pace and the presenter's window. Change the sheet, not the code.
+
 Small edits after the build: `--patch T0 T1` re-renders only those seconds (grown to whole shots, with a second of
 lead-in so the transition into the first shot is drawn from the real previous frame) using the script as it is now,
 splices them into `video.mp4` frame for frame, masters again, and writes `patch_T0-T1.mp4` (the moment, a second either

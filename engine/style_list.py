@@ -139,7 +139,8 @@ class Build:
                 if not os.path.isabs(f["png"]): f["png"] = os.path.join(here, os.path.basename(f["png"]))
         self.title = cfg.get("title") or re.sub(r"\s*[-|]\s*Qdrant.*$", "", A.get("title", "")).strip()
         self.sections = self.script_sections(cfg["script"]); self.items, self.groups = self.list_items()
-        self.windows = {w["name"]: w for w in BL.windows(cfg["script"], cfg["broll"], words=cfg["words"], cut=cfg["cut"])}
+        self.windows = {w["name"]: w for w in BL.windows(cfg["script"], cfg["broll"], words=cfg["words"], cut=cfg["cut"],
+                                                       lead=SHEET.get("broll", {}).get("lead_in_seconds", BL.ARRIVE_LEAD))}
     def script_sections(self, path):
         """[{heading, lines: [{text, t0, t1, piece}], markers: [...], calls: [...]}] with every line placed in the cut"""
         text_ = re.sub(r"<!--.*?-->", "", open(path, encoding="utf-8").read(), flags=re.S); secs = []; cur = None; self.unplaced = []; self.last_t = None
@@ -621,7 +622,8 @@ def plan(B, t0=0.0, t1=None):
     if t1 is not None: S = [s_ for s_ in S if s_["t0"] < t1]
     S = E.protect_eyes(S, p.look, board_at=E.nearest_graphic(S), recenter_px=0, bg=BG)
     S = E.direct_face(S, p.look, project=p, bg=BG, border=(BORDER, 3))              # figures and tradeoffs: the face layouts
-    S = E.invite_face(S, p.look, project=p, bg=BG, border=(BORDER, 3))              # lists and code: a window over the free corner
+    cam = SHEET.get("camera", {})
+    S = E.invite_face(S, p.look, project=p, bg=BG, border=(BORDER, 3), size=tuple(cam.get("window_size", (310, 360))), margin=cam.get("window_margin", 40))              # lists and code: a window over the free corner
     S = E.hold_over_empty(S, p, BG)
     B.overlays, B.overlay_info = [], []
     if lw:
@@ -634,9 +636,20 @@ def plan(B, t0=0.0, t1=None):
     sfx += [(s_["t0"], E.tone(0.6, 1200, 1800, 0.05, noise=0.3, decay=6)) for s_ in S if s_.get("tr") == "flash"]
     return S, sfx
 
+SHEET = {}
+def apply_sheet(path):
+    """the style sheet (style_list.json, from the build): transitions, reading pace, the presenter's window, the B-roll lead-in"""
+    global SHEET, READ_WPS, CODE_CPS
+    if not path or not os.path.exists(path): return
+    SHEET = json.load(open(path, encoding="utf-8")); tr, pace, cam = SHEET.get("transitions", {}), SHEET.get("pace", {}), SHEET.get("camera", {})
+    E.TR = tr.get("seconds", E.TR); READ_WPS = pace.get("read_words_per_second", READ_WPS); CODE_CPS = pace.get("code_characters_per_second", CODE_CPS)
+    first = cam.get("window_corner_first")
+    if first in E.CORNER_ORDER: E.CORNER_ORDER = (first,) + tuple(c for c in E.CORNER_ORDER if c != first)
+    print(f"style sheet: transitions {E.TR} s, reading {READ_WPS} words/s, window {cam.get('window_size')} first at {E.CORNER_ORDER[0]}")
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("config"); ap.add_argument("rest", nargs="*"); a = ap.parse_args()
-    cfg = json.load(open(a.config, encoding="utf-8")); B = Build(cfg); out = cfg["out"]
+    cfg = json.load(open(a.config, encoding="utf-8")); apply_sheet(cfg.get("sheet")); B = Build(cfg); out = cfg["out"]
     print(f"{len(B.items)} items in {len(B.groups)} groups: " + "; ".join(f"{it['n']}. {it['title']} ({it['group']})" for it in B.items))
     if a.rest[:1] == ["stills"]:
         ts = [float(x) for x in a.rest[1:]]; S, sfx = plan(B, 0, max(ts) + 3); r = E.Renderer(B.p, S, 0, B.p.dur, out, sfx, BG, B.overlays); print(r.stills(ts, out.replace(".mp4", "_sheet.png"), cols=4)); return
