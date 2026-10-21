@@ -93,8 +93,8 @@ of every line and checks that you are looking at the lens.
 Nobody should wait an hour and a half to find out something is wrong, so the build ([video builder](skills/video-builder/))
 goes in three pieces, each shown to you before the next:
 
-1. **The raw edit** (a few minutes): your recording cut to the script, the best take of every line, and every spot
-   where you look away from the lens matched to what is shown instead. You approve it.
+1. **The raw edit, on its own** (a few minutes a round): your recording cut to the script, the best take of every line,
+   clean joins, a couple of small zoom-ins. No B-roll, cards or animations yet. Small fixes until you approve it.
 2. **A preview** of the first 30 seconds (a few minutes): the style, the name card, the first B-roll. You approve the
    direction.
 3. **The whole video.**

@@ -140,28 +140,35 @@ If there is no recording yet:
 Then ask where the file is. A take recorded from a different version of the script lists the lines never said as NO TAKE
 FOUND.
 
-## Step 7 of 8: build, in three short checks
+## Step 7 of 8: build: the raw edit first, then the visuals
 
 Hand over to **video-builder**; everything its "Ask first" section needs is answered by now. Nobody should wait an hour
-and a half to find out something is wrong, so the build goes in three pieces, each shown and approved before the next.
+and a half to find out something is wrong, so the build goes in pieces, each shown and approved before the next.
 Run every build in the background, with a one-line update as each stage finishes (from `BUILD_DIR/build.json`). A
 failed stage stops the build and the command exits 1; `BUILD.md` and the stage's log say why.
 
-**7a. The raw edit (a few minutes).** Cut only the take, and get it approved before anything is laid on it:
+**7a. The raw edit, and only the raw edit.** John, 2026-10-21: "This is raw editing only. Don't focus on putting
+animations in... don't put in the B-roll." Until the raw edit is approved, nothing visual is built or talked about: no
+B-roll, no cards, no list, no animations, no style. The raw edit is the presenter's own footage cut to the script:
+
+- which take of each line is kept, and no line missing
+- the joins: no clipped word, no word heard twice, no sound cut mid-way
+- the zoom: a couple of small zoom-ins held for a stretch, never one at every cut
+- the eyes: where they leave the lens (listed now; what covers them is a visual, decided after the raw edit)
 
 ```bash
 python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style" --style list --only cut
 ```
 
-Show `BUILD_DIR/cut/cut.mp4` and a short table from `cut/cutlist.md`: which take of each line was kept, the lines with no
-take, and where the words said differ from the script. Ask whether the cut is right. A wrong take or a clipped word is
-fixed in the cut (editing skill) and cut again; nothing else has been built yet, so this is cheap.
+Show `BUILD_DIR/cut/cut.mp4` (face only) and at most five short lines: the length, the lines found, the joins to listen
+to (run video-review's `join_checks.joins(RAW, cut/cutlist.md)`; give the times), the look-aways as times only. Ask
+what to change. Fixes stay in the raw edit and repeat until they approve it: a different take or a clipped word is fixed
+in the cut and cut again (minutes), nothing else is rebuilt.
 
-Then the look-aways: run `--only words`, then `--only gaze`, and match `lookaways.json` to the script's lines. Presenters
-look at their notes; that is fine, but the script must say what is on screen instead. Every line with a look-away over
-about a second whose camera call shows the face full screen gets a new call: a small window and what stays up (the code,
-the card, the B-roll, the list). Shorter glances are hidden by the engine on its own. Show the person one line per
-change, not the whole script, and get a yes.
+**After the raw edit is approved: the visuals.** Only now, run `--only words` and `--only gaze`, match `lookaways.json`
+to the script's lines, and for every line with a look-away over about a second whose camera call shows the face full
+screen, write what is shown instead (a small window and what stays up: the code, the card, the B-roll, the list). One
+line per change, approved.
 
 **7b. A preview (a few minutes).** Ask:
 

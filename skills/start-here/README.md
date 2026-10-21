@@ -11,7 +11,8 @@ step at a time, with a small map of where you are:
 4. **Approve the script.** The whole thing, with the B-roll, camera and transitions the skills filled in.
 5. **The editing style.** Always asked.
 6. **Record**, or hand over the recording you have.
-7. **Build** in three short checks: approve the raw edit, approve a 30 second preview, then the whole video.
+7. **Build**: the raw edit on its own first (takes, joins, zoom; no B-roll or animations), small fixes until you
+   approve it; then the visuals, a 60 second preview, and the whole video.
 8. **Small edits** until it is ready: each fix re-renders only the seconds it touches, you see just that moment, and a
    final check ends with "ready to go?"
 
