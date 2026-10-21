@@ -513,12 +513,13 @@ def main():
             state = None                                              # stays the last heading that crossed the middle until another one does
             title = TX.norm(page_titles.get((w.get("url") or "").split("#")[0].rstrip("/"), ""))
             man = os.path.join(a.broll or "", w["name"] + "_manifest.json")
-            if os.path.exists(man) and json.load(open(man)).get("style") == "arrive": continue   # it clicks into the page and holds its top:
-                                                                                               # the page, not a section, is what it shows
+            t_in = next((x for x in (w.get("t_arrive"), w.get("t0")) if x is not None), 0.0)
+            lead_until = t_in + 1.7 if os.path.exists(man) and json.load(open(man)).get("style") == "arrive" else -1   # the click-through
+                                                                                               # before the line shows the listing page
             for t, sec, how, others, i in sorted(w.get("seen", [])):
                 if how.startswith("heading"): state = sec
                 elif state: sec, how = state, "the last heading that crossed the middle"
-                if sec and title and TX.norm(sec) == title: continue        # the arrival clicks into the page and holds its top, on purpose
+                if t < lead_until or (sec and title and TX.norm(sec) == title and t < t_in + 2.0): continue   # the click and the landing
                 if sec and w["section"] and TX.norm(sec) != TX.norm(w["section"]):
                     F.add("broll_section", "fix", t, f'B-roll "{w["name"]}" shows "{sec}" ({how}), not "{w["section"]}"', frame=i)
                 elif others: F.add("broll_other", "note", t, f'B-roll "{w["name"]}": other headings in frame: {", ".join(o[:40] for o in others)}', frame=i)

@@ -240,8 +240,13 @@ def build_plan(data, sec, a):
         from_url = f"{parts.scheme}://{parts.netloc}{up}" if up.count("/") > 2 else None   # never the site root: that is not where it is found
         spec = {"link": parts.path.rstrip("/") + "/"} if from_url else {"nav": path}
         land = max(0, top - int(H * 0.24)) if sec else 0
-        steps = [{"t": 0.1 * k, "hover": spec, "dur": 0.5 * k}, {"t": 0.6 * k, "hover": spec, "click": True, "navigate": bool(from_url), "dur": 0.1},
-                 {"t": 1.0 * k, "move": [cx, int(H * 0.62)], "dur": 0.4 * k}]   # then the article's top, held: no scrolling ("just keep it at the top")
+        # 2026-10-21, timed to the words: the click is a quick lead-in before the line (ARRIVE_LEAD in broll_layer places it
+        # there), then the page jumps to the section, no scroll animation, and holds it at the top of the screen while
+        # the line is said ("when I'm talking about something, I'm supporting the idea"). Seconds, not scaled by dur.
+        # the article opens straight on the section (its #anchor): no frame of the article's top, no scroll
+        anchor = ("#" + sec["id"]) if sec and sec.get("id") else ""
+        steps = [{"t": 0.05, "hover": spec, "dur": 0.35}, {"t": 0.4, "hover": spec, "click": True, "navigate": (anchor or True) if from_url else False, "dur": 0.1},
+                 {"t": 0.6, "move": [cx, int(H * 0.7)], "dur": 0.3}]
         return {"start_y": 0, "steps": steps, **({"from_url": from_url} if from_url else {})}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
@@ -408,12 +413,15 @@ def do_record(a):
                             if z != 1.0: page.add_init_script(f"document.addEventListener('DOMContentLoaded', () => document.documentElement.style.zoom = '{z}'); if (document.documentElement) document.documentElement.style.zoom = '{z}';")
                             hide_css = ",".join(BANNER_SELECTORS + list(a.hide or [])) + "{display:none !important}"   # never painted, not swept after
                             page.add_init_script("(() => { const add = () => { const st = document.createElement('style'); st.textContent = " + json.dumps(hide_css) + "; (document.head || document.documentElement).appendChild(st); }; if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add); })();")
-                            try: page.goto(plan["url"], wait_until="domcontentloaded", timeout=a.timeout * 1000)
+                            dest = plan["url"].split("#")[0] + (s["navigate"] if isinstance(s["navigate"], str) else "")
+                            try: page.goto(dest, wait_until="domcontentloaded", timeout=a.timeout * 1000)
                             except Exception: pass
                             page.evaluate(SWEEP_JS, BANNER_SELECTORS + list(a.hide or []))
                             z = float(getattr(a, "zoom", 1.0) or 1.0)
                             if z != 1.0: page.evaluate(f"document.documentElement.style.zoom = '{z}'")
-                            page.evaluate("window.scrollTo(0, 0)"); y_now = 0; navigated = True
+                            if not isinstance(s["navigate"], str): page.evaluate("window.scrollTo(0, 0)")
+                            else: time.sleep(0.15); page.evaluate("(id) => { const e = document.getElementById(id); if (e) e.scrollIntoView({block: 'start'}); window.scrollBy(0, -innerHeight * 0.22); }", s["navigate"][1:])
+                            y_now = page.evaluate("scrollY"); navigated = True
                             page.evaluate(CURSOR_JS); page.evaluate("([x, y]) => window.__moveCursor(x, y)", cur)
                     if "highlight" in s:
                         box = heading_box(s["highlight"])

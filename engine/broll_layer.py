@@ -21,6 +21,7 @@ SCRIPT = os.environ.get("BROLL_SCRIPT", r"C:\Users\ADMIN\camera_audit\full_suite
 BROLL = os.environ.get("BROLL_DIR", r"C:\Users\ADMIN\camera_audit\full_suite\broll2")   # readthrough at 1.4x page zoom
 WORDS = r"C:\Users\ADMIN\camera_audit\styles\out\v2_words.json"
 MARK = re.compile(r"\[B-ROLL:\s*([^|\]]+)\|([^|\]]+)\|(.*?)\]")
+ARRIVE_LEAD = 1.5                                  # the recorder's click-through before its line (script_broll.ARRIVE_LEAD)
 PUSH_MAX = 1.0                                     # no push: a crop cuts the sidebars mid-word; the page is recorded at 1.4x zoom, readable full frame
 
 CUT = r"C:\Users\ADMIN\camera_audit\edit\full_edit\bulk_uploads_full_edit_v2.mp4"
@@ -71,7 +72,9 @@ def windows(path=SCRIPT, broll=BROLL, words=None, cut=None):
         if not os.path.exists(clip): print(f"  B-roll {m['name']}: no clip at {clip}"); continue
         i, t0, r = find_line(m["line"], pcs); t0 = max(0.0, onset(pcs[i][0], t0 + 0.01, path=cut or CUT) - 0.05)   # lands with the first sound of the line
         mj = json.load(open(man)) if os.path.exists(man) else {}
-        dur = mj.get("duration", m["secs"]) if mj.get("style") == "arrive" else min(m["secs"], mj.get("duration", m["secs"]))   # the click-through runs whole
+        arrive = mj.get("style") == "arrive"
+        if arrive: t0 = max(0.0, t0 - ARRIVE_LEAD)                                    # the click-through is a lead-in: the section is up on the line
+        dur = mj.get("duration", m["secs"]) if arrive else min(m["secs"], mj.get("duration", m["secs"]))   # the click-through runs whole
         out.append(dict(name=m["name"], t0=round(t0, 2), t1=round(t0 + dur, 2), path=clip, section=m["section"], line=m["line"],
                         piece=i, match=round(r, 2), box=mj.get("section_box", {}).get("block")))
     out.sort(key=lambda w: w["t0"])

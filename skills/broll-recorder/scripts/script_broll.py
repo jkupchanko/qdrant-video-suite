@@ -34,7 +34,7 @@ PATTERNS = [
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
 STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
-ARRIVE_MIN = 3.0    # the floor, not the length: the script's marker sets it (John, 2026-10-21: about 3 s, quick, no slow end); a click needs 3
+ARRIVE_LEAD = 1.5   # the click-through plays this long before its line, then the marker's seconds hold the section (John, 2026-10-21)
 
 def prev_sentence(text, pos):
     before = text[:pos]
@@ -113,7 +113,7 @@ def main():
         if a.style: j["style"] = a.style
         page_key = j["url"].split("#")[0].rstrip("/")
         if a.arrive_first and page_key not in seen_pages:                                  # the viewer is shown where this page is, once:
-            j["style"] = "arrive"; j["duration"] = max(float(j["duration"]), ARRIVE_MIN)   # below 3 s the click cannot be seen
+            j["style"] = "arrive"; j["duration"] = float(j["duration"]) + ARRIVE_LEAD   # the click before the line, then the section on it
         seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]
