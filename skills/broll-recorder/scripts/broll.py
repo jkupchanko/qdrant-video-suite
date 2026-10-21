@@ -241,8 +241,7 @@ def build_plan(data, sec, a):
         spec = {"link": parts.path.rstrip("/") + "/"} if from_url else {"nav": path}
         land = max(0, top - int(H * 0.24)) if sec else 0
         steps = [{"t": 0.1 * k, "hover": spec, "dur": 0.5 * k}, {"t": 0.6 * k, "hover": spec, "click": True, "navigate": bool(from_url), "dur": 0.1},
-                 {"t": 0.85 * k, "scroll": land, "dur": 0.5 * k, "js": True}, {"t": 1.4 * k, "move": [cx, int(H * 0.62)], "dur": 0.3 * k},
-                 {"t": 1.4 * k, "scroll": land + int(H * 0.08), "dur": 1.0 * k, "js": True}]   # short and brisk: the heading stays on screen
+                 {"t": 1.0 * k, "move": [cx, int(H * 0.62)], "dur": 0.4 * k}]   # then the article's top, held: no scrolling ("just keep it at the top")
         return {"start_y": 0, "steps": steps, **({"from_url": from_url} if from_url else {})}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
