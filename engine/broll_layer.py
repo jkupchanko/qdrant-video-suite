@@ -71,7 +71,7 @@ def windows(path=SCRIPT, broll=BROLL, words=None, cut=None):
         if not os.path.exists(clip): print(f"  B-roll {m['name']}: no clip at {clip}"); continue
         i, t0, r = find_line(m["line"], pcs); t0 = max(0.0, onset(pcs[i][0], t0 + 0.01, path=cut or CUT) - 0.05)   # lands with the first sound of the line
         mj = json.load(open(man)) if os.path.exists(man) else {}
-        dur = min(m["secs"], mj.get("duration", m["secs"]))
+        dur = mj.get("duration", m["secs"]) if mj.get("style") == "arrive" else min(m["secs"], mj.get("duration", m["secs"]))   # the click-through runs whole
         out.append(dict(name=m["name"], t0=round(t0, 2), t1=round(t0 + dur, 2), path=clip, section=m["section"], line=m["line"],
                         piece=i, match=round(r, 2), box=mj.get("section_box", {}).get("block")))
     out.sort(key=lambda w: w["t0"])

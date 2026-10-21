@@ -18,6 +18,9 @@ decide the camera, the B-roll and the transitions from what they have learned, a
   is for.
 - **Keep it very short.** Walls of text lose people. After the map: what you need from them now, as a short list.
   Findings go in a small table, never paragraphs. Detail only when they ask.
+- **Reviews and results: five lines at most.** Any review, check or result is: what is good (one line), what is wrong
+  (at most three short rows), one question. No reasons, causes or history unless asked. Explaining too much throws the
+  person off and makes the reply more work than the video.
 - **Always ask the step 2 questions.** Who it is for, what they should get from it, and how long it is are the person's
   decisions, even when a script seems to answer them. You may offer your guess as a default to confirm ("Developers
   doing large uploads? Yes / no"), but ask; never fill these in silently.
@@ -158,8 +161,9 @@ fixed in the cut (editing skill) and cut again; nothing else has been built yet,
 
 > Preview the first 30 seconds (a few minutes), or build the whole video?
 
-Default to the preview. With Listed Sections the list only appears at the first item; if that starts after 30 s, say
-so and offer a preview that reaches it (`--preview 60` usually does). It builds into its own folder:
+Default to the preview. With Listed Sections use `--preview 60`: its first 30 s are mostly the presenter by design (the
+list, code and trade-off cards start at the first item), so a 30 s preview shows almost no visuals. It builds into its
+own folder:
 
 ```bash
 python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR_preview --label "Topic, style" --style list --preview 30

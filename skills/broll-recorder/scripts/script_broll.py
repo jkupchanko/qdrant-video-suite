@@ -34,6 +34,7 @@ PATTERNS = [
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
 STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
+ARRIVE_MIN = 12.0   # John, 2026-10-20: start where the article is listed, click it, the article, its section, a slow scroll; 5 s was too fast
 
 def prev_sentence(text, pos):
     before = text[:pos]
@@ -111,7 +112,8 @@ def main():
     for j in jobs:
         if a.style: j["style"] = a.style
         page_key = j["url"].split("#")[0].rstrip("/")
-        if a.arrive_first and page_key not in seen_pages: j["style"] = "arrive"           # the viewer is shown where this page is, once
+        if a.arrive_first and page_key not in seen_pages:                                  # the viewer is shown where this page is, once:
+            j["style"] = "arrive"; j["duration"] = max(float(j["duration"]), ARRIVE_MIN)   # the click-through needs its time to be followed
         seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]

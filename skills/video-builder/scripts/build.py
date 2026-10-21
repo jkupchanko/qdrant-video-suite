@@ -195,6 +195,7 @@ def main():
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
+    ap.add_argument("--take-is-edited", action="store_true", help="build from a take that is already cut (a test); normally refused, it gets cut twice")
     ap.add_argument("--patch", type=float, nargs=2, metavar=("T0", "T1"), help="a small edit to a finished build: re-render only T0-T1 s (grown to whole shots) with the script as it is now, splice it in and master; minutes, not hours")
     ap.add_argument("--preview", type=float, metavar="SECONDS", help="build only the sections that start in the first SECONDS (try 30): minutes instead of hours, to check the direction first")
     a = ap.parse_args(); a.redo = set(filter(None, a.redo.split(",")))
@@ -202,6 +203,13 @@ def main():
         if not (a.name and a.role): print(INTAKE); return 2
         os.makedirs(a.out, exist_ok=True); a.script = with_lower_third(a.script, os.path.abspath(a.out), a.name, a.role)
         print(f"the script has no name card: added [**Lower third:** {a.name} | {a.role} | 5 s] in {a.script}")
+    if not a.take_is_edited and not a.patch:                                            # a raw take with retakes runs well over its script;
+        import cv2; sys.path.insert(0, os.path.join(SK, "video-review", "scripts")); import script_checks as SC   # an edit is about as long
+        c = cv2.VideoCapture(a.take); take_s = c.get(cv2.CAP_PROP_FRAME_COUNT) / (c.get(cv2.CAP_PROP_FPS) or 30); c.release()
+        said_s = sum(len((l if isinstance(l, str) else l.get("text", "")).split()) for l in SC.parse(a.script)["lines"]) / 2.6
+        if said_s and take_s < 1.15 * said_s:
+            print(f"the take is {take_s:.0f} s for about {said_s:.0f} s of script: it looks already edited, not raw. Cutting an edit again cuts it twice\n"
+                  f"(clipped words at the old joins, the push applied twice, mirrored back). Give the raw, full recording, or --take-is-edited to go on anyway."); return 2
     if a.preview:
         os.makedirs(a.out, exist_ok=True); full = a.script; a.script, n = preview_script(full, os.path.abspath(a.out), a.preview)
         a.label = f"{a.label or os.path.basename(a.out)} (preview, first {a.preview:.0f} s)"

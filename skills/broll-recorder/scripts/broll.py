@@ -39,17 +39,17 @@ SWEEP_JS = """(sels) => {
 CURSOR_JS = """() => {
   if (document.getElementById('__cursor')) return;
   const c = document.createElement('div'); c.id = '__cursor';
-  c.innerHTML = `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M3 2 L3 29 L10 22 L15 34 L20 32 L15 20 L25 20 Z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  c.innerHTML = `<svg width="52" height="67" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M3 2 L3 29 L10 22 L15 34 L20 32 L15 20 L25 20 Z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg>`;
   Object.assign(c.style, {position:'fixed', left:'0px', top:'0px', zIndex: 2147483647, pointerEvents:'none', filter:'drop-shadow(0 2px 3px rgba(0,0,0,.45))', transform:'translate(-3px,-2px)'});
   document.body.appendChild(c);
   const ring = document.createElement('div'); ring.id = '__cursor_ring';
-  Object.assign(ring.style, {position:'fixed', width:'44px', height:'44px', borderRadius:'50%', border:'3px solid #DC244C', opacity:'0', zIndex: 2147483646, pointerEvents:'none', transform:'translate(-22px,-22px) scale(0.4)'});
+  Object.assign(ring.style, {position:'fixed', width:'84px', height:'84px', borderRadius:'50%', border:'5px solid #DC244C', opacity:'0', zIndex: 2147483646, pointerEvents:'none', transform:'translate(-42px,-42px) scale(0.4)'});
   document.body.appendChild(ring);
   // x, y are screen pixels; with the page zoomed (--zoom 1.4 on the root element) the overlay is zoomed too, so it is placed at x / Z
   const Z = () => parseFloat(document.documentElement.style.zoom || '1') || 1;
   window.__moveCursor = (x, y) => { const z = Z(); c.style.left = x / z + 'px'; c.style.top = y / z + 'px'; ring.style.left = x / z + 'px'; ring.style.top = y / z + 'px'; };
-  window.__clickRing = () => { ring.style.transition = 'none'; ring.style.opacity = '0.9'; ring.style.transform = 'translate(-22px,-22px) scale(0.4)';
-    requestAnimationFrame(() => { ring.style.transition = 'opacity .45s ease-out, transform .45s ease-out'; ring.style.opacity = '0'; ring.style.transform = 'translate(-22px,-22px) scale(1.4)'; }); };
+  window.__clickRing = () => { ring.style.transition = 'none'; ring.style.opacity = '0.9'; ring.style.transform = 'translate(-42px,-42px) scale(0.4)';
+    requestAnimationFrame(() => { ring.style.transition = 'opacity .6s ease-out, transform .6s ease-out'; ring.style.opacity = '0'; ring.style.transform = 'translate(-42px,-42px) scale(1.4)'; }); };
   window.__highlight = (top, left, width, height, color) => {
     const h = document.createElement('div'); h.className = '__hl';
     const z = Z(); top = (top - scrollY) / z + scrollY / (window.__scrollZoomed ? 1 : 1); left /= z; width /= z; height /= z;
@@ -227,13 +227,26 @@ def build_plan(data, sec, a):
         from urllib.parse import urlparse
         path = urlparse(a.url).path.rstrip("/").split("/")[-1]
         title = next((x["text"] for x in data["sections"] if x["tag"] == "H1"), data["sections"][0]["text"] if data["sections"] else "")
-        start = max(0, top - int(H * 0.17)) if sec else 0; k = dur / 7.0                    # timed for 7 s; a shorter clip runs it faster
-        steps = [{"t": 0.4 * k, "hover": {"nav": path}, "dur": 0.7 * k}, {"t": 1.15 * k, "hover": {"nav": path}, "click": True, "dur": 0.1},
-                 {"t": 1.4 * k, "highlight": {"heading": title, "height": 90}}]
+        # timed for 12 s, slow enough to follow. It starts where the article is found, not on the article (John: "go to where
+        # you would find that article, then click on it and then go to this article"): the page one level up, which lists
+        # it as a card; the cursor travels to the card and clicks it, the article opens, its title is marked, the cursor
+        # clicks the section in "On this page", the page scrolls down slowly, and the section holds to be read.
+        start = max(0, top - int(H * 0.17)) if sec else 0; k = dur / 12.0
+        parts = urlparse(a.url); up = parts.path.rstrip("/").rsplit("/", 1)[0] + "/"
+        from_url = f"{parts.scheme}://{parts.netloc}{up}" if up.count("/") > 2 else None   # never the site root: that is not where it is found
+        steps, t = [], 0.0
+        if from_url:
+            steps += [{"t": 0.5 * k, "hover": {"link": parts.path.rstrip("/") + "/"}, "dur": 1.4 * k},
+                      {"t": 2.0 * k, "hover": {"link": parts.path.rstrip("/") + "/"}, "click": True, "navigate": True, "dur": 0.1}]
+            t = 2.6
+        else:
+            steps += [{"t": 0.6 * k, "hover": {"nav": path}, "dur": 1.2 * k}, {"t": 1.9 * k, "hover": {"nav": path}, "click": True, "dur": 0.1}]
+            t = 0.3
+        steps.append({"t": (t + 0.3) * k, "highlight": {"heading": title, "height": 90}})
         if sec:
-            steps += [{"t": 2.0 * k, "hover": {"toc": sec.get("id") or ""}, "dur": 0.7 * k}, {"t": 2.75 * k, "hover": {"toc": sec.get("id") or ""}, "click": True, "dur": 0.1},
-                      {"t": 2.95 * k, "scroll": start, "dur": 1.3 * k, "js": True}, {"t": 4.4 * k, "move": [cx, int(H * 0.62)], "dur": 0.6 * k}]
-        return {"start_y": 0, "steps": steps}
+            steps += [{"t": (t + 1.6) * k, "hover": {"toc": sec.get("id") or ""}, "dur": 1.0 * k}, {"t": (t + 2.7) * k, "hover": {"toc": sec.get("id") or ""}, "click": True, "dur": 0.1},
+                      {"t": (t + 3.0) * k, "scroll": start, "dur": 3.0 * k, "js": True}, {"t": (t + 6.2) * k, "move": [cx, int(H * 0.62)], "dur": 0.6 * k}]
+        return {"start_y": 0, "steps": steps, **({"from_url": from_url} if from_url else {})}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
         steps.append({"t": t, "move": [cx, int(H * 0.6)], "dur": 0.8}); t += 0.9
@@ -302,11 +315,13 @@ def ensure_pw_ffmpeg():
     except Exception:
         return False
 
-LINK_JS = """([nav, toc]) => { const W = innerWidth, H = innerHeight;
+LINK_JS = """([nav, toc, link]) => { const W = innerWidth, H = innerHeight;
     const cand = [...document.querySelectorAll('a')].filter(e => { const r = e.getBoundingClientRect();
         if (!(r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= H)) return false;
+        if (link) return (e.getAttribute('href') || '').includes(link) && r.left >= W * 0.2;
         if (nav) return (e.getAttribute('href') || '').includes(nav) && r.left < W * 0.3;
         return e.getAttribute('href') === '#' + toc && r.left > W * 0.6; });
+    if (link) cand.sort((p, q) => q.getBoundingClientRect().width * q.getBoundingClientRect().height - p.getBoundingClientRect().width * p.getBoundingClientRect().height);
     if (!cand.length) return null; const r = cand[0].getBoundingClientRect();
     return {x: r.left, y: r.top, width: Math.min(r.width, 300), height: r.height, top: r.top + scrollY}; }"""
 
@@ -325,7 +340,7 @@ def do_record(a):
             with sync_playwright() as p:
                 browser, ctx = launch(p, a, record_dir=tmp)
                 t_page = time.time()
-                page = open_page(ctx, plan["url"], a, a.hide)
+                page = open_page(ctx, plan.get("from_url") or plan["url"], a, a.hide)
                 page.evaluate(f"window.scrollTo(0, {plan.get('start_y', 0)})")
                 page.evaluate(CURSOR_JS)
                 cur = [W * 0.55, H * 0.6]
@@ -334,9 +349,9 @@ def do_record(a):
                 t_start = time.time(); trim = max(0.0, t_start - t_page - 0.1)
                 y_now = plan.get("start_y", 0)
                 def heading_box(spec):
-                    if isinstance(spec, dict) and ("nav" in spec or "toc" in spec):     # a link on screen: in the docs menu (left) or "On this page" (right)
-                        try:
-                            return page.evaluate(LINK_JS, [spec.get("nav"), spec.get("toc")])
+                    if isinstance(spec, dict) and ("nav" in spec or "toc" in spec or "link" in spec):   # a link on screen: the docs menu (left),
+                        try:                                                                            # "On this page" (right), or a card in the page
+                            return page.evaluate(LINK_JS, [spec.get("nav"), spec.get("toc"), spec.get("link")])
                         except Exception:
                             return None
                     txt = spec.get("heading") if isinstance(spec, dict) else None
@@ -376,7 +391,7 @@ def do_record(a):
                             box = heading_box(s["hover"])
                             off = s["hover"].get("offset", [0, 0]) if isinstance(s["hover"], dict) else [0, 0]
                             if box: target = [box["x"] + min(box["width"] * 0.5, 160) + off[0], box["y"] + box["height"] / 2 + off[1]]
-                            elif isinstance(s["hover"], dict) and ("nav" in s["hover"] or "toc" in s["hover"]): s = {k_: v_ for k_, v_ in s.items() if k_ != "click"}   # no link on screen: no click on nothing
+                            elif isinstance(s["hover"], dict) and ("nav" in s["hover"] or "toc" in s["hover"] or "link" in s["hover"]): s = {k_: v_ for k_, v_ in s.items() if k_ not in ("click", "navigate")}   # no link on screen: no click on nothing
                         if target != cur:
                             x0, y0, t0 = cur[0], cur[1], time.time()
                             while True:
@@ -389,6 +404,15 @@ def do_record(a):
                         if s.get("click"):
                             page.evaluate("() => window.__clickRing()")
                             if s.get("real_click"): page.mouse.click(cur[0], cur[1])
+                        if s.get("navigate"):
+                            time.sleep(0.25)
+                            try: page.goto(plan["url"], wait_until="domcontentloaded", timeout=a.timeout * 1000)
+                            except Exception: pass
+                            page.evaluate(SWEEP_JS, BANNER_SELECTORS + list(a.hide or []))
+                            z = float(getattr(a, "zoom", 1.0) or 1.0)
+                            if z != 1.0: page.evaluate(f"document.documentElement.style.zoom = '{z}'")
+                            page.evaluate("window.scrollTo(0, 0)"); y_now = 0
+                            page.evaluate(CURSOR_JS); page.evaluate("([x, y]) => window.__moveCursor(x, y)", cur)
                     if "highlight" in s:
                         box = heading_box(s["highlight"])
                         if box:
