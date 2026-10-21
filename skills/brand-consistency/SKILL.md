@@ -5,9 +5,15 @@ description: The Qdrant brand layer of the video suite. Every Qdrant video shows
 
 # Brand consistency
 
-Qdrant videos look like each other on purpose: the presenter's name always comes up early, in the same card, the
+Qdrant videos look like each other on purpose: the presenter's name always comes up first, in the same card, the
 colours and type are the brand's, and the logo is the supplied file. This skill holds those pieces for the video suite:
 the lower third renderer, the rules, and the questions to ask before anything is built.
+
+**The brand itself is Qdrant's own brand skill, copied in whole** (`qdrant-brand/`: its SKILL.md, colour, type, spacing
+and logo specs, every logo file, and `brand_utils.py`). Nothing here restates it by hand: `scripts/brand.py` reads the
+palette from `qdrant-brand/scripts/brand_utils.py` and gives videos their roles (background, card, text, muted, Qdrant
+Red, the chart order for groups, the code colours) as RGB tuples, plus `PALETTE` for the review. When Qdrant updates its
+brand skill, copy the new version over `qdrant-brand/` and every video follows.
 
 ## Before building: ask
 
@@ -33,7 +39,8 @@ It's also handling indexing, payloads, and much more in the background.
 [**Lower third:** John Kupchanko | Developer Relations Engineer | 5 s]
 ```
 
-It comes in on the line above it (here 0:04.9, the moment the title card leaves) and holds for the given seconds. The
+Put it after the video's first line: the name card opens the video and the title card follows it (John: "your name
+first"). It comes in on the line above it and holds for the given seconds. The
 style moves it later if the eyes leave the lens inside its window, and shortens the hold (never under 3 s) so it is gone
 before the next graphic. If the script has no directive, `build.py --name ... --role ...` adds one to a copy of the script
 on the hook's second line; the original script is never edited.
@@ -61,8 +68,9 @@ python ~/.claude/skills/brand-consistency/scripts/lower_third.py --name "..." --
 
 ## The rest of the brand, on screen
 
-- Colours: background `#0B0F19`, cards `#111824`, text `#F0F3FA`, secondary `#656B7F`, border `#4E5366`, accent Qdrant Red
-  `#DC244C`; Violet `#6047FF`, Teal `#009688` and Orange for groups and charts in the brand's order.
+- Colours: only from `scripts/brand.py` (from the brand skill): background `#0B0F19`, cards `#111824`, text `#F0F3FA`,
+  muted text `#ABB1C7`, captions `#656B7F`, border `#4E5366`, accent Qdrant Red `#DC244C`; groups in the brand's chart
+  order (red, violet, teal, light blue); code in brand colours. No colour typed in by hand, no Mac window dots on code.
 - Type: Mona Sans (headings SemiBold or Bold, body Regular), Geist Mono for code. Never gradient text.
 - Logos: the supplied files only (`assets/`, from the qdrant-brand skill). The video ends on `Qdrant-Logo-Red-White`.
 - Code: the brand's code snippet (surface card, header bar with the language tab, line numbers in `#656B7F`).
@@ -71,6 +79,7 @@ python ~/.claude/skills/brand-consistency/scripts/lower_third.py --name "..." --
 
 `video-review` reads the name card from the pixels (OCR): a script without a lower third is a **fix**; a name card that
 never appears, or reads differently from the script's spelling, or lacks the title is a **fix**; one held much shorter
-than asked, not in the lower left, over a frame without the presenter, or after the first minute is a **check**.
+than asked, not in the lower left, over a frame without the presenter, or first read after 4 s is a **check**. It also
+samples the graphics every 2 s and flags accents that are not in `PALETTE` (`brand_colour`).
 
 Fonts: Mona Sans (GitHub) and Geist Mono (Vercel) are under the SIL Open Font License 1.1; see `assets/fonts/FONTS.md`.

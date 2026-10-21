@@ -14,6 +14,9 @@ Everything but VIDEO is optional; each input switches on the checks that need it
   --broll        the recorded clips (and their *_sections.json: the docs page's own text, for numbers and spelling)
   --take         (with --cutlist) the raw recording: every join of the cut heard in the take, a word clipped at a join,
                  a piece starting or ending mid-word, the same words heard twice where two pieces overlap
+  (always)       the pace: a graphic cut in or out with no transition (the house wants soft changes), a card gone before
+                 its words can be read, accents outside the Qdrant palette on the graphics
+  (with --broll) the first B-roll of each page shows which page it is (its title, breadcrumb, menu)
   (with --script) the brand: the presenter's name lower third ([**Lower third:** NAME | TITLE | 5 s]) read on screen,
                  spelled as the script gives it, held its time, low left, with the face on screen; a script without
                  one is a fix (Qdrant videos always show the presenter's name)
@@ -24,7 +27,7 @@ Severity: fix (wrong), check (probably wrong, a person decides), note (worth kno
 import os, sys, json, glob, argparse, time, collections, math
 import cv2, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-import text_checks as TX, script_checks as SC
+import text_checks as TX, script_checks as SC, pace_checks as PC
 TH = TX.RULES["thresholds"]
 
 FIXES = {
@@ -287,7 +290,7 @@ def broll_pass(v, small, motion, trans, script, pcs, cut, broll_dir, F):
     for m in script["markers"]:
         clip = os.path.join(broll_dir, m["name"] + ".mp4")
         _, t_line, r = SC.line_time(m["line"], pcs, cut) if pcs else (None, None, 0)
-        w = dict(name=m["name"], section=m["section"], line=m["line"], t_line=t_line, match=round(r, 2), t0=None, t1=None)
+        w = dict(name=m["name"], section=m["section"], line=m["line"], t_line=t_line, match=round(r, 2), t0=None, t1=None, url=m.get("url", ""))
         if t_line is not None and t_line > v.dur - 0.5: continue                        # past the end of this video (a sample range)
         if not os.path.exists(clip): F.add("broll_missing", "fix", t_line or 0, f'B-roll "{m["name"]}": no clip at {clip}'); out.append(w); continue
         c = cv2.VideoCapture(clip); cf = []
@@ -381,7 +384,7 @@ def brand_pass(v, res, script, faces, F):
         if not (bx[0] < v.W * 0.45 and bx[1] > v.H * 0.55): F.add("brand", "check", i0 / v.fps, "the name card is not in the lower left", bx, frame=i0)
         off = [i for i, _ in seen if face_near(i) is not None and not face_near(i).get("presenter")]
         if off: F.add("brand", "check", off[0] / v.fps, f"the name card is up while the presenter is not on screen ({len(off)} of {len(seen)} reads)", bx, frame=off[0])
-        if i0 / v.fps > 60: F.add("brand", "check", i0 / v.fps, "the name card comes in after the first minute: viewers meet the presenter in the opening")
+        if i0 / v.fps > 4.0: F.add("brand", "check", i0 / v.fps, f"the name card is first read at {ts(i0 / v.fps)}: Qdrant videos open on it, before the title")
         out.append(f'{lw["name"]} on screen {ts(i0 / v.fps)} to {ts(i1 / v.fps)} (about {held:.0f} s)')
     return "; ".join(out)
 
@@ -438,16 +441,24 @@ def main():
     static = [i for i in range(len(motion)) if motion[i] < 0.12]
     for run in _runs(static):
         if len(run) >= TH["static_s"] * v.fps: F.add("static", "check", run[0] / v.fps, f"the picture does not move for {len(run) / v.fps:.1f} s", t1=run[-1] / v.fps, frame=run[0])
+    cuts = PC.hard_cuts(small, motion, v.fps)
+    for i, g0, g1 in cuts:
+        if small[min(len(small) - 1, i + 1)].mean() > 200: continue                    # a white flash the script asked for
+        what = "into a card" if g1 and not g0 else ("out of a card" if g0 and not g1 else "from one card to the next")
+        F.add("abrupt", "fix", i / v.fps, f"a hard cut {what}, no transition: the house wants soft changes of about 0.8 s (a jump cut between two face takes is fine)", frame=i)
+    stats["pace"] = f"{len(cuts)} hard cuts into, out of or between cards"
     stats["frames"] = f"{v.n} frames; moving {100 * (motion > 0.12).mean():.0f}% of the time; black {sum(1 for f in F.items if f['kind'] == 'black')} stretches"
     script = SC.parse(a.script) if a.script else None; pcs = SC.pieces(a.words) if a.words else None
     texts = []
     if script: texts += script["lines"] + [m["section"] for m in script["markers"]] + [c["text"] for c in script["calls"]] + [f'{lw["name"]} {lw["title"]}' for lw in script.get("lowers", [])]
     if pcs: texts += [" ".join(p[2]) for p in pcs]
-    sections = None
+    sections = None; page_titles = {}
     if a.broll:
         sj = sorted(glob.glob(os.path.join(a.broll, "*_sections.json")))
         if sj:
             d = json.load(open(sj[0], encoding="utf-8")); sections = [s for s in d["sections"] if s.get("text")]
+            h1 = next((s_["text"] for s_ in d["sections"] if s_.get("tag") == "H1"), d.get("title", ""))
+            for m in (script["markers"] if script else []): page_titles[m["url"].split("#")[0].rstrip("/")] = h1
             texts += [s["text"] + " " + s.get("body", "") for s in sections] + [d.get("title", "")]
     if a.assets and os.path.exists(a.assets):
         A = json.load(open(a.assets, encoding="utf-8"))
@@ -482,6 +493,22 @@ def main():
         json.dump(cache, open(cp, "w"))
         stats["text"] = f"{len(res)} frames read"
         if script: stats["brand"] = brand_pass(v, res, script, faces, F)
+        bspans = [(w["t0"], w["t1"]) for w in windows if w.get("t0") is not None]
+        rd = PC.reading(small, motion, v.fps, res, v.H, TX.is_code, bspans, TH.get("read_wps", 3.8))
+        for sev, t0_, t1_, i, msg in rd: F.add("read", sev, t0_, msg, t1=t1_, frame=i)
+        stats["pace"] = stats.get("pace", "") + f"; {sum(1 for r in rd if r[0] == 'fix')} cards gone before they can be read, {sum(1 for r in rd if r[0] == 'check')} tight"
+        for t_, i, msg in PC.broll_context(res, v.fps, windows, page_titles): F.add("broll_context", "fix", t_, msg, frame=i)
+        off_n = 0                                                                     # the palette, on the graphics (not the face, not a recorded page)
+        for i in range(int(v.fps), v.n, int(2 * v.fps)):
+            t_ = i / v.fps
+            if small[i].mean() >= 70 or any(x0 - 0.3 <= t_ <= x1 + 0.3 for x0, x1 in bspans): continue
+            fr = v.frame(i)
+            if fr is None: continue
+            fa = min(faces, key=lambda r: abs(r["i"] - i)) if faces else None
+            boxes = [fa["window"]] if fa and fa.get("presenter") and fa.get("window") else [(int(v.W * 0.74), 0, int(v.W * 0.26), int(v.H * 0.4))]
+            sh, hexc = PC.brand_colours(fr, boxes)
+            if hexc: F.add("brand_colour", "check", t_, f"{sh * 100:.0f}% of the accent colour on this card is off the Qdrant palette (mostly {hexc}): take colours from brand-consistency's brand.py", frame=i); off_n += 1
+        stats["brand"] = (stats.get("brand", "") + f"; {off_n} card frames with off-palette accents").lstrip("; ")
         for w in windows:                                             # the section each B-roll shows: the page scrolls continuously, so it
             state = None                                              # stays the last heading that crossed the middle until another one does
             for t, sec, how, others, i in sorted(w.get("seen", [])):

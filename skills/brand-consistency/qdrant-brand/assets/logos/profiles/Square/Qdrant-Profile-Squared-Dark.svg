@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #9e0d38;
+      }
+
+      .cls-2 {
+        fill: #111824;
+      }
+
+      .cls-3 {
+        fill: #dc244c;
+      }
+
+      .cls-4 {
+        fill: #ff516b;
+      }
+    </style>
+  </defs>
+  <g id="Vectors">
+    <g>
+      <rect class="cls-2" width="1080" height="1080"/>
+      <g>
+        <g>
+          <polygon class="cls-3" points="540 60 124.3 300 124.3 780 540 1020 695.88 930 695.88 750 540 840 280.2 690 280.2 390 540 240 799.8 390 799.8 990 955.7 900 955.7 300 540 60"/>
+          <polygon class="cls-3" points="384.12 450 384.12 630 540 720 695.88 630 695.88 450 540 360 384.12 450"/>
+        </g>
+        <g>
+          <polygon class="cls-1" points="695.88 750 695.88 930 540 1020 540 840 695.88 750"/>
+          <polygon class="cls-1" points="955.7 300 955.7 900 799.8 990 799.8 390 955.7 300"/>
+          <polygon class="cls-4" points="955.7 300 799.8 390 540 240 280.2 390 124.3 300 540 60 955.7 300"/>
+          <polygon class="cls-3" points="540 840 540 1020 124.3 780 124.3 300 280.2 390 280.2 690 540 840"/>
+          <polygon class="cls-4" points="695.88 450 540 540 384.12 450 540 360 695.88 450"/>
+          <polygon class="cls-3" points="540 540 540 720 384.12 630 384.12 450 540 540"/>
+          <polygon class="cls-1" points="695.88 450 695.88 630 540 720 540 540 695.88 450"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

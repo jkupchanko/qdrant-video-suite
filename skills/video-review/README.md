@@ -73,6 +73,13 @@ build kept the first 40 ms of "when" after "...dense and sparse vectors". On tha
 On the cut after the editing skill placed its cut points by the sound, it found none. It leaves 5 joins as checks,
 where one word runs straight into the next with no pause to cut in.
 
+### The pace
+What a person notices first and a frame check misses. A hard cut into or out of a card is a fix: the house wants soft
+changes of about 0.8 s. A card is a fix when it leaves before its words can be read, timed at 3.8 words a second. The
+first B-roll of a page is a fix if it never shows which page it is. Accents on the graphics are checked against the
+Qdrant palette. All four came from watching build 4: "we don't actually show what it is", "it instantly is already
+gone", "how quick we are transitioning", "the color considerations".
+
 ### The name card
 The script's `[**Lower third:** NAME | TITLE | 5 s]` is read off the screen. These are fixes: a script without one, a
 card that never appears, a different spelling, or no title. A card held much shorter than asked, out of the lower left,

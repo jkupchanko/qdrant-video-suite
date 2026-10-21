@@ -19,7 +19,8 @@
     "dead_side_w": 0.35,
     "dead_side_h": 0.4,
     "dead_frame": 0.92,
-    "dead_air_s": 1.2
+    "dead_air_s": 1.2,
+    "read_wps": 3.8
   },
   "stale": {
     "on_disk=True": "since Qdrant v1.19 the docs write vectors on disk as memory=models.Memory.COLD (on_disk is the legacy setting)"

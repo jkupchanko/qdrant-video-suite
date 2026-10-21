@@ -37,10 +37,16 @@ sys.path.insert(0, os.path.expanduser(r"~/.claude/skills/brand-consistency/scrip
 sys.path.insert(0, os.path.expanduser(r"~/.claude/skills/video-review/scripts")); import script_checks as SC
 
 W, H = E.W, E.H
+E.TR = 0.8          # transitions 0.8 s, soft (John's boss: "how quick we are transitioning"; 0.5 s zoom-cuts read as abrupt). The eye
+                    # rules use the same TR, so the face is still hidden a whole transition before a look-away
+SOFT = "soft_zoom"  # a card arriving: the new frame fades in while it settles; leaving a card for the face: a dissolve
+CODE_CPS = 65.0     # live code types this fast, then holds at least 3 s with the key line lit
+READ_WPS = 3.8      # words a second a viewer reads on a card (with the presenter saying much the same over it)
 FONTS = r"C:\Users\ADMIN\camera_audit\fonts"; ASSETS = r"C:\Users\ADMIN\camera_audit\assets"
-BG = (11, 15, 25); CARD = (17, 24, 36); CARD2 = (22, 29, 46); BORDER = (78, 83, 102); TXT = (240, 243, 250); MUTED = (150, 156, 178)
-RED = (220, 36, 76); VIOLET = (96, 71, 255); VIOLET_L = (180, 168, 255); TEAL = (0, 150, 136); TEAL_L = (79, 209, 197); ORANGE = (255, 152, 0)
-GROUP_COL = [VIOLET, RED, TEAL, ORANGE]
+from brand import C as BC, GROUPS, SYNTAX, LOGO_DIR                                     # every colour from the Qdrant brand skill
+BG, CARD, CARD2, BORDER, TXT, MUTED = BC.BG, BC.CARD, BC.CARD2, BC.BORDER, BC.TEXT, BC.MUTED
+RED, VIOLET, VIOLET_L, TEAL, TEAL_L, ORANGE = BC.RED, BC.VIOLET, BC.VIOLET_LIGHT, BC.TEAL, BC.CYAN, BC.ORANGE
+GROUP_COL = GROUPS[:4]                                                                  # the brand's chart order: red, violet, teal, light blue
 F_HEAD = "MonaSansCondensed-Black.ttf"; F_LABEL = "MonaSansCondensed-BlackItalic.ttf"; F_BOLD = "MonaSans-Bold.ttf"; F_REG = "MonaSans-Medium.ttf"
 F_MONO = "GeistMono-Regular.ttf"; F_MONO_B = "GeistMono-Medium.ttf"
 
@@ -201,7 +207,7 @@ def list_layout(B):
 
 def draw_list(cv, B, t, lit=None, lit_group=None, build=None, ticks=None, a_all=1.0):
     """the master list. lit: the item number lit (others dimmed); lit_group: a whole group lit; build: {n: t_in}; ticks: {n: t}"""
-    bm = img(os.path.join(ASSETS, "qdrant-brandmark-red.png")); cv.drawImageRect(bm, skia.Rect.MakeXYWH(60, 68, 60, 60 * bm.height() / bm.width()), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), a_all))
+    bm = img(os.path.join(LOGO_DIR, "png", "Qdrant-Brandmark-Red.png")); cv.drawImageRect(bm, skia.Rect.MakeXYWH(60, 68, 60, 60 * bm.height() / bm.width()), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), a_all))
     lines, sz = fit_lines(B.title.upper(), F_HEAD, 64, 44, 1330, 1); text(cv, lines[0], 140, 120, font(F_HEAD, sz), TXT, a_all)
     text(cv, counts(B), 142, 162, font(F_REG, 28), MUTED, a_all)
     for r in list_layout(B):
@@ -337,7 +343,7 @@ def key_line(it, B):
     best = max(range(len(code)), key=lambda k: 3 * sum(1 for w in tw if w[:5] in code[k].lower()) + sum(1 for w in hw if w[:5] in code[k].lower()))   # the title counts most
     return best, len(code)
 
-SYN = dict(kw=VIOLET_L, str=TEAL_L, num=(255, 183, 77), call=(110, 200, 255), arg=(255, 135, 146), punct=MUTED, comment=(101, 107, 127), name=TXT)
+SYN = SYNTAX
 def tokens(line):
     """[(text, colour key)] for one line of Python: keyword arguments, calls, strings, numbers, comments, the rest"""
     from pygments.lexers import PythonLexer; from pygments.token import Keyword, String, Number, Comment, Operator, Punctuation, Name
@@ -355,27 +361,39 @@ def tokens(line):
         out.append((v, c))
     return out
 
-def d_code(B, it, t_in, t_end=None):
+def chip_block(cv, label, body, c, x, y, w, size, a):
+    """a TRADEOFF chip: its label, then the page's own words in a tinted card; -> its height"""
+    lines, _ = wrap(body, font(F_BOLD, size), w - 48, 9); h = 58 + len(lines) * size * 1.3 + 30
+    text(cv, label, x, y + 38, font(F_LABEL, 40), c, a); rrect(cv, x, y + 58, w, h - 58, 18, c, 0.15 * a, c, 3 * a)
+    ty = y + 58 + 22 + size
+    for ln in lines: text(cv, ln, x + 24, ty, font(F_BOLD, size), TXT, a); ty += size * 1.3
+    return h
+
+def d_code(B, it, t_in, t_end=None, chips=None):
     """live code: the docs code typed out in the card, character by character with syntax colours (indentation arrives
     with the line, as an editor puts it there), a cursor at the typing point; once it is all there the key line is lit.
     The top right stays clear for the presenter (house rule)"""
     code = code_of(it); kl, nl = key_line(it, B); toks = [tokens(ln) for ln in code]
     t_end = t_end if t_end is not None else t_in + 6.0
-    longest = max((len(ln) for ln in code), default=10); x0, y0, cw, ch = 80, 190, W - 560, H - 300
+    longest = max((len(ln) for ln in code), default=10); x0, y0, cw, ch = 80, 190, (W - 560) if not chips else 1080, H - 300
+    if chips:                                                                          # the right column under the presenter's corner: Best for, Watch for
+        col_x, col_w, col_y = 1220, W - 1220 - 56, 410; csz = 30
+        while csz > 24 and sum(58 + len(wrap(b_, font(F_BOLD, csz), col_w - 48, 9)[0]) * csz * 1.3 + 30 for b_ in (it["best"], chips["watch"]) if b_) + 24 > H - 60 - col_y: csz -= 2
     size = max(24, min(46, (cw - 150) / (0.6 * longest), (ch - 110) / (1.55 * max(1, len(code)))))       # short code reads big on a phone
     fm, lh = font(F_MONO, size), size * 1.55; adv = fm.measureText("M")
     cw = min(cw, max(1000, 28 + adv * 3.4 + adv * longest + 70))                       # the card hugs the code
     typed = [len(ln) - len(ln.lstrip()) for ln in code]                                # the indentation of each line: no time
     n_chars = sum(len(ln) - t_ for ln, t_ in zip(code, typed)); t_type = t_in + 0.45
-    rate = max(45.0, n_chars / max(0.8, 0.62 * (t_end - t_type)))                        # done by about 60% of the shot, never slow
+    rate = max(CODE_CPS, n_chars / max(0.8, (t_end - t_type) - 3.0))                    # done with at least 3 s left to read it, never slow
+    if chips: rate = max(rate, CODE_CPS * 1.15)                                        # beside the tradeoff: typed briskly, the card stays up
     t_done = t_type + n_chars / rate
     card_h = min(ch, 92 + lh * len(code) + 30); cy = y0 + max(0, (ch - card_h) / 2 - 20)
     def d(lt, dur, ctx):
         t = ctx["t"]; s_, cv = surface(); item_header(cv, it, "IN CODE", right=W - 420)
         rrect(cv, x0, cy, cw, card_h, 16, CARD, 1.0, BORDER, 2, shadow=True)               # the brand's code snippet: surface, header bar, tab
         rrect(cv, x0, cy, cw, 64, 16, CARD2, 1.0); cv.drawRect(skia.Rect(x0, cy + 48, x0 + cw, cy + 64), paint(CARD2))
-        for k_, c_ in enumerate(((255, 95, 87), (254, 188, 46), (40, 200, 64))): cv.drawCircle(x0 + 34 + 26 * k_, cy + 32, 8, paint(c_, 0.9))
-        rrect(cv, x0 + 120, cy + 12, 150, 52, 10, CARD, 1.0); text(cv, "Python", x0 + 195, cy + 47, font(F_REG, 24), TXT, 1.0, "center")
+        rrect(cv, x0 + 20, cy + 12, 150, 52, 10, CARD, 1.0); text(cv, "Python", x0 + 95, cy + 47, font(F_REG, 24), TXT, 1.0, "center")      # the brand's language tab
+        cv.drawRect(skia.Rect(x0 + 20, cy + 60, x0 + 170, cy + 63), paint(RED))
         left = int((t - t_type) * rate) if t >= t_type else 0; gx, tx = x0 + 28, x0 + 28 + adv * 3.4; y = cy + 92 + size
         cur = None; c = GROUP_COL[it["gi"] % len(GROUP_COL)]
         if kl is not None and t >= t_done + 0.25:                                          # the point of it, once it is all there
@@ -394,14 +412,31 @@ def d_code(B, it, t_in, t_end=None):
         if cur is None and code: cur = (tx + fm.measureText(code[-1]), y - lh)
         if cur and (t < t_done or int((t - t_done) * 2.2) % 2 == 0):                        # the cursor: steady while typing, then blinking
             cv.drawRect(skia.Rect(cur[0] + 2, cur[1] - size * 0.85, cur[0] + 5, cur[1] + size * 0.2), paint(RED))
+        if chips:                                                                      # then the tradeoff arrives beside the code, and stays
+            yy = col_y
+            for lab, body, c_, at in (("BEST FOR", it["best"], TEAL, chips["t_best"]), ("WATCH FOR", chips["watch"], RED, chips["t_watch"])):
+                k = ease(ramp(t, at, 0.5))
+                if body and k > 0:
+                    cv.save(); cv.translate(40 * (1 - k), 0); hh = chip_block(cv, lab, body, c_, col_x, yy, col_w, csz, k); cv.restore(); yy += hh + 24
+                elif body: yy += 58 + len(wrap(body, font(F_BOLD, csz), col_w - 48, 9)[0]) * csz * 1.3 + 30 + 24
         return to_pil(s_)
     return d
 
-def d_tradeoff(B, it, t_in, t_watch):
+def sentences(s): return [x.strip() for x in re.split(r"(?<=[.!?])\s+", s or "") if x.strip()]
+def fit_watch(it, seconds):
+    """the page's own Watch for, whole sentences only, as many as can be read in `seconds` after the Best for (at least one)"""
+    room = (seconds - 1.0) * READ_WPS - len(it["best"].split()); out = []
+    for x in sentences(it["watch"]):
+        if out and len(" ".join(out + [x]).split()) > room: break
+        out.append(x)
+    return " ".join(out)
+
+def d_tradeoff(B, it, t_in, t_watch, watch=None):
     """Fireship's TRADEOFF, side by side: the page's own 'Best fit' (teal) and 'Watch for' (red); the figure under them as evidence"""
+    watch = it["watch"] if watch is None else watch
     def d(lt, dur, ctx):
         t = ctx["t"]; s, cv = surface(); item_header(cv, it, "TRADEOFF")
-        pairs = [(lab, body, c, at) for lab, body, c, at in (("BEST FOR", it["best"], TEAL, t_in), ("WATCH FOR", it["watch"], RED, t_watch)) if body]
+        pairs = [(lab, body, c, at) for lab, body, c, at in (("BEST FOR", it["best"], TEAL, t_in), ("WATCH FOR", watch, RED, t_watch)) if body]
         cw = (W - 160 - 40 * (len(pairs) - 1)) / max(1, len(pairs))
         one = min((fit_lines(body, F_BOLD, 54, 36, cw - 70, 8)[1] for _, body, _, _ in pairs), default=54)   # one size for both sides
         for j, (lab, body, c, at) in enumerate(pairs):
@@ -416,13 +451,75 @@ def d_end(B, t_in):
     def d(lt, dur, ctx):
         t = ctx["t"]; k = ease(ramp(t, t_in, 0.5)); s = skia.Surface(W, H); cv = s.getCanvas(); cv.clear(skia.Color(0, 0, 0, 0))
         if k > 0:
-            lg = img(os.path.join(ASSETS, "qdrant-logo-red-white.png")); lw = 420 * (0.9 + 0.1 * k); lh = lw * lg.height() / lg.width()
+            lg = img(os.path.join(LOGO_DIR, "png", "Qdrant-Logo-Red-White.png")); lw = 420 * (0.9 + 0.1 * k); lh = lw * lg.height() / lg.width()
             rrect(cv, W - lw - 120, H - lh - 110, lw + 60, lh + 60, 20, BG, 0.85 * k)
             cv.drawImageRect(lg, skia.Rect.MakeXYWH(W - lw - 90, H - lh - 80, lw, lh), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), k))
         return to_pil(s)
     return d
 
+def d_where(B, si, t_in, t_out):
+    """on the full face: a small chip, top left over the wall, saying where we are: the item's number and name and a dot per
+    item (done ones filled, this one lit), or the section's name between items. It slides in from the left and back out, and
+    never covers the face. (John: "when I'm full screen... a little animation to help guide the direction of what I'm doing")"""
+    sec = B.sections[si]; its = [it for it in B.items if it["section"] == si]; it = its[0] if its else None
+    done = {x["n"] for x in B.items if x["section"] < si}
+    label = (it["title"] if it else re.sub(r"^(option|step|tip)\s*\d+\s*[:.-]\s*", "", sec["heading"], flags=re.I)).strip()
+    f = font(F_BOLD, 30); lines, sz = fit_lines(label, F_BOLD, 30, 24, 470, 1); tw = font(F_BOLD, sz).measureText(lines[0])
+    w = (76 if it else 0) + 24 + max(tw, 22 * len(B.items)) + 32; h = 104; x0, y0 = 44, 96
+    def d(lt, dur, ctx):
+        t = ctx["t"]; k = ease(ramp(t, t_in, 0.5)) * (1 - ease(ramp(t, t_out - 0.45, 0.45)))
+        if k <= 0: return None
+        s_ = skia.Surface(W, H); cv = s_.getCanvas(); cv.clear(skia.Color(0, 0, 0, 0)); x = x0 - (w + 60) * (1 - k)
+        rrect(cv, x, y0, w, h, 16, CARD, 0.9 * k, BORDER, 2, shadow=True); tx = x + 22
+        if it:
+            c = GROUP_COL[it["gi"] % len(GROUP_COL)]; number_chip(cv, it["n"], x + 18, y0 + (h - 60) / 2, 60, c, k); tx = x + 96
+        text(cv, lines[0], tx, y0 + 44, font(F_BOLD, sz), TXT, k)
+        for j, x_ in enumerate(B.items):                                             # the list so far, and where this is in it
+            cx, cy = tx + 8 + 22 * j, y0 + 74; c = GROUP_COL[x_["gi"] % len(GROUP_COL)]
+            if it and x_["n"] == it["n"]: cv.drawCircle(cx, cy, 8, paint(c, k)); cv.drawCircle(cx, cy, 11, paint(c, 0.6 * k, stroke=2))
+            elif x_["n"] in done: cv.drawCircle(cx, cy, 6, paint(c, 0.85 * k))
+            else: cv.drawCircle(cx, cy, 6, paint(BORDER, k))
+        return to_pil(s_)
+    return d
+
+def where_chips(B, S):
+    """the chip on every full-face stretch of 2.5 s or more between the hook and the wrap-up"""
+    starts = [sec["lines"][0]["t0"] for sec in B.sections]
+    for s_ in S:
+        if s_["kind"] != "face" or s_.get("draw") or s_["t1"] - s_["t0"] < 2.5: continue
+        si = max((k for k, t in enumerate(starts) if t <= s_["t0"] + 0.1), default=0)
+        if si == 0 or si == len(B.sections) - 1: continue
+        dr = d_where(B, si, s_["t0"] + 0.5, s_["t1"] - 0.2)
+        s_["draw"] = (lambda d_: lambda lt, du, ctx: d_(lt, du, ctx))(dr)
+    return S
+
 # ---------------------------------------------------------------- the plan
+def item_devices(B, it, t0, t1, cav_t=None):
+    """what an item shows after its B-roll, and for how long, so every card can be read ("I can't actually sit there and
+    look at it... it instantly is already gone"). An item with code gets ONE card that stays up for the item's time: the
+    code typed out on the left, its key line lit, then the page's Best for and Watch for arriving beside it (Watch for on
+    the caveat line), whole sentences only, as many as can be read. Without code, the tradeoff card alone. The docs figure
+    comes first only when the item has 4.5 s to spare beyond a comfortable card. -> [(name, t_start, t_end, extra)]"""
+    span = t1 - t0
+    if span < 3.5: return []
+    best_w = len(it["best"].split()); code = code_of(it) if it["code"] else []; n_chars = sum(len(l.strip()) for l in code)
+    t_typed = 0.45 + n_chars / (CODE_CPS * 1.15) + 0.3
+    def comfortable(watch_words): return (t_typed if code else 0.0) + best_w / READ_WPS + 0.5 + watch_words / READ_WPS + 1.0
+    out, t = [], t0
+    if span - comfortable(len(it["watch"].split())) >= 4.5:                            # time to spare: the figure first
+        fig = min(6.0, span - comfortable(len(it["watch"].split()))); out.append(("figure", t, t + fig, {})); t += fig
+    te = t1; d = te - t; ex = {}
+    room = (d - (t_typed if code else 0.0) - 1.0) * READ_WPS - best_w; keep = []
+    for x in sentences(it["watch"]):                                                  # Watch for: whole sentences that can be read
+        if keep and len(" ".join(keep + [x]).split()) > room: break
+        keep.append(x)
+    ex["watch"] = " ".join(keep); watch_w = len(ex["watch"].split())
+    ex["t_best"] = t + (t_typed if code else 0.3)
+    want = cav_t if cav_t is not None else ex["t_best"] + best_w / READ_WPS + 0.5
+    ex["t_watch"] = max(ex["t_best"] + min(2.0, best_w / READ_WPS), min(want, te - watch_w / READ_WPS - 0.8))
+    out.append(("code" if code else "tradeoff", t, te, ex))
+    return out
+
 CAVEAT = re.compile(r"\b(may|might|can affect|more expensive|too much|overhead|not always|depend|careful|only)\b", re.I)
 def lower_third_at(B, lw, line, graphics):
     """when the name card comes in: on its line, on the face with the eyes on the lens for the whole card; moved later (never
@@ -459,40 +556,42 @@ def plan(B, t0=0.0, t1=None):
     for si, sec in enumerate(B.sections):
         L = sec["lines"]
         if si == 0:                                                                   # the hook: title over the face, then the list builds
-            t_title = min(L[0]["t1"] + 2.5, L[-1]["t0"]) if not (lt_line and lw[0] is sec) else min(L[0]["t1"] + 2.5, L[-1]["t0"], lt_line["t0"] + 0.1)
-            beats.append((L[0]["t0"], "face", d_title_over_face(B, L[0]["t0"] + 0.3, t_title), "cut", {}))
+            if lt_line and lw[0] is sec and lt_line is L[0]:                         # the name card first (John: "your name first"), then the title
+                lt_end = L[0]["t0"] + 0.2 + 0.75 + lw[1]["secs"] + 0.6
+                beats.append((L[0]["t0"], "face", d_title_over_face(B, lt_end + 0.3, max(lt_end + 3.3, L[-1]["t0"] - 0.1)), "cut", {}))
+            else:
+                t_title = min(L[0]["t1"] + 2.5, L[-1]["t0"]) if not (lt_line and lw[0] is sec) else min(L[0]["t1"] + 2.5, L[-1]["t0"], lt_line["t0"] + 0.1)
+                beats.append((L[0]["t0"], "face", d_title_over_face(B, L[0]["t0"] + 0.3, t_title), "cut", {}))
             last = L[-1]; n = len(B.items); build = {it["n"]: last["t0"] + 0.3 + (last["t1"] - last["t0"] - 0.8) * k / max(1, n) for k, it in enumerate(B.items)}
-            beats.append((last["t0"], "graphic", d_list(B, build=build), "zoom", dict(scene="list", corner_only=True)))
+            beats.append((last["t0"], "graphic", d_list(B, build=build), SOFT, dict(scene="list", corner_only=True)))
             continue
         its = items_by_sec.get(si, [])
         if si == len(B.sections) - 1 and not its:                                    # the wrap-up: every item ticked off, then the logo
             ticks = {it["n"]: L[0]["t0"] + 0.5 + 0.35 * k for k, it in enumerate(B.items)}
-            beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), "zoom", dict(scene="list", corner_only=True)))
+            beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), SOFT, dict(scene="list", corner_only=True)))
             if len(L) > 1: beats.append((L[-1]["t0"], "face", d_end(B, L[-1]["t0"] + 0.2), "cut", {}))
             continue
         if not its:
             for m in sec["markers"]:                                                  # B-roll that is not a list item (context)
                 w = B.windows.get(m["name"])
-                if w: beats.append((w["t0"], "broll", d_broll_badge(B, None, w), "zoom", dict(window=w)))
+                if w: beats.append((w["t0"], "broll", d_broll_badge(B, None, w), SOFT, dict(window=w)))
             if si in group_of_sec:
                 k = next((k for k, l in enumerate(L) if any(w_ in l["text"].lower() for w_ in ("both", "best practice", "let's cover"))), len(L) - 1)
-                beats.append((L[k]["t0"], "graphic", d_list(B, lit_group=group_of_sec[si]), "zoom", dict(scene="list", corner_only=True)))
+                beats.append((L[k]["t0"], "graphic", d_list(B, lit_group=group_of_sec[si]), SOFT, dict(scene="list", corner_only=True)))
             continue
         it = its[0]; w = B.windows.get(it["marker"]["name"]); mk = it["marker"]["line_index"]
-        if mk > 0: beats.append((L[0]["t0"], "graphic", d_list(B, lit=it["n"]), "zoom", dict(scene="list", corner_only=True)))     # announcement: the row lit
+        if mk > 0: beats.append((L[0]["t0"], "graphic", d_list(B, lit=it["n"]), SOFT, dict(scene="list", corner_only=True)))     # announcement: the row lit
         if w:
             if mk == 0: beats.append((w["t0"] - 0.4, "broll", d_list_into_broll(B, it, w), "cut", dict(window=w, lead=0.4)))
-            else: beats.append((w["t0"], "broll", d_broll_badge(B, it, w), "zoom", dict(window=w)))
+            else: beats.append((w["t0"], "broll", d_broll_badge(B, it, w), SOFT, dict(window=w)))
         after = L[mk + 1:]; t_free = (w["t1"] + (0.4 if mk == 0 else 0.0)) if w else L[mk]["t1"]
-        if not after: continue
-        cav = max((k for k, l in enumerate(after) if CAVEAT.search(l["text"])), default=len(after) - 1)
-        rest = [l for k, l in enumerate(after) if k != cav]; devs = [("figure", d_figure), ("code", d_code)]
-        for l, (name, fn) in zip(rest, devs):
-            if name == "code" and not it["code"]: continue
-            ts = max(l["t0"], t_free); te = next((x["t0"] for x in after if x["t0"] > ts + 0.3), L[-1]["t1"])
-            beats.append((ts, "graphic", fn(B, it, ts, te) if name == "code" else fn(B, it, ts), "zoom", dict(scene=f"item{it['n']}", corner_only=(name == "code"))))
-        lc = after[cav]; ts = max(lc["t0"], t_free) - (0.0 if lc["t0"] >= t_free else 0)
-        beats.append((ts, "graphic", d_tradeoff(B, it, ts, ts + 0.6), "zoom", dict(scene=f"item{it['n']}")))
+        t_stop = B.sections[si + 1]["lines"][0]["t0"] if si + 1 < len(B.sections) else p.dur
+        cav_t = max((l["t0"] for l in after if CAVEAT.search(l["text"])), default=None)
+        for name, ts, te, ex in item_devices(B, it, t_free, t_stop, cav_t):
+            if name == "figure": draw = d_figure(B, it, ts)
+            elif name == "code": draw = d_code(B, it, ts, te, chips=ex)
+            else: draw = d_tradeoff(B, it, ts, ex["t_watch"], ex["watch"])
+            beats.append((ts, "graphic", draw, SOFT, dict(scene=f"item{it['n']}", corner_only=(name == "code"))))
     beats.sort(key=lambda b: b[0])
     # beats to shots: each runs to the next; B-roll runs its window; a line with no beat is the face
     S = []; dur = p.dur if t1 is None else min(p.dur, t1)
@@ -514,6 +613,8 @@ def plan(B, t0=0.0, t1=None):
                             corner_only=bool(ex.get("corner_only"))))
         cur_t = S[-1]["t1"]
     S = [s_ for s_ in S if s_["t1"] - s_["t0"] > 0.02]
+    for k_, s_ in enumerate(S):                                                        # the face back after a card: a dissolve, not a cut
+        if k_ and s_["kind"] == "face" and s_.get("tr") == "cut" and S[k_ - 1]["kind"] == "graphic": s_["tr"] = "dissolve"
     for s_ in S:                                                                       # the script's chapter flashes
         if any(abs(s_["t0"] - fa) < 0.6 for fa in flash_at): s_["tr"] = "flash"
     if t1 is not None: S = [s_ for s_ in S if s_["t0"] < t1]
@@ -526,7 +627,8 @@ def plan(B, t0=0.0, t1=None):
         t_lt, hold = lower_third_at(B, lw[1], lt_line, [s_["t0"] for s_ in S if s_["kind"] == "graphic"])
         L3 = LowerThird(lw[1]["name"], lw[1]["title"], t_lt, hold); B.overlays.append(L3)
         B.overlay_info.append(dict(kind="lower_third", name=lw[1]["name"], title=lw[1]["title"], t_in=round(t_lt, 2), t_out=round(L3.t_out, 2), hold=round(hold, 2), box=L3.box))
-    sfx = [(s_["t0"] - 0.05, E.whoosh(0.03, 0.4)) for s_ in S if s_.get("tr") in ("zoom", "push_up", "morph")]
+    S = where_chips(B, S)                                                              # on the full face: where we are
+    sfx = [(s_["t0"] - 0.05, E.whoosh(0.025, 0.6)) for s_ in S if s_.get("tr") in ("zoom", SOFT, "push_up", "morph")]
     sfx += [(o["t_in"], E.whoosh(0.025, 0.35)) for o in B.overlay_info]
     sfx += [(s_["t0"], E.tone(0.6, 1200, 1800, 0.05, noise=0.3, decay=6)) for s_ in S if s_.get("tr") == "flash"]
     return S, sfx

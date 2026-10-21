@@ -19,7 +19,8 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ASSETS = os.path.join(os.path.dirname(HERE), "assets")
 W, H = 1920, 1080
-RED, RED_DARK, WHITE = (220, 36, 76), (158, 13, 56), (255, 255, 255)
+sys.path.insert(0, HERE); from brand import C as BC                                 # the colours come from Qdrant's brand skill
+RED, RED_DARK, WHITE = BC.RED, BC.RED_DARK, BC.WHITE
 IN_S, OUT_S = 0.75, 0.6                                           # the whole entrance and exit
 
 def _ease_out(x): x = max(0.0, min(1.0, x)); return 1 - (1 - x) ** 3
@@ -39,7 +40,7 @@ class LowerThird:
         tw = max(self.fn.measureText(name), self.ft.measureText(title))
         self.bar_w = self.D * 0.5 + 30 * s + tw + 46 * s                # from the circle's centre to past the longer line
         self.box = (left, int(bottom - self.D), int(self.D / 2 + self.bar_w), int(self.D))
-        logo = logo or os.path.join(ASSETS, "Qdrant-Profile-Circular-Light.png")
+        logo = logo or os.path.join(os.path.dirname(HERE), "qdrant-brand", "assets", "logos", "profiles", "Circular", "Qdrant-Profile-Circular-Light.png")
         im = Image.open(logo).convert("RGBA"); k = int(self.D * 2)             # the supplied file, cropped to its circle
         im = im.resize((k, k), Image.LANCZOS); mask = Image.new("L", (k, k), 0)
         from PIL import ImageDraw; ImageDraw.Draw(mask).ellipse((0, 0, k - 1, k - 1), fill=255); im.putalpha(mask)

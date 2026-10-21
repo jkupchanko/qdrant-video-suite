@@ -15,7 +15,8 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
   gaze     editing/gaze     where the eyes are, frame by frame; the look-aways on the cut  -> gaze.json, lookaways.json
   camera   camera-layout    the camera plan from the script, checked against the corpus    -> camera_plan.md
   keyterms broll-recorder   which lines earn B-roll, by key term (checked against the script's markers) -> keyterms.md
-  broll    broll-recorder   every [B-ROLL] marker recorded: readthrough, 1.4x page zoom, its section pinned -> broll/
+  broll    broll-recorder   every [B-ROLL] marker recorded: the first of each page arrives on it (title, menu, a click into
+                            the section), the rest read through their section and settle; 1.4x page zoom -> broll/
   assets   broll-recorder   the docs page's figures and code, sharp, with its Best fit / Watch for lines -> page_assets/
   style    editing-style    the styled video (style 'list': the listed-sections style, built from all of the above)
   master   (editing-style)  loudness to about -14 LUFS, true peak -1.5 dBTP, picture untouched
@@ -107,7 +108,7 @@ class Build:
     def broll(self):
         outs = [self.p("broll", "shotlist.md")]
         if self.done("broll", outs): return outs, "kept"
-        run([PY, os.path.join(SK, "broll-recorder", "scripts", "script_broll.py"), self.a.script, "--out", self.p("broll"), "--raw", "--style", "readthrough", "--zoom", "1.4"], self.p("broll.log"))
+        run([PY, os.path.join(SK, "broll-recorder", "scripts", "script_broll.py"), self.a.script, "--out", self.p("broll"), "--raw", "--style", "readthrough", "--arrive-first", "--zoom", "1.4"], self.p("broll.log"))
         return outs, f"{len(glob.glob(self.p('broll', '*_manifest.json')))} clips"
     def assets(self):
         out = self.p("page_assets", "assets.json")

@@ -45,11 +45,14 @@ CURSOR_JS = """() => {
   const ring = document.createElement('div'); ring.id = '__cursor_ring';
   Object.assign(ring.style, {position:'fixed', width:'44px', height:'44px', borderRadius:'50%', border:'3px solid #DC244C', opacity:'0', zIndex: 2147483646, pointerEvents:'none', transform:'translate(-22px,-22px) scale(0.4)'});
   document.body.appendChild(ring);
-  window.__moveCursor = (x, y) => { c.style.left = x + 'px'; c.style.top = y + 'px'; ring.style.left = x + 'px'; ring.style.top = y + 'px'; };
+  // x, y are screen pixels; with the page zoomed (--zoom 1.4 on the root element) the overlay is zoomed too, so it is placed at x / Z
+  const Z = () => parseFloat(document.documentElement.style.zoom || '1') || 1;
+  window.__moveCursor = (x, y) => { const z = Z(); c.style.left = x / z + 'px'; c.style.top = y / z + 'px'; ring.style.left = x / z + 'px'; ring.style.top = y / z + 'px'; };
   window.__clickRing = () => { ring.style.transition = 'none'; ring.style.opacity = '0.9'; ring.style.transform = 'translate(-22px,-22px) scale(0.4)';
     requestAnimationFrame(() => { ring.style.transition = 'opacity .45s ease-out, transform .45s ease-out'; ring.style.opacity = '0'; ring.style.transform = 'translate(-22px,-22px) scale(1.4)'; }); };
   window.__highlight = (top, left, width, height, color) => {
     const h = document.createElement('div'); h.className = '__hl';
+    const z = Z(); top = (top - scrollY) / z + scrollY / (window.__scrollZoomed ? 1 : 1); left /= z; width /= z; height /= z;
     Object.assign(h.style, {position:'absolute', top: top + 'px', left: left + 'px', width: width + 'px', height: height + 'px', border: '3px solid ' + color, borderRadius: '10px',
       boxShadow: '0 0 0 4px rgba(0,0,0,0.0), 0 0 24px ' + color + '66', pointerEvents:'none', zIndex: 2147483645, opacity: '0', transition: 'opacity .35s ease-out'});
     document.body.appendChild(h); requestAnimationFrame(() => { h.style.opacity = '1'; });
@@ -206,13 +209,31 @@ def build_plan(data, sec, a):
     steps, t = [], 0.3
     if style == "readthrough":
         # opens with the heading just under the site header (so the frame is this section, not the end of the one before),
-        # reads down it, and stops with the section's end at the frame's bottom; a short section only drifts, its next heading kept below the middle
-        start = max(0, top - int(H * 0.17)); dist = int(110 * (dur - 1.4))
+        # reads down it, and stops with the section's end at the frame's bottom; a short section only drifts, its next heading kept below the middle.
+        # The scroll then SETTLES: at least 1.8 s still at the end, so the section can be read before the clip ends ("you start to
+        # scroll down and then you instantly show a different example": the old scroll ran until 0.4 s before the cut)
+        start = max(0, top - int(H * 0.17)); move = max(1.0, min(dur * 0.5, dur - 2.7)); dist = int(150 * move)
         if sec and sec.get("height"):
             end = top + int(sec["height"]); room_end = end - H + 40 - start; room_mid = end - start - int(H * 0.5) - 20
             dist = max(0, min(dist, room_end if room_end >= 40 else min(room_mid, 120)))
-        steps = [{"t": 0.3, "move": [cx, int(H * 0.55)], "dur": 0.8}] + ([{"t": 1.0, "scroll": start + dist, "dur": dur - 1.4}] if dist >= 20 else [])
+        steps = [{"t": 0.3, "move": [cx, int(H * 0.55)], "dur": 0.8}] + ([{"t": 0.9, "scroll": start + dist, "dur": move}] if dist >= 20 else [])
         return {"start_y": start, "steps": steps}
+    if style == "arrive":
+        # the first time a page is on screen: where it is and what it is, before the section. The page top (the site's
+        # header, the breadcrumb, the article lit in the docs menu, the title, the "On this page" list), a click on the
+        # article in the menu, the title marked, a click on the section in "On this page", the page scrolling down to it,
+        # and the section held still to be read. John: "show the title and a few of the sections, or show me clicking on
+        # the actual article so that people can actually see where you can find it and what it was"
+        from urllib.parse import urlparse
+        path = urlparse(a.url).path.rstrip("/").split("/")[-1]
+        title = next((x["text"] for x in data["sections"] if x["tag"] == "H1"), data["sections"][0]["text"] if data["sections"] else "")
+        start = max(0, top - int(H * 0.17)) if sec else 0; k = dur / 7.0                    # timed for 7 s; a shorter clip runs it faster
+        steps = [{"t": 0.4 * k, "hover": {"nav": path}, "dur": 0.7 * k}, {"t": 1.15 * k, "hover": {"nav": path}, "click": True, "dur": 0.1},
+                 {"t": 1.4 * k, "highlight": {"heading": title, "height": 90}}]
+        if sec:
+            steps += [{"t": 2.0 * k, "hover": {"toc": sec.get("id") or ""}, "dur": 0.7 * k}, {"t": 2.75 * k, "hover": {"toc": sec.get("id") or ""}, "click": True, "dur": 0.1},
+                      {"t": 2.95 * k, "scroll": start, "dur": 1.3 * k, "js": True}, {"t": 4.4 * k, "move": [cx, int(H * 0.62)], "dur": 0.6 * k}]
+        return {"start_y": 0, "steps": steps}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
         steps.append({"t": t, "move": [cx, int(H * 0.6)], "dur": 0.8}); t += 0.9
@@ -281,6 +302,14 @@ def ensure_pw_ffmpeg():
     except Exception:
         return False
 
+LINK_JS = """([nav, toc]) => { const W = innerWidth, H = innerHeight;
+    const cand = [...document.querySelectorAll('a')].filter(e => { const r = e.getBoundingClientRect();
+        if (!(r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= H)) return false;
+        if (nav) return (e.getAttribute('href') || '').includes(nav) && r.left < W * 0.3;
+        return e.getAttribute('href') === '#' + toc && r.left > W * 0.6; });
+    if (!cand.length) return null; const r = cand[0].getBoundingClientRect();
+    return {x: r.left, y: r.top, width: Math.min(r.width, 300), height: r.height, top: r.top + scrollY}; }"""
+
 LAST_BOX = {}   # filled by do_record: where the matched section sat on screen at the end (viewport px)
 
 def do_record(a):
@@ -305,6 +334,11 @@ def do_record(a):
                 t_start = time.time(); trim = max(0.0, t_start - t_page - 0.1)
                 y_now = plan.get("start_y", 0)
                 def heading_box(spec):
+                    if isinstance(spec, dict) and ("nav" in spec or "toc" in spec):     # a link on screen: in the docs menu (left) or "On this page" (right)
+                        try:
+                            return page.evaluate(LINK_JS, [spec.get("nav"), spec.get("toc")])
+                        except Exception:
+                            return None
                     txt = spec.get("heading") if isinstance(spec, dict) else None
                     sel = spec.get("selector") if isinstance(spec, dict) else spec
                     try:
@@ -319,7 +353,14 @@ def do_record(a):
                 for s in sorted(plan["steps"], key=lambda s: s["t"]):
                     while time.time() - t_start < s["t"]: time.sleep(0.005)
                     length = s.get("dur", 0.9)
-                    if "scroll" in s:
+                    if "scroll" in s and s.get("js"):                                  # after a click on a link: the page itself scrolls
+                        y0, y1, t0 = y_now, s["scroll"], time.time()                 # (the wheel over a sticky menu would scroll the menu)
+                        while True:
+                            k = (time.time() - t0) / length; page.evaluate(f"window.scrollTo(0, {ease(y0, y1, k):.0f})")
+                            if k >= 1: break
+                            time.sleep(1 / 60)
+                        y_now = y1
+                    elif "scroll" in s:
                         y0, y1, t0, sent = y_now, s["scroll"], time.time(), 0.0
                         while True:
                             k = (time.time() - t0) / length
@@ -335,6 +376,7 @@ def do_record(a):
                             box = heading_box(s["hover"])
                             off = s["hover"].get("offset", [0, 0]) if isinstance(s["hover"], dict) else [0, 0]
                             if box: target = [box["x"] + min(box["width"] * 0.5, 160) + off[0], box["y"] + box["height"] / 2 + off[1]]
+                            elif isinstance(s["hover"], dict) and ("nav" in s["hover"] or "toc" in s["hover"]): s = {k_: v_ for k_, v_ in s.items() if k_ != "click"}   # no link on screen: no click on nothing
                         if target != cur:
                             x0, y0, t0 = cur[0], cur[1], time.time()
                             while True:
@@ -512,11 +554,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("inspect"); s.add_argument("url"); s.add_argument("--out"); s.add_argument("--table", action="store_true"); add_common(s)
-    s = sub.add_parser("plan"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look"])
+    s = sub.add_parser("plan"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look", "arrive"])
     s.add_argument("--duration", type=float, default=6); s.add_argument("--out"); s.add_argument("--verbose", action="store_true"); add_common(s)
     s = sub.add_parser("record"); s.add_argument("plan"); s.add_argument("--out", required=True); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="(default now) no motion interpolation"); s.add_argument("--interp", action="store_true", help="motion-interpolate the capture up to 60 fps: smoother, but it ghosts and doubles scrolling text, so not for docs"); add_common(s)
     s = sub.add_parser("review"); s.add_argument("clip"); s.add_argument("--sheet"); s.add_argument("--out")
-    s = sub.add_parser("auto"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look"])
+    s = sub.add_parser("auto"); s.add_argument("url"); s.add_argument("--match", default=""); s.add_argument("--section"); s.add_argument("--style", default="reveal", choices=["reveal", "hover", "highlight", "readthrough", "look", "arrive"])
     s.add_argument("--duration", type=float, default=6); s.add_argument("--out", required=True); s.add_argument("--name"); s.add_argument("--fps", type=int, default=60); s.add_argument("--no-interp", action="store_true", help="(default now) no motion interpolation"); s.add_argument("--interp", action="store_true", help="motion-interpolate the capture up to 60 fps: smoother, but it ghosts and doubles scrolling text, so not for docs"); s.add_argument("--verbose", action="store_true")
     s.add_argument("--compose", choices=["fullscreen", "fullscreen-pip", "evidence-card", "window"], help="also bake a finished, editor-agnostic file in this style")
     s.add_argument("--presenter", help="presenter video for --compose (PiP + audio)"); s.add_argument("--at", type=float, default=0.0, help="where the clip sits in the presenter video (s)")

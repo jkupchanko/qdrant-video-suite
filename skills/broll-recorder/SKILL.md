@@ -78,11 +78,22 @@ fix any "match weak" rows by adding `section:` to that marker, then record. Mark
 `references/script-markers.md`; tell script writers about it so their drafts come out ready to record.
 
 For docs pages cut into an edit full frame, record raw with the readable settings:
-`script_broll.py script.md --out <folder> --raw --style readthrough --zoom 1.4`. `--zoom` is CSS zoom on the page: the
+`script_broll.py script.md --out <folder> --raw --style readthrough --arrive-first --zoom 1.4`. `--zoom` is CSS zoom on the page: the
 text renders 1.4x bigger and stays sharp (about 22 px body text at 1080 instead of 16, which a phone can read), and the
 docs layout still fits 1920 with the header on one line (1.5 wraps "Log in"). `--scale` does NOT do this: Playwright
 records CSS pixels, so a higher device scale only pads the video. `--style readthrough` opens with the section's heading
-just under the site header and reads down the section, stopping before the next heading rises past the middle.
+just under the site header, reads down the section, stopping before the next heading rises past the middle, and then
+**settles**: the scroll takes about half the clip and the last 1.8 s or more are still, so the section can be read before
+the cut (a scroll running into the cut reads as "it instantly moved to a different example").
+
+**The first time a page is on screen, show where it is** (`--arrive-first`, or `--style arrive` for one marker). A viewer
+dropped into the middle of a docs page cannot tell what it is ("we show this section of something... we don't actually
+show what it is"). The arrive style opens on the page top (the site header, the breadcrumb, the article lit in the docs
+menu, the title, the "On this page" list), moves the cursor to the article in the menu and clicks it (where to find it),
+marks the title, clicks the section in "On this page", scrolls the page down to it and holds it still. It is timed for
+7 s (`| 7s |` on the marker); a shorter clip runs it faster. Later markers on the same page read through their section as
+usual. The cursor and the marks are placed in screen pixels and divided by the page zoom, so they land on their targets
+at `--zoom 1.4`.
 
 ## Judging the match, and fixing it
 

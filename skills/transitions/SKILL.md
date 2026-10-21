@@ -55,6 +55,24 @@ Only what the model videos do. Nothing is added to the vocabulary that was not s
 6. **One vocabulary per video; never two soft moves in a row.** The models use two or three kinds in a
    whole video.
 
+## House rule for Qdrant videos: slower, softer changes (2026-10-20)
+
+The audit's videos cut hard and fast. Qdrant's own review went the other way: the quick changes read as abrupt ("one of
+the things my boss keeps complaining about is how quick we are transitioning... give us a little bit longer of a time
+frame"). So for Qdrant videos, the house rule wins over the audit where they differ:
+
+- **A card arriving or leaving is soft, about 0.8 s.** The new frame fades in while it settles from slightly small, and the
+  old one drifts forward underneath (`soft_zoom` in the shared engine). The face coming back after a card dissolves in
+  over the same time. No hard cut into or out of a graphic.
+- **Face-to-face joins stay cuts** (a jump cut between takes, with the editing skill's push alternation).
+- **A white flash at a chapter boundary** stays, where the script asks for it.
+- **The pace of the cards matters as much as the transitions.** Every card stays up long enough to read its words (the
+  listed-sections style schedules by reading time), and a recorded page settles before it leaves.
+- Small animated guides on the full face are fine (the listed-sections "where we are" chip), not over the face.
+
+The review checks it: a hard cut into, out of or between cards is a fix (`abrupt`), and a card gone before its words can
+be read is a fix (`read`).
+
 ## Writing it into the script
 
 The script's `**Transition:**` field already exists. Fill it with one of: `cut`, `push left 0.3` (a card

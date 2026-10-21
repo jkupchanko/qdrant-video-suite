@@ -22,30 +22,41 @@ builds itself: no edit list or boards drawn by hand. Give it the cut, the three-
 - **The pictures** are the page's own figures and code, captured at 2x so they stay sharp (`page_assets.py` in the
   [B-roll skill](../../skills/broll-recorder/)). **Every word on a chip** is the page's own: "Best fit" is BEST FOR, "Watch
   for" is WATCH FOR. Nothing on screen is invented.
-- **Each line gets one beat**, in order:
+- **Each part gets its beat**, in order:
 
-  | line | on screen |
+  | part | on screen |
   |---|---|
-  | the hook | the title over the face, the presenter's name card, then the list building row by row |
+  | the hook | the presenter's name card first, then the title over the face, then the list building row by row |
   | an item's announcement | the list, its row lit |
-  | the item's B-roll line | a zoom through the lit row into the docs page, so the page lands on the line |
-  | then | the docs figure (a focus box moving from its upper half to its lower half), then the docs code typed out live with its key line lit |
-  | the caveat line | the TRADEOFF card |
+  | the item's B-roll line | a zoom through the lit row into the docs page, so the page lands on the line; the first time the page is shown, it opens on the page top and clicks into the section |
+  | the rest of the item | **one card that stays up for the item's whole time**: the docs code typed out on the left, its key line lit, then the page's Best for and Watch for arriving beside it (Watch for on the caveat line). The docs figure comes first only when the item has time to spare |
   | a group turn | the group card |
   | the wrap-up | the list, every item ticked off, then the logo |
 
-- **The code is live**: the docs code types itself out in the brand's code card (Geist Mono, syntax colours, line
-  numbers, a cursor), indentation arriving with each line as an editor puts it, finished by about 60% of its beat; then
-  the line that matters is lit. The words typed are the page's own code, nothing else.
+- **Every card can be read.** The first version changed card every 3 to 4 s (figure, code, tradeoff) and was judged too
+  fast: "I can't actually sit there and look at it... it instantly is already gone". Items are now scheduled by reading
+  time: code typed at 65 characters a second, then held; the tradeoff's words at 3.8 a second, its Watch for cut to whole
+  sentences that fit. A card is never put up for less than it needs; what does not fit is left out.
+
+  ![one card per item: the code typed, then Best for and Watch for beside it](images/item_card.jpg)
+
+- **The code is live**: the docs code types itself out in the brand's code card (Geist Mono, syntax colours in the
+  brand palette, line numbers, the language tab), indentation arriving with each line as an editor puts it; then the
+  line that matters is lit. The words typed are the page's own code, nothing else.
 
   ![the docs code typed out live, then its key line lit](images/live_code.jpg)
 
-- **The name card**: the Qdrant lower third ([brand consistency](../../skills/brand-consistency/)) comes in where the
-  script's `[**Lower third:** NAME | TITLE | 5 s]` says, once the title card has left, on a stretch with the eyes on the
-  lens, and is gone before the list.
+- **The name card** opens the video: the Qdrant lower third ([brand consistency](../../skills/brand-consistency/)) where
+  the script's `[**Lower third:** NAME | TITLE | 5 s]` says (after the first line), then the title.
+- **Where we are**: on every full-face stretch between the hook and the wrap-up, a small chip slides in at the top left,
+  over the wall and clear of the face: the item's number and name and a dot per item (done ones filled).
 - **The face** follows the suite's eye-contact rule (off whenever the eyes leave the lens). On the list and on code it sits
   in the free top-right corner and never shrinks the graphic (house rule: code keeps the presenter small, top right).
-  Transitions are the script's own values: push in on a card, a white flash where a camera call says so.
+- **Transitions are soft and about 0.8 s**: a card fades in while it settles, the face dissolves back after a card, a white
+  flash where the script asks for one. Face-to-face joins stay cuts. (Qdrant's review: the quick 0.5 s zoom-cuts were "how
+  quick we are transitioning".)
+- **Colours** all come from Qdrant's brand skill (brand-consistency's `brand.py`): groups in the brand's chart order,
+  code in brand colours.
 
 ## Script
 

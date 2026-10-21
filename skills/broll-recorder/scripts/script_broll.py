@@ -33,7 +33,7 @@ PATTERNS = [
     re.compile(r"(?m)^\s*" + LABEL + r"\s*:\s*(?P<body>https?://[^\n]+)$", re.I),
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
-STYLES = {"reveal", "hover", "highlight", "readthrough", "look"}
+STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
 
 def prev_sentence(text, pos):
     before = text[:pos]
@@ -93,7 +93,8 @@ def main():
     ap.add_argument("--compose", choices=["fullscreen", "fullscreen-pip", "evidence-card", "window"], help="also bake each clip in this style")
     ap.add_argument("--presenter", help="presenter video for --compose fullscreen-pip"); ap.add_argument("--light", action="store_true")
     ap.add_argument("--raw", action="store_true", help="record only; skip the house-style finishing (shot.py)")
-    ap.add_argument("--style", choices=["reveal", "hover", "highlight", "readthrough", "look"], help="one recording style for every marker (readthrough: opens on the section and reads down it)")
+    ap.add_argument("--style", choices=["reveal", "hover", "highlight", "readthrough", "look", "arrive"], help="one recording style for every marker (readthrough: opens on the section and reads down it)")
+    ap.add_argument("--arrive-first", action="store_true", help="the first marker of each page arrives on it (page top, the article clicked in the docs menu, the title, the section clicked in On this page); the rest use --style")
     ap.add_argument("--zoom", type=float, help="CSS page zoom for every recording (1.4 = docs text readable on a phone)")
     a = ap.parse_args()
     text = open(a.script, encoding="utf-8").read()
@@ -106,8 +107,12 @@ def main():
     if a.dry_run: return
     os.makedirs(a.out, exist_ok=True)
     results = []
+    seen_pages = set()
     for j in jobs:
         if a.style: j["style"] = a.style
+        page_key = j["url"].split("#")[0].rstrip("/")
+        if a.arrive_first and page_key not in seen_pages: j["style"] = "arrive"           # the viewer is shown where this page is, once
+        seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]
         if a.light: cmd.append("--light")

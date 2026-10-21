@@ -1,0 +1,25 @@
+- [motion-design-feedback](motion-design-feedback.md) — John's standards for motion graphics work (variety of movement, strict layout), given…
+- [after-effects-scripting-setup](after-effects-scripting-setup.md) — How Claude drives John's After Effects 2026 from scripts (second instance +…
+- [broll-keyword-trigger](broll-keyword-trigger.md) — "B-roll" is the keyword that routes work to the broll-recorder skill; only exception is explaining the term
+- [shared-repo-no-overwrite](shared-repo-no-overwrite.md) — parallel sessions push to qdrant-video-suite; pull and merge, never replace a folder
+- [camera-code-small-window](camera-code-small-window.md) — house rule: code on screen keeps a small top-right presenter window (20%), NONE only for results/diagrams/inserts
+- [editing-skill](editing-skill.md) — editing skill (take + script -> cut + cut list), John's cut rules, suite cards now live
+- [broll-by-keyterm](broll-by-keyterm.md) — B-roll only for lines naming something specific, matched to the page section; general lines stay on the person
+- [script-three-layers](script-three-layers.md) — any script request returns script + camera calls + transition values, shown inline
+- [transitions-skill](transitions-skill.md) — transitions skill: 50-video audit (cuts 65% of shot changes, elements 62% of all changes), John's edit inverts it, classifier limits
+- [camera-layout-skill](camera-layout-skill.md) — camera-layout skill: 32-video audit numbers, corpus location, planner caveats
+- [video-suite-repo](video-suite-repo.md) — private GitHub repo jkupchanko/qdrant-video-suite holding the skill suite; script library repo to be folded in
+- [broll-recorder-skill](broll-recorder-skill.md) — John's reusable B-roll skill at ~/.claude/skills/broll-recorder (URL + spoken line -> recorded clip -> composed mp4/mov for any editor); eval status and known gaps
+- [animation-pacing-feedback](animation-pacing-feedback.md) — 2026-10-15: animation test transitions a bit too fast, holds are fine; build five distinct styles
+- [editing-styles-five](editing-styles-five.md) — nineteen channel-copied editing styles on a shared engine in camera_auditstyles (2026-10-16), local only, audit table + gaps + HeyGen note
+- [explanatory-animation-focus](explanatory-animation-focus.md) — 2026-10-16: focus on explanatory animation types, timing to speech, and the best way to build them
+- [eye-contact-hide-face](eye-contact-hide-face.md) — hard rule: face off screen whenever eyes leave the lens, back in a corner window when on it; voice-lips lock (assemble.py, check_sync.py)
+- [animated-board-looks](animated-board-looks.md) — 2026-10-18: animated board is a named style; next options = new looks (whiteboard/paper/neon/editor) on the same system
+- [coding-channel-styles](coding-channel-styles.md) — 2026-10-19: metaphor styles judged goofy; copy top coding channels (IDE walkthrough, ByteByteGo diagrams)
+- [face-framing-annotations-feedback](face-framing-annotations-feedback.md) — never stretch the face (crop at output aspect), cam shows whole head (~460x520), squares tight to exact words, not loops
+- [precision-review-phase](precision-review-phase.md) — 2026-10-19: rebuild Bulk Uploads with all skills + both styles, then a review skill for small details; known tool bugs list
+- [video-review-skill](video-review-skill.md) — the review skill: audits renders from pixels/sound, faults with time+frame; selftest with planted faults; what it caught
+- [video-builder-skill](video-builder-skill.md) — 2026-10-20: one-request build (take + script -> all skills -> review); listed-sections style; build 1 findings and fixes
+- [brand-consistency-skill](brand-consistency-skill.md) — Qdrant name lower third (John Kupchanko | Developer Relations Engineer), [**Lower third:**] directive, intake questions
+- [script-controls-video](script-controls-video.md) — the script controls the video; ask intake questions first; every fault John catches becomes a review check
+- [pacing-context-feedback](pacing-context-feedback.md) — build 4 notes: B-roll must show which page, cards too fast to read, soft 0.8 s transitions, brand colours from Qdrant's skill, name first

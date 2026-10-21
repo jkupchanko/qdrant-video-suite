@@ -1,6 +1,6 @@
 ---
 name: video-review
-description: Audit a rendered video for the small details before anyone sees it, and report every problem with its timestamp, frame number and a marked frame. Checks the presenter (face on screen while the eyes are off the lens, stretched face, head cut off by its window, lip sync, voice drift), the sound at every join of the cut (a word clipped, a piece starting or ending mid-word, words heard twice), the brand (the presenter's name lower third present, spelled as the script gives it, held, lower left), the text on screen (words cut at the frame edge, text spilling out of its card, text too small for a phone, typos, numbers the script and docs never gave, stale API spellings, code shown without the top-right presenter window), the B-roll (missing, late against its line, the wrong docs section, ghost frames), the script (camera calls not followed, lines missing from the cut, a Count section that disagrees with itself), and the picture and sound (black or frozen frames, static stretches, dead space, loudness, clipping). Use it after every render made with the editing, editing-style, broll-recorder, camera-layout or transitions skills, and whenever the user asks to review, audit, QA, proof or check a video, to "look at the small details", "pay attention", "make sure it looks good", or asks whether a video is ready to ship, even if they do not say "review".
+description: Audit a rendered video for the small details before anyone sees it, and report every problem with its timestamp, frame number and a marked frame. Checks the presenter (face on screen while the eyes are off the lens, stretched face, head cut off by its window, lip sync, voice drift), the sound at every join of the cut (a word clipped, a piece starting or ending mid-word, words heard twice), the brand (the presenter's name lower third present, spelled as the script gives it, held, first; accents in the Qdrant palette), the pace (a hard cut into or out of a card, a card gone before its words can be read, a first B-roll that never shows which page it is), the text on screen (words cut at the frame edge, text spilling out of its card, text too small for a phone, typos, numbers the script and docs never gave, stale API spellings, code shown without the top-right presenter window), the B-roll (missing, late against its line, the wrong docs section, ghost frames), the script (camera calls not followed, lines missing from the cut, a Count section that disagrees with itself), and the picture and sound (black or frozen frames, static stretches, dead space, loudness, clipping). Use it after every render made with the editing, editing-style, broll-recorder, camera-layout or transitions skills, and whenever the user asks to review, audit, QA, proof or check a video, to "look at the small details", "pay attention", "make sure it looks good", or asks whether a video is ready to ship, even if they do not say "review".
 ---
 
 # Video review
@@ -31,6 +31,17 @@ Only the video is required. Give it everything the project has: each input switc
 | `--cutlist` | the editing skill's `cutlist.md` | a line it found no take of is a **fix** (missing); one it found "said in other words" is a note |
 | `--assets` | `page_assets.py`'s `assets.json` | the page's code and figure captions count as its own words and numbers (`size=768` is the docs') |
 | `--take` | the raw recording the cut was made from (with `--cutlist`) | every join heard in the take: the next word's first sound kept at an out-point, a piece ending or starting mid-word, two pieces overlapping (heard twice) |
+
+Always, from the pixels (`scripts/pace_checks.py`), the pace John and his boss noticed and the review did not:
+- **`abrupt`** (fix): a hard cut into, out of or between cards. The house wants soft changes of about 0.8 s ("how quick we
+  are transitioning"); a jump cut between two face takes and a white flash the script asks for are fine.
+- **`read`** (fix under 60% of the time needed, check under 80%): the video is split at every change of picture, and each
+  card's words (OCR; big titles and short labels are glanced, not read) are timed at 3.8 words a second plus 0.4 s a
+  line of code. A card that comes back (the list) is not counted again. Build 4's 4 s tradeoff cards were the case.
+- **`broll_context`** (fix, with `--broll`): the first B-roll of each page must show the page's title in its first 3.5 s
+  ("we show this section of something... we don't actually show what it is").
+- **`brand_colour`** (check): every 2 s on the graphics (not the face window, not a recorded page), accents more than a
+  little off every colour of the Qdrant palette (brand-consistency's `brand.py`).
 
 With `--script`, the name lower third is checked too: the script's `[**Lower third:** NAME | TITLE | 5 s]` must be read on
 screen (OCR) with that spelling and the title, held about its time, in the lower left, over the presenter; a script
