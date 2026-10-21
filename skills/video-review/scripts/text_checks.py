@@ -17,15 +17,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RULES = json.load(open(os.path.join(HERE, "..", "references", "rules.json"), encoding="utf-8"))
 MIN_LINE = RULES["thresholds"]["min_line_px"]
 _ocr = None
-def ocr(bgr):
-    """-> [dict(text, score, box=(x0, y0, x1, y1), h)]"""
+def ocr(bgr, pad=24):
+    """-> [dict(text, score, box=(x0, y0, x1, y1), h)]. The frame is read with its edge pixels repeated `pad` px outwards: the
+    detector drops a letter the frame edge has cut in half, and that letter is the one the edge check needs (OpenCV 4 here
+    read "UPLOADS" from "K UPLOADS"); boxes come back in frame coordinates, clamped to it"""
     global _ocr
     if _ocr is None:
         from rapidocr_onnxruntime import RapidOCR
         _ocr = RapidOCR()
-    res, _ = _ocr(bgr); out = []
+    H, W = bgr.shape[:2]
+    res, _ = _ocr(cv2.copyMakeBorder(bgr, pad, pad, pad, pad, cv2.BORDER_REPLICATE) if pad else bgr); out = []
     for quad, text, score in (res or []):
-        q = np.array(quad, np.float32); x0, y0 = q.min(axis=0); x1, y1 = q.max(axis=0)
+        q = np.array(quad, np.float32) - pad; x0, y0 = np.maximum(q.min(axis=0), 0); x1, y1 = np.minimum(q.max(axis=0), (W - 1, H - 1))
+        if x1 <= x0 or y1 <= y0: continue                                              # wholly in the repeated border
         out.append(dict(text=str(text), score=float(score), box=[int(x0), int(y0), int(x1), int(y1)], h=int(y1 - y0)))
     return out
 

@@ -42,7 +42,7 @@ E.TR = 0.8          # transitions 0.8 s, soft (John's boss: "how quick we are tr
 SOFT = "soft_zoom"  # a card arriving: the new frame fades in while it settles; leaving a card for the face: a dissolve
 CODE_CPS = 65.0     # live code types this fast, then holds at least 3 s with the key line lit
 READ_WPS = 3.8      # words a second a viewer reads on a card (with the presenter saying much the same over it)
-FONTS = r"C:\Users\ADMIN\camera_audit\fonts"; ASSETS = r"C:\Users\ADMIN\camera_audit\assets"
+FONTS = os.path.expanduser(r"~\camera_audit\fonts"); ASSETS = os.path.expanduser(r"~\camera_audit\assets")
 from brand import C as BC, GROUPS, SYNTAX, LOGO_DIR                                     # every colour from the Qdrant brand skill
 BG, CARD, CARD2, BORDER, TXT, MUTED = BC.BG, BC.CARD, BC.CARD2, BC.BORDER, BC.TEXT, BC.MUTED
 RED, VIOLET, VIOLET_L, TEAL, TEAL_L, ORANGE = BC.RED, BC.VIOLET, BC.VIOLET_LIGHT, BC.TEAL, BC.CYAN, BC.ORANGE

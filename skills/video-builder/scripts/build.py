@@ -24,7 +24,7 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
 Writes BUILD_DIR/BUILD.md (what each stage did, how long it took, what the review found) and build.json.
 """
 import os, sys, re, json, time, glob, argparse, subprocess, shutil
-SK = os.path.expanduser("~/.claude/skills"); STYLES = r"C:\Users\ADMIN\camera_audit\styles"; PY = sys.executable
+SK = os.path.expanduser("~/.claude/skills"); STYLES = os.path.expanduser(r"~\camera_audit\styles"); PY = sys.executable
 STAGES = ["cut", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review"]
 
 def run(cmd, log, cwd=None):

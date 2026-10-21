@@ -19,6 +19,7 @@ Run it after changing any check. Exit 1 if a fault is missed or a fix is invente
 import os, sys, json, argparse, subprocess, cv2, imageio_ffmpeg
 HERE = os.path.dirname(os.path.abspath(__file__))
 WANT = {"blank": (2.0, 2.5), "aspect": (3.0, 6.0), "sync": (6.0, 10.0), "edge": (7.0, 9.0)}
+ALSO = {"abrupt": (1.9, 2.6)}          # the blank plant is also a hard cut in and out of a plain frame: true, not invented
 
 def plant(cut, out):
     c = cv2.VideoCapture(cut); fps = c.get(cv2.CAP_PROP_FPS) or 30; frames = []
@@ -90,7 +91,7 @@ def main():
     for kind, (t0, t1) in WANT.items():
         hit = [f for f in found if f["kind"] == kind and f["t"] < t1 and (f["t1"] or f["t"]) >= t0]
         print(f"  {'caught' if hit else 'MISSED'}  {kind:7s} planted {t0}-{t1} s" + (f"  -> {hit[0]['msg'][:80]}" if hit else "")); ok &= bool(hit)
-    extra = [f for f in found if f["sev"] == "fix" and f["kind"] not in WANT]
+    extra = [f for f in found if f["sev"] == "fix" and f["kind"] not in WANT and not (f["kind"] in ALSO and ALSO[f["kind"]][0] <= f["t"] <= ALSO[f["kind"]][1])]
     for f in extra: print(f"  INVENTED  {f['kind']} at {f['t']} s: {f['msg'][:80]}")
     ok &= joins_ok
     print("SELF-TEST PASSED" if ok and not extra else "SELF-TEST FAILED"); return 0 if ok and not extra else 1

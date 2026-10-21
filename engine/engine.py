@@ -15,8 +15,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 FF = imageio_ffmpeg.get_ffmpeg_exe()
 W, H, FPS = 1920, 1080, 30
 TR = 0.5
-FONTS = r"C:\Users\ADMIN\camera_audit\fonts"
-EDIT = r"C:\Users\ADMIN\camera_audit\edit"
+FONTS = os.path.expanduser(r"~\camera_audit\fonts")
+EDIT = os.path.expanduser(r"~\camera_audit\edit")
 
 # ---------------------------------------------------------------- fonts, easing, drawing helpers
 _fc = {}
