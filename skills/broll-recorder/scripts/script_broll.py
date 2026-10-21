@@ -34,7 +34,7 @@ PATTERNS = [
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
 STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
-ARRIVE_MIN = 12.0   # John, 2026-10-20: start where the article is listed, click it, the article, its section, a slow scroll; 5 s was too fast
+ARRIVE_MIN = 7.0    # John, 2026-10-21: click the card where the article is listed, land on the section, a slight slow scroll; no boxes
 
 def prev_sentence(text, pos):
     before = text[:pos]

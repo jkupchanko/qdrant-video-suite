@@ -231,21 +231,15 @@ def build_plan(data, sec, a):
         # you would find that article, then click on it and then go to this article"): the page one level up, which lists
         # it as a card; the cursor travels to the card and clicks it, the article opens, its title is marked, the cursor
         # clicks the section in "On this page", the page scrolls down slowly, and the section holds to be read.
-        start = max(0, top - int(H * 0.17)) if sec else 0; k = dur / 12.0
+        # 2026-10-21, shorter: about 7 s, no boxes ("the red rectangle doesn't help"): the card clicked, the article opens on
+        # its section, then a slight slow scroll down it.
+        start = max(0, top - int(H * 0.17)) if sec else 0; k = dur / 7.0
         parts = urlparse(a.url); up = parts.path.rstrip("/").rsplit("/", 1)[0] + "/"
         from_url = f"{parts.scheme}://{parts.netloc}{up}" if up.count("/") > 2 else None   # never the site root: that is not where it is found
-        steps, t = [], 0.0
-        if from_url:
-            steps += [{"t": 0.5 * k, "hover": {"link": parts.path.rstrip("/") + "/"}, "dur": 1.4 * k},
-                      {"t": 2.0 * k, "hover": {"link": parts.path.rstrip("/") + "/"}, "click": True, "navigate": True, "dur": 0.1}]
-            t = 2.6
-        else:
-            steps += [{"t": 0.6 * k, "hover": {"nav": path}, "dur": 1.2 * k}, {"t": 1.9 * k, "hover": {"nav": path}, "click": True, "dur": 0.1}]
-            t = 0.3
-        steps.append({"t": (t + 0.3) * k, "highlight": {"heading": title, "height": 90}})
-        if sec:
-            steps += [{"t": (t + 1.6) * k, "hover": {"toc": sec.get("id") or ""}, "dur": 1.0 * k}, {"t": (t + 2.7) * k, "hover": {"toc": sec.get("id") or ""}, "click": True, "dur": 0.1},
-                      {"t": (t + 3.0) * k, "scroll": start, "dur": 3.0 * k, "js": True}, {"t": (t + 6.2) * k, "move": [cx, int(H * 0.62)], "dur": 0.6 * k}]
+        spec = {"link": parts.path.rstrip("/") + "/"} if from_url else {"nav": path}
+        steps = [{"t": 0.3 * k, "hover": spec, "dur": 1.0 * k}, {"t": 1.4 * k, "hover": spec, "click": True, "navigate": bool(from_url), "dur": 0.1},
+                 {"t": 2.0 * k, "scroll": max(0, top - int(H * 0.24)) if sec else 0, "dur": 1.0 * k, "js": True}, {"t": 3.1 * k, "move": [cx, int(H * 0.62)], "dur": 0.6 * k},
+                 {"t": 3.3 * k, "scroll": (max(0, top - int(H * 0.24)) if sec else 0) + int(H * 0.07), "dur": 3.4 * k, "js": True}]   # slight: the heading stays on screen
         return {"start_y": 0, "steps": steps, **({"from_url": from_url} if from_url else {})}
     start = max(0, y_target - (520 if style != "hover" else 0))
     if style != "hover":
@@ -365,8 +359,10 @@ def do_record(a):
                     except Exception:
                         box = None
                     return box
+                navigated = False
                 for s in sorted(plan["steps"], key=lambda s: s["t"]):
                     while time.time() - t_start < s["t"]: time.sleep(0.005)
+                    if navigated: page.evaluate(SWEEP_JS, BANNER_SELECTORS + list(a.hide or []))   # a new page's cookie banner arrives late
                     length = s.get("dur", 0.9)
                     if "scroll" in s and s.get("js"):                                  # after a click on a link: the page itself scrolls
                         y0, y1, t0 = y_now, s["scroll"], time.time()                 # (the wheel over a sticky menu would scroll the menu)
@@ -406,12 +402,16 @@ def do_record(a):
                             if s.get("real_click"): page.mouse.click(cur[0], cur[1])
                         if s.get("navigate"):
                             time.sleep(0.25)
+                            z = float(getattr(a, "zoom", 1.0) or 1.0)                # the new page paints at its zoom from the first frame
+                            if z != 1.0: page.add_init_script(f"document.addEventListener('DOMContentLoaded', () => document.documentElement.style.zoom = '{z}'); if (document.documentElement) document.documentElement.style.zoom = '{z}';")
+                            hide_css = ",".join(BANNER_SELECTORS + list(a.hide or [])) + "{display:none !important}"   # never painted, not swept after
+                            page.add_init_script("(() => { const add = () => { const st = document.createElement('style'); st.textContent = " + json.dumps(hide_css) + "; (document.head || document.documentElement).appendChild(st); }; if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add); })();")
                             try: page.goto(plan["url"], wait_until="domcontentloaded", timeout=a.timeout * 1000)
                             except Exception: pass
                             page.evaluate(SWEEP_JS, BANNER_SELECTORS + list(a.hide or []))
                             z = float(getattr(a, "zoom", 1.0) or 1.0)
                             if z != 1.0: page.evaluate(f"document.documentElement.style.zoom = '{z}'")
-                            page.evaluate("window.scrollTo(0, 0)"); y_now = 0
+                            page.evaluate("window.scrollTo(0, 0)"); y_now = 0; navigated = True
                             page.evaluate(CURSOR_JS); page.evaluate("([x, y]) => window.__moveCursor(x, y)", cur)
                     if "highlight" in s:
                         box = heading_box(s["highlight"])
