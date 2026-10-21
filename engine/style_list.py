@@ -132,7 +132,7 @@ def tick(cv, x, y, s, c, k):
 class Build:
     def __init__(self, cfg):
         self.cfg = cfg; self.p = E.Project(base=cfg["cut"], cutlist=cfg["cutlist"], lookaways=cfg["lookaways"], words=cfg["raw_words"])
-        self.pcs = SC.pieces(cfg["words"]); A = json.load(open(cfg["assets"], encoding="utf-8")); self.page = A
+        self.pcs = SC.pieces(cfg["words"]); self.pcs_words = json.load(open(cfg["words"], encoding="utf-8"))["pieces"]; A = json.load(open(cfg["assets"], encoding="utf-8")); self.page = A
         here = os.path.dirname(os.path.abspath(cfg["assets"]))                         # a relative picture path is next to assets.json
         for sec in A["sections"]:
             for f in sec.get("figures", []) + sec.get("code", []):
@@ -149,7 +149,7 @@ class Build:
             if s.startswith("## "):
                 head = re.sub(r"\s+\d+:\d{2}.*$", "", s[3:]).strip(); cur = None
                 if head.lower().startswith(("count", "notes", "sources")): continue
-                cur = dict(heading=head, lines=[], markers=[], calls=[], lowers=[]); secs.append(cur); continue
+                cur = dict(heading=head, lines=[], markers=[], calls=[], lowers=[], animations=[]); secs.append(cur); continue
             if cur is None or not s or s.startswith(("#", "|")): continue
             for m in SC.MARK.finditer(s):
                 f = {}
@@ -157,6 +157,7 @@ class Build:
                     if ":" in part: k, v = part.split(":", 1); f[k.strip()] = v.strip()
                 cur["markers"].append(dict(line=m.group(2).strip(), section=f.get("section", ""), name=f.get("name", ""), after=len(cur["lines"])))
             for m in SC.CALL.finditer(s): cur["calls"].append(dict(text=m.group(0), after=len(cur["lines"])))
+            for m in ANIM.finditer(s): cur["animations"].append(dict(name=m.group(1).strip().lower(), after=len(cur["lines"])))
             for lw in SC.lower_thirds_in(s): cur["lowers"].append(dict(lw, after=len(cur["lines"])))
             if s.startswith("["): continue
             i, t0, r = SC.line_time(s, self.pcs, self.cfg["cut"])
@@ -206,7 +207,7 @@ def list_layout(B):
             rows.append(dict(kind="item", item=it, x=x0s[c], y=y, w=cw, h=rh)); y += rh + gap
     return rows
 
-def draw_list(cv, B, t, lit=None, lit_group=None, build=None, ticks=None, a_all=1.0):
+def draw_list(cv, B, t, lit=None, lit_group=None, build=None, ticks=None, a_all=1.0, subs=True):
     """the master list. lit: the item number lit (others dimmed); lit_group: a whole group lit; build: {n: t_in}; ticks: {n: t}"""
     bm = img(os.path.join(LOGO_DIR, "png", "Qdrant-Brandmark-Red.png")); cv.drawImageRect(bm, skia.Rect.MakeXYWH(60, 68, 60, 60 * bm.height() / bm.width()), skia.SamplingOptions(skia.FilterMode.kLinear), paint((255, 255, 255), a_all))
     lines, sz = fit_lines(B.title.upper(), F_HEAD, 64, 44, 1330, 1); text(cv, lines[0], 140, 120, font(F_HEAD, sz), TXT, a_all)
@@ -234,7 +235,7 @@ def draw_list(cv, B, t, lit=None, lit_group=None, build=None, ticks=None, a_all=
         picture(cv, thumb(it["figure"]), x + 124, y + 20, 238, h - 40, a, mode="cover", focus=(0.5, 0.3), radius=10)
         tx = x + 384; tw = w - 384 - 24
         lines, sz = fit_lines(it["title"], F_BOLD, 38, 30, tw, 2); block = [(ln, F_BOLD, sz, TXT) for ln in lines]
-        if it["sub"]:
+        if it["sub"] and subs:
             room = 2 if len(lines) == 1 else 1                                        # never more than the row holds
             sl, over = wrap(it["sub"], font(F_REG, 24), tw, room)
             if not over: block += [(ln, F_REG, 24, MUTED) for ln in sl]
@@ -565,10 +566,14 @@ def plan(B, t0=0.0, t1=None):
                 beats.append((L[0]["t0"], "face", d_title_over_face(B, L[0]["t0"] + 0.3, t_title), "cut", {}))
             last = L[-1]; n = len(B.items); build = {it["n"]: last["t0"] + 0.3 + (last["t1"] - last["t0"] - 0.8) * k / max(1, n) for k, it in enumerate(B.items)}
             if B.items:                                                               # no items (a preview that ends before the first): the face
-                beats.append((last["t0"], "graphic", d_list(B, build=build), SOFT, dict(scene="list", corner_only=True)))
+                beats.append((last["t0"], "graphic", d_list(B, build=build, subs=False), SOFT, dict(scene="list", corner_only=True)))   # titles only: readable in the time
             continue
         its = items_by_sec.get(si, [])
-        if si == len(B.sections) - 1 and not its and not sec["markers"]:             # the wrap-up: every item ticked off, then the logo
+        for an in sec["animations"]:                                                  # an explainer on the line it sits under
+            ln = L[max(0, min(len(L) - 1, an["after"] - 1))]; draw = ANIMATIONS.get(an["name"].split()[0])
+            if draw: beats.append((ln["t0"], "graphic", draw(B, ln), SOFT, dict(scene="anim:" + an["name"], corner_only=True)))
+            else: print(f"no animation called {an['name']!r} (have: {', '.join(ANIMATIONS)}); the line stays on the face")
+        if si == len(B.sections) - 1 and not its and not sec["markers"] and not sec["animations"]:             # the wrap-up: every item ticked off, then the logo
             ticks = {it["n"]: L[0]["t0"] + 0.5 + 0.35 * k for k, it in enumerate(B.items)}   # (a last section with B-roll is content: a preview's)
             if B.items: beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), SOFT, dict(scene="list", corner_only=True)))
             if len(L) > 1: beats.append((L[-1]["t0"], "face", d_end(B, L[-1]["t0"] + 0.2), "cut", {}))
@@ -584,9 +589,8 @@ def plan(B, t0=0.0, t1=None):
         it = its[0]; w = B.windows.get(it["marker"]["name"]); mk = it["marker"]["line_index"]
         if mk > 0: beats.append((L[0]["t0"], "graphic", d_list(B, lit=it["n"]), SOFT, dict(scene="list", corner_only=True)))     # announcement: the row lit
         if w:
-            if mk == 0: beats.append((w["t0"] - 0.4, "broll", d_list_into_broll(B, it, w), "cut", dict(window=w, lead=0.4)))
-            else: beats.append((w["t0"], "broll", d_broll_badge(B, it, w), SOFT, dict(window=w)))
-        after = L[mk + 1:]; t_free = (w["t1"] + (0.4 if mk == 0 else 0.0)) if w else L[mk]["t1"]
+            beats.append((w["t0"], "broll", d_broll_badge(B, it, w), SOFT, dict(window=w)))
+        after = L[mk + 1:]; t_free = w["t1"] if w else L[mk]["t1"]
         t_stop = B.sections[si + 1]["lines"][0]["t0"] if si + 1 < len(B.sections) else p.dur
         cav_t = max((l["t0"] for l in after if CAVEAT.search(l["text"])), default=None)
         for name, ts, te, ex in item_devices(B, it, t_free, t_stop, cav_t):
@@ -635,6 +639,52 @@ def plan(B, t0=0.0, t1=None):
     sfx += [(o["t_in"], E.whoosh(0.025, 0.35)) for o in B.overlay_info]
     sfx += [(s_["t0"], E.tone(0.6, 1200, 1800, 0.05, noise=0.3, decay=6)) for s_ in S if s_.get("tr") == "flash"]
     return S, sfx
+
+ANIM = re.compile(r"\[\*\*Animation:\*\*\s*([^\]\.]+)", re.I)
+
+def word_time(B, ln, *keys):
+    """the cut time of the first word in this line's stretch that starts with any of keys (else the line's start)"""
+    for pc in B.pcs_words:
+        for w, t in pc["words"]:
+            if ln["t0"] - 0.05 <= t <= ln["t1"] + 0.3 and any(re.sub(r"[^a-z]", "", w.lower()).startswith(k) for k in keys): return t
+    return ln["t0"]
+
+def d_dense_sparse(B, ln):
+    """dense against sparse, drawn as what they are: a dense vector has a value in every place and goes into the HNSW graph;
+    a sparse vector is mostly zeros and goes into an inverted (sparse) index. Each row builds as its words are said."""
+    t_d = word_time(B, ln, "dense"); t_s = max(t_d + 1.2, word_time(B, ln, "while", "sparse"))
+    dense = ["0.12", "-0.53", "0.88", "0.07", "-0.31", "0.64", "0.25", "-0.92", "0.41", "0.73"]
+    sparse = ["0", "0", "2.1", "0", "0", "0", "0.7", "0", "0", "1.4"]
+    CW, CH, GAP, X0 = 112, 150, 12, 90                                               # ten cells a row, filling the frame
+    def d(lt, dur, ctx):
+        s_, cv = surface(); t = ctx["t"]
+        text(cv, "DENSE VS. SPARSE", X0, 150, font(F_HEAD, 84), TXT, ease(ramp(t, t_d - 0.6, 0.4)))
+        for row, (lab, vals, c, t0, idx_name, y) in enumerate([("DENSE VECTOR", dense, VIOLET, t_d, "HNSW graph", 330),
+                                                                ("SPARSE VECTOR", sparse, TEAL, t_s, "Sparse index", 730)]):
+            a = ease(ramp(t, t0, 0.35))
+            if a <= 0: continue
+            text(cv, lab, X0 + 4, y - 30, font(F_LABEL, 44), c, a)
+            for k, v in enumerate(vals):                                            # the cells fill left to right
+                ak = ease(ramp(t, t0 + 0.06 * k, 0.3)); x = X0 + k * (CW + GAP); on = v != "0"
+                rrect(cv, x, y, CW, CH, 14, c if on else CARD, ak * (0.95 if on else 1.0), c if on else BORDER, 2)
+                text(cv, v, x + CW / 2, y + CH / 2 + 14, font(F_MONO_B, 34 if len(v) > 3 else 42), (255, 255, 255) if on else MUTED, ak, align="center")
+            ak = ease(ramp(t, t0 + 0.8, 0.4)); xa = X0 + 10 * (CW + GAP) + 6; ym = y + CH / 2
+            cv.drawLine(xa, ym, xa + 80 * ak, ym, paint(c, ak, stroke=6))
+            if ak > 0.9: cv.drawPath(skia.Path().moveTo(xa + 86, ym).lineTo(xa + 64, ym - 18).lineTo(xa + 64, ym + 18).close(), paint(c, ak))
+            bx = xa + 100; bw = 1920 - 70 - bx; rrect(cv, bx, y - 40, bw, CH + 80, 20, CARD, ak, c, 4)
+            text(cv, idx_name, bx + bw / 2, y + 14, font(F_BOLD, 44), TXT, ak, align="center")
+            if row == 0:                                                            # a small graph: every vector linked to neighbours
+                pts = [(bx + 70 + (bw - 140) / 5 * i, y + 100 + (34 if i % 2 else -4)) for i in range(6)]
+                for i in range(5): cv.drawLine(*pts[i], *pts[i + 1], paint(c, ak * 0.85, stroke=4))
+                cv.drawLine(*pts[0], *pts[2], paint(c, ak * 0.5, stroke=3)); cv.drawLine(*pts[3], *pts[5], paint(c, ak * 0.5, stroke=3))
+                for p_ in pts: cv.drawCircle(*p_, 13, paint(c, ak))
+            else:                                                                   # a few places, each pointing at its documents
+                for i, (term, docs) in enumerate([("dim 2", "doc 4, 9"), ("dim 6", "doc 1"), ("dim 9", "doc 4")]):
+                    text(cv, f"{term} -> {docs}", bx + 40, y + 74 + 38 * i, font(F_MONO, 30), TXT, ak * 0.85)
+        return to_pil(s_)
+    return d
+
+ANIMATIONS = {"dense": d_dense_sparse}   # [**Animation:** dense vs sparse]
 
 SHEET = {}
 def apply_sheet(path):

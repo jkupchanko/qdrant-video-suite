@@ -111,10 +111,10 @@ def main():
     results = []
     seen_pages = set()
     for j in jobs:
-        if a.style: j["style"] = a.style
+        if a.style and not j["style"]: j["style"] = a.style                                     # a marker's own style wins over the default
         page_key = j["url"].split("#")[0].rstrip("/")
-        if a.arrive_first and page_key not in seen_pages:                                  # the viewer is shown where this page is, once:
-            j["style"] = "arrive"; j["duration"] = float(j["duration"]) + a.lead_in   # the click before the line, then the section on it
+        if a.arrive_first and page_key not in seen_pages: j["style"] = "arrive"             # the viewer is shown where this page is, once
+        if j["style"] == "arrive": j["duration"] = float(j["duration"]) + a.lead_in         # the click before the line, then the section on it
         seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]

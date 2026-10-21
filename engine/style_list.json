@@ -2,13 +2,15 @@
   "style": "Listed Sections",
   "about": "The style sheet the build reads. Change a value here and every video built in this style follows it; nothing per clip.",
   "broll": {
-    "first_clip_of_a_page": "arrive",
-    "first_clip_of_a_page_means": "the cursor clicks the article's card on the page that lists it, then the article opens on the section",
+    "first_clip_of_a_page": "readthrough",
+    "first_clip_of_a_page_means": "no automatic click-through: a clip opens on its section",
     "other_clips": "readthrough",
     "lead_in_seconds": 1.5,
     "lead_in_means": "the click plays this long before its line, so the section is on screen as the line starts",
     "page_zoom": 1.4,
-    "default_seconds": 3
+    "default_seconds": 3,
+    "click_through": "only on a marker that asks for it with | arrive: when the words point to where to find something ('in the docs', 'on the bulk upload page'). The cursor clicks the article's card on the page that lists it, the article opens on the section, lead_in_seconds before the line",
+    "concepts": "a line that explains an idea (dense vs sparse) gets an [**Animation:** ...] that draws it, not a page recording"
   },
   "camera": {
     "window_corner_first": "tr",

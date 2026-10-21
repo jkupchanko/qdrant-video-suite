@@ -109,7 +109,12 @@ Show the whole script inline in the suite's form ([references/script-form.md](re
 layers filled in by the skills:
 
 1. **The lines**, for the viewer and the goal.
-2. **The B-roll**: only lines that name something specific the docs page shows (broll-recorder's key-term rule).
+2. **The visuals, each supporting what is said at that moment** (John, 2026-10-21: "when I'm talking about something,
+   it needs to be something supported"):
+   - a line naming a specific setting or feature: the docs B-roll of that section (broll-recorder's key-term rule)
+   - a line explaining an idea (dense vs sparse): an `[**Animation:** ...]` that draws it, timed to its words
+   - the click-through (clicking into the article from the page that lists it) only where the words point to where
+     something is ("in the docs", "on the bulk upload page"): mark that B-roll `| arrive`. Never by default.
 3. **The camera calls and transitions** (camera-layout, transitions; Qdrant house rule: soft 0.8 s into and out of
    cards, code with a small top-right window).
 
