@@ -511,9 +511,12 @@ def main():
         stats["brand"] = (stats.get("brand", "") + f"; {off_n} card frames with off-palette accents").lstrip("; ")
         for w in windows:                                             # the section each B-roll shows: the page scrolls continuously, so it
             state = None                                              # stays the last heading that crossed the middle until another one does
+            title = TX.norm(page_titles.get((w.get("url") or "").split("#")[0].rstrip("/"), ""))
+            t_in = next((x for x in (w.get("t_arrive"), w.get("t0")) if x is not None), 0.0)
             for t, sec, how, others, i in sorted(w.get("seen", [])):
                 if how.startswith("heading"): state = sec
                 elif state: sec, how = state, "the last heading that crossed the middle"
+                if sec and title and TX.norm(sec) == title and t - t_in < 2.5: continue   # the arrival opens on the page's title on purpose
                 if sec and w["section"] and TX.norm(sec) != TX.norm(w["section"]):
                     F.add("broll_section", "fix", t, f'B-roll "{w["name"]}" shows "{sec}" ({how}), not "{w["section"]}"', frame=i)
                 elif others: F.add("broll_other", "note", t, f'B-roll "{w["name"]}": other headings in frame: {", ".join(o[:40] for o in others)}', frame=i)

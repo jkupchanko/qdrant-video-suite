@@ -196,6 +196,15 @@ def start_point(path, words, q0, handle):
     p0, p1 = ps[-1]
     return max(0, p1 - min(handle, p1 - p0))
 
+_ends = {}
+def take_end(path):
+    """the last moment of the take with a whole frame in it: a piece's end handle cannot reach past the file"""
+    if path not in _ends:
+        import cv2
+        c = cv2.VideoCapture(path); fps = c.get(cv2.CAP_PROP_FPS) or 30; n = c.get(cv2.CAP_PROP_FRAME_COUNT); c.release()
+        _ends[path] = max(0.0, (n - 2) / fps)
+    return _ends[path]
+
 def speech_end(path, x1, next_start=None, air=0.25, look=1.2, last_end=None):
     """the out-point: the first silence after the last word, plus some air, never more than `look` s later, and never into
     the next word. x1 is the last word's end plus a handle; when the pause was shorter than the handle, the out-point
@@ -290,7 +299,7 @@ def main():
             a0 = start_point(a.raw, words, q0, a.handle_in); b0 = words[q1]["e"] + a.handle_out
             said = " ".join(w["w"] for w in words[q0:q1 + 1])
             nxt = words[q1 + 1]["s"] if q1 + 1 < len(words) else None
-            b0 = speech_end(a.raw, b0, nxt, last_end=words[q1]["e"])
+            b0 = min(speech_end(a.raw, b0, nxt, last_end=words[q1]["e"]), take_end(a.raw))   # a take that stops right after its last word
             subs = split_on_silence(a.raw, a0, b0, min_len=a.max_gap)
             for m_, (x0, x1) in enumerate(subs):
                 lab = line if first else "(same line, after a pause)"

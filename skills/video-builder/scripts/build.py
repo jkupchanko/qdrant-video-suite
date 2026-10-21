@@ -57,6 +57,18 @@ def with_lower_third(script, out_dir, name, role):
     L[at + 1:at + 1] = ["", f"[**Lower third:** {name} | {role} | 5 s]", ""]
     out = os.path.join(out_dir, "script.md"); open(out, "w", encoding="utf-8").write("\n".join(L) + "\n"); return out
 
+def preview_script(script, out_dir, secs):
+    """a copy of the script cut to its first `secs` seconds: everything before the first section, then the sections that start
+    before `secs` (by the heading's m:ss times, else by about 2.5 spoken words a second), so a short build shows the direction"""
+    t = open(script, encoding="utf-8").read(); parts = re.split(r"(?m)^(?=## )", t); head, secs_ = parts[0], parts[1:]
+    keep, words = [], 0
+    for s in secs_:
+        m = re.search(r"(\d+):(\d{2})\s+to\s+\d+:\d{2}", s.splitlines()[0])
+        start = int(m.group(1)) * 60 + int(m.group(2)) if m else words / 2.5
+        if keep and start >= secs: break
+        keep.append(s); words += len(re.sub(r"(?s)<!--.*?-->|\[.*?\]|^#.*$", " ", s, flags=re.M).split())
+    out = os.path.join(out_dir, "script_preview.md"); open(out, "w", encoding="utf-8").write(head + "".join(keep)); return out, len(keep)
+
 def page_url(script):
     t = open(script, encoding="utf-8").read()
     m = re.search(r"Source page:\s*(https?://\S+)", t) or re.search(r"\[B-ROLL:\s*(https?://[^\s|]+)", t)
@@ -139,19 +151,64 @@ class Build:
         R = json.load(open(self.p("review", "report.json"))); from collections import Counter; c = Counter(f["sev"] for f in R["findings"])
         return [out], f"{c['fix']} to fix, {c['check']} to check, {c['note']} notes"
 
+def patch(B, a):
+    """a small edit: re-render only [t0, t1] of a finished build with the script as it is now, splice it into video.mp4, master
+    again, and cut the changed moment out to show (patch_T0-T1.mp4). Minutes, not the full render. The range grows to whole
+    shots, so no transition is cut in half. The review is not re-run here: run --only review --redo review for the final check."""
+    import cv2, imageio_ffmpeg; FF = imageio_ffmpeg.get_ffmpeg_exe(); fps = 30
+    t0, t1 = a.patch; video = B.p("video.mp4")
+    if not os.path.exists(video): sys.exit(f"--patch needs a finished build in {B.d} (no video.mp4)")
+    shots = json.load(open(B.p("video_shots.json")))
+    t0 = max([s["t0"] for s in shots if s["t0"] <= t0 + 1e-6] or [0.0]); t1 = min([s["t1"] for s in shots if s["t1"] >= t1 - 1e-6] or [shots[-1]["t1"]])
+    print(f"patch: re-rendering {t0:.2f}-{t1:.2f} s (whole shots)", flush=True)
+    cfg = json.load(open(B.p("style_config.json"))); cfg["script"] = os.path.abspath(a.script); json.dump(cfg, open(B.p("style_config.json"), "w"), indent=1)
+    shots_p = B.p("video_shots.json"); shutil.copy(shots_p, shots_p + ".full")              # a range render writes its own shot list over it
+    f0 = round(t0 * fps); lead = min(fps, f0); r0 = (f0 - lead) / fps                      # a second of the shot before: the transition
+    run([PY, os.path.join(STYLES, f"style_{a.style}.py"), B.p("style_config.json"), f"{r0}", f"{t1}"], B.p("patch.log"), cwd=STYLES)   # into the first
+    shutil.move(shots_p + ".full", shots_p)                                                  # shot needs its last frame; it is dropped below
+    part = B.p(f"video_{int(r0)}-{int(t1)}.mp4"); c = cv2.VideoCapture(part); n = int(c.get(cv2.CAP_PROP_FRAME_COUNT)) - lead; c.release()
+    c = cv2.VideoCapture(video); total = int(c.get(cv2.CAP_PROP_FRAME_COUNT)); c.release()
+    f1 = min(total, f0 + n)
+    segs = ([(0, f"trim=end_frame={f0}", f"atrim=end={f0 / fps:.4f}")] if f0 > 0 else []) + \
+           [(1, f"trim=start_frame={lead}:end_frame={lead + f1 - f0}", f"atrim=start={lead / fps:.4f}:end={(lead + f1 - f0) / fps:.4f}")] + \
+           ([(0, f"trim=start_frame={f1}", f"atrim=start={f1 / fps:.4f}")] if f1 < total else [])
+    fc = "".join(f"[{s}:v]{vt},setpts=PTS-STARTPTS[v{k}];[{s}:a]{at},asetpts=PTS-STARTPTS[a{k}];" for k, (s, vt, at) in enumerate(segs))
+    fc += "".join(f"[v{k}][a{k}]" for k in range(len(segs))) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
+    tmp = B.p("video_patched.mp4")
+    subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", "-i", video, "-i", part, "-filter_complex", fc, "-map", "[v]", "-map", "[a]",
+                    "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", tmp], check=True)
+    c = cv2.VideoCapture(tmp); got = int(c.get(cv2.CAP_PROP_FRAME_COUNT)); c.release()
+    if got != total: sys.exit(f"patch: the spliced video has {got} frames, the original {total}: kept the original, nothing changed")
+    shutil.copy(video, B.p("video_before_patch.mp4")); os.replace(tmp, video)
+    a.redo = {"master"}; outs, note = B.master()
+    show = B.p(f"patch_{t0:.0f}-{t1:.0f}.mp4"); s0 = max(0.0, t0 - 1.0)
+    subprocess.run([FF, "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{s0:.3f}", "-i", outs[0], "-t", f"{t1 + 1.0 - s0:.3f}", "-vf", "scale=1280:720",
+                    "-c:v", "libx264", "-crf", "23", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", show], check=True)
+    B.state["patch"] = dict(ok=True, range=[t0, t1], at=time.strftime("%Y-%m-%d %H:%M"), show=show)
+    if "review" in B.state: B.state["review"]["stale"] = True
+    B.save(); print(f"patched {t0:.2f}-{t1:.2f} s into {video}; mastered; the changed moment: {show}\nthe review is now out of date: --only review --redo review for the final check")
+    return 0
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--take", required=True); ap.add_argument("--script", required=True); ap.add_argument("--out", required=True); ap.add_argument("--url")
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
+    ap.add_argument("--patch", type=float, nargs=2, metavar=("T0", "T1"), help="a small edit to a finished build: re-render only T0-T1 s (grown to whole shots) with the script as it is now, splice it in and master; minutes, not hours")
+    ap.add_argument("--preview", type=float, metavar="SECONDS", help="build only the sections that start in the first SECONDS (try 30): minutes instead of hours, to check the direction first")
     a = ap.parse_args(); a.redo = set(filter(None, a.redo.split(",")))
     if not LOWER.search(open(a.script, encoding="utf-8").read()):
         if not (a.name and a.role): print(INTAKE); return 2
         os.makedirs(a.out, exist_ok=True); a.script = with_lower_third(a.script, os.path.abspath(a.out), a.name, a.role)
         print(f"the script has no name card: added [**Lower third:** {a.name} | {a.role} | 5 s] in {a.script}")
+    if a.preview:
+        os.makedirs(a.out, exist_ok=True); full = a.script; a.script, n = preview_script(full, os.path.abspath(a.out), a.preview)
+        a.label = f"{a.label or os.path.basename(a.out)} (preview, first {a.preview:.0f} s)"
+        print(f"preview: the first {n} section(s) of {full} -> {a.script}")
     B = Build(a)
     if not B.url: sys.exit("no docs URL: give --url, or put 'Source page: URL' or a [B-ROLL: URL | ...] marker in the script")
+    if a.patch: return patch(B, a)
     stages = [a.only] if a.only else STAGES[STAGES.index(a.start):] if a.start else STAGES
     print(f"building {a.out} from {a.take} + {a.script} ({B.url}), style '{a.style}': {', '.join(stages)}", flush=True)
     for st in stages:

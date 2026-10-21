@@ -48,7 +48,17 @@ python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script S
 ```
 
 It takes about an hour and a half for a 3.5 minute video (the render and the review are most of it); run it in the
-background and report progress from `BUILD_DIR/build.json`. Each stage keeps its outputs, so a second run skips what is
+background and report progress from `BUILD_DIR/build.json`. Offer a preview first: `--preview 30` builds only the
+sections that start in the first 30 s (their lines, B-roll, name card and review), in minutes, into its own folder, so
+the person can judge the direction before the long build. Before either, `--only cut` makes just the raw edit for
+the person to approve.
+
+Small edits after the build: `--patch T0 T1` re-renders only those seconds (grown to whole shots, with a second of
+lead-in so the transition into the first shot is drawn from the real previous frame) using the script as it is now,
+splices them into `video.mp4` frame for frame, masters again, and writes `patch_T0-T1.mp4` (the moment, a second either
+side) to show. About 40 s for a few seconds of video; the spliced video matched the original to within encoding noise.
+It marks the review out of date: run `--only review --redo review` once at the end. Edits to the cut, the B-roll
+recordings or the spoken lines change everything after them; re-run those from their stage instead. Each stage keeps its outputs, so a second run skips what is
 done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,style` forces some again.
 
 | stage | skill | makes |

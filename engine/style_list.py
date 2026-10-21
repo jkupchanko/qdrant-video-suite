@@ -563,12 +563,13 @@ def plan(B, t0=0.0, t1=None):
                 t_title = min(L[0]["t1"] + 2.5, L[-1]["t0"]) if not (lt_line and lw[0] is sec) else min(L[0]["t1"] + 2.5, L[-1]["t0"], lt_line["t0"] + 0.1)
                 beats.append((L[0]["t0"], "face", d_title_over_face(B, L[0]["t0"] + 0.3, t_title), "cut", {}))
             last = L[-1]; n = len(B.items); build = {it["n"]: last["t0"] + 0.3 + (last["t1"] - last["t0"] - 0.8) * k / max(1, n) for k, it in enumerate(B.items)}
-            beats.append((last["t0"], "graphic", d_list(B, build=build), SOFT, dict(scene="list", corner_only=True)))
+            if B.items:                                                               # no items (a preview that ends before the first): the face
+                beats.append((last["t0"], "graphic", d_list(B, build=build), SOFT, dict(scene="list", corner_only=True)))
             continue
         its = items_by_sec.get(si, [])
-        if si == len(B.sections) - 1 and not its:                                    # the wrap-up: every item ticked off, then the logo
-            ticks = {it["n"]: L[0]["t0"] + 0.5 + 0.35 * k for k, it in enumerate(B.items)}
-            beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), SOFT, dict(scene="list", corner_only=True)))
+        if si == len(B.sections) - 1 and not its and not sec["markers"]:             # the wrap-up: every item ticked off, then the logo
+            ticks = {it["n"]: L[0]["t0"] + 0.5 + 0.35 * k for k, it in enumerate(B.items)}   # (a last section with B-roll is content: a preview's)
+            if B.items: beats.append((L[0]["t0"], "graphic", d_list(B, ticks=ticks), SOFT, dict(scene="list", corner_only=True)))
             if len(L) > 1: beats.append((L[-1]["t0"], "face", d_end(B, L[-1]["t0"] + 0.2), "cut", {}))
             continue
         if not its:
