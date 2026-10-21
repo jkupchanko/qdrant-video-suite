@@ -34,7 +34,7 @@ PATTERNS = [
 ]
 URL = re.compile(r"https?://[^\s|\]\}>\"']+")
 STYLES = {"reveal", "hover", "highlight", "readthrough", "look", "arrive"}
-ARRIVE_MIN = 7.0    # John, 2026-10-21: click the card where the article is listed, land on the section, a slight slow scroll; no boxes
+ARRIVE_MIN = 3.0    # the floor, not the length: the script's marker sets it (John, 2026-10-21: about 4 s, quick); a click needs 3
 
 def prev_sentence(text, pos):
     before = text[:pos]
@@ -113,7 +113,7 @@ def main():
         if a.style: j["style"] = a.style
         page_key = j["url"].split("#")[0].rstrip("/")
         if a.arrive_first and page_key not in seen_pages:                                  # the viewer is shown where this page is, once:
-            j["style"] = "arrive"; j["duration"] = max(float(j["duration"]), ARRIVE_MIN)   # the click-through needs its time to be followed
+            j["style"] = "arrive"; j["duration"] = max(float(j["duration"]), ARRIVE_MIN)   # below 3 s the click cannot be seen
         seen_pages.add(page_key)
         cmd = [sys.executable, os.path.join(HERE, "broll.py"), "auto", j["url"], "--match", j["match"], "--duration", str(j["duration"]), "--style", j["style"], "--out", a.out, "--name", j["name"]]
         if j["section"]: cmd += ["--section", j["section"]]
