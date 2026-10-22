@@ -183,6 +183,30 @@ def main():
                 pieces.append((q_before(seg[0]["s"]), q_after(seg[-1]["e"]), line if first else "(same line, after a pause)", " ".join(x["w"] for x in seg), note if first else "pause inside the take removed")); first = False; seg = []
             seg.append(w)
         pieces.append((q_before(seg[0]["s"]), q_after(seg[-1]["e"]), line if first else "(same line, after a pause)", " ".join(x["w"] for x in seg), note if first else "pause inside the take removed"))
+    # pauses found from the sound, not the word times: the transcript stretches a word over the stop after it ("if you
+    # want more control, [3 s]" kept whole at 1:29 of the Get Started cut; 80 words over a second long in that take)
+    def silences_out(x0, x1, min_gap=0.45, keep=0.12):
+        i0, i1 = int(round(x0 * 100)), int(round(x1 * 100))
+        voiced = [k for k in range(i0, i1) if env[k] >= quiet + 3]                    # no long silence at the edges either
+        if voiced: x0, x1 = max(x0, voiced[0] / 100 - 0.15), min(x1, voiced[-1] / 100 + 0.2); i0, i1 = int(round(x0 * 100)), int(round(x1 * 100))
+        out, cur, k = [], x0, i0
+        while k < i1:
+            if env[k] < quiet + 3:
+                r = k
+                while r < i1 and env[r] < quiet + 3: r += 1
+                if (r - k) / 100 >= min_gap and k > i0 and r < i1:
+                    if k / 100 + keep - cur > 0.15: out.append((cur, k / 100 + keep))
+                    cur = r / 100 - keep
+                k = r
+            else: k += 1
+        if x1 - cur > 0.15: out.append((cur, x1))
+        return out or [(x0, x1)]
+    split = []
+    for p in pieces:
+        if p[0] is None: split.append(p); continue
+        for m, (y0, y1) in enumerate(silences_out(p[0], p[1])):
+            split.append((y0, y1, p[2] if m == 0 else "(same line, after a pause)", p[3] if m == 0 else "", p[4] if m == 0 else "pause found in the sound removed"))
+    pieces = split
     real = [p for p in pieces if p[0] is not None]
     for k in range(len(real) - 1):                                                     # never overlap the next piece in the source
         if real[k + 1][0] < real[k][1] and real[k + 1][0] > real[k][0]: real[k] = (real[k][0], real[k + 1][0], *real[k][2:])
