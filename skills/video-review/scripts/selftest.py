@@ -13,7 +13,9 @@ and that nothing else is reported as a fix. Then the joins, on a made-up take (w
 And the reading pace, on a made-up card track (OCR reads, no video) where the picture never stops moving:
   two cards of 30 words, 2 s each, back to back -> read (fix) on each; a card typed in over 10 s -> nothing.
   Cards split by motion merge all three into one long card and miss both (build 4, 0:43-0:53).
-Without CUT.mp4 only the joins and the reading pace run (they need no video).
+And the raw edit (raw_edit_checks), on a made-up take: a restart left in, a script list item dropped, a piece running into
+  a thinking pause as the eyes leave, a stop inside a sentence -> each caught; a list that repeats its opening -> nothing.
+Without CUT.mp4 only the joins, the reading pace and the raw edit run (they need no video).
 Run it after changing any check. Exit 1 if a fault is missed or a fix is invented.
 """
 import os, sys, json, argparse, subprocess, cv2, imageio_ffmpeg
@@ -57,6 +59,60 @@ def joins_selftest(out):
     for j in extra: print(f"  INVENTED  join at {j['t']:.2f} s: {j['msg'][:80]}")
     return ok and not extra
 
+def raw_edit_selftest(out):
+    """a made-up take (words as voiced bursts), its literal words, the eyes, and a cut list with four faults planted:
+      a sentence started, dropped and said again, both kept       -> restart
+      a list item of the script said between two pieces, left out -> dropped
+      a piece ending on "to" that runs into a thinking pause as the eyes leave -> glance
+      a 1.6 s silence inside one sentence                          -> stop
+    and a list that repeats its opening on purpose ("you can run it locally, you can deploy it") that must not be called a restart"""
+    import numpy as np, wave, raw_edit_checks as RE
+    sr = 16000; W, bursts, t = [], [], 0.5
+    def say(text, gap=0.12):
+        nonlocal t
+        for w in text.split():
+            d = 0.08 * len(w.strip(",.")) + 0.1; W.append(dict(w=w, s=round(t, 2), e=round(t + d, 2))); bursts.append((t, t + d)); t += d + gap
+        t -= gap
+    def pause(s): 
+        nonlocal t; t += s
+    P = {}
+    P["list"] = t; say("You can run it locally, you can deploy it, or use the cloud."); P["list_e"] = t; pause(1.5)
+    P["try1"] = t; say("Now this can be useful if you want more"); P["try1_e"] = t; pause(1.2)
+    P["try2"] = t; say("Now this can be useful if you want more control."); P["try2_e"] = t; pause(1.5)
+    P["web"] = t; say("The Web UI lets us explore the cluster, manage collections,"); P["web_e"] = t; pause(0.8)
+    say("run requests,"); pause(0.8); P["web2"] = t; say("and follow tutorials."); P["web2_e"] = t; pause(1.5)
+    P["tool"] = t; say("This tool allows you to"); P["tool_e"] = t; pause(2.0); P["tool2"] = t; say("explore the data."); P["tool2_e"] = t; pause(1.5)
+    P["stop"] = t; say("Then we open the"); pause(1.6); say("settings page."); P["stop_e"] = t; pause(1.0)
+    n = int((t + 1) * sr); tt = np.arange(n) / sr; x = np.random.default_rng(2).normal(0, 0.001, n)
+    for a, b in bursts:
+        m = (tt >= a) & (tt < b); x[m] += 0.3 * np.sin(2 * np.pi * 180 * tt[m])
+    wp = os.path.join(out, "raw_take.wav")
+    with wave.open(wp, "w") as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
+    rng = np.random.default_rng(3); fr = []
+    for k in range(int(t * 12.5)):
+        ft = k / 12.5; away = P["tool_e"] + 0.05 < ft < P["tool2"] - 0.3
+        fr.append(dict(t=ft, face=True, h=(0.37 if away else 0.43) + rng.normal(0, 0.015), v=0.47 + rng.normal(0, 0.015), off=False))
+    h = 0.06
+    spans = [(P["list"] - h, P["list_e"] + h, "You can run it locally, you can deploy it, or use the cloud."),
+             (P["try1"] - h, P["try1_e"] + h, "Now this can be useful if you want more control."), (P["try2"] - h, P["try2_e"] + h, "(same line, after a pause)"),
+             (P["web"] - h, P["web_e"] + h, "The Web UI lets us explore the cluster, manage collections, run requests, and follow interactive tutorials."),
+             (P["web2"] - h, P["web2_e"] + h, "(same line, after a pause)"),
+             (P["tool"] - h, P["tool_e"] + 0.35, "This tool allows you to explore the data."), (P["tool2"] - h, P["tool2_e"] + h, "(same line, after a pause)"),
+             (P["stop"] - h, P["stop_e"] + h, "Then we open the settings page.")]
+    e, rows = 0.0, []
+    for a, b, line in spans: rows.append(f"| {e:.2f} | {a:.2f}-{b:.2f} | x1.00 | {line} | {line} | test |"); e += b - a
+    cl = os.path.join(out, "raw_cutlist.md"); open(cl, "w", encoding="utf-8").write("| edit time | source | push | script line | said | take |\n|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
+    F, S = RE.checks(wp, cl, W, dict(frames=fr)); ok = True
+    edit = lambda src: next(float(r.split("|")[1]) + src - float(r.split("|")[2].split("-")[0]) for r in rows if float(r.split("|")[2].split("-")[0]) <= src + 0.1 <= float(r.split("|")[2].split("-")[1]) + 0.2)
+    want = [("restart", edit(P["try1"]), "a sentence started, dropped and said again"), ("dropped", edit(P["web"]), '"run requests" left out of the list'),
+            ("glance", edit(P["tool_e"]), 'a piece running past "to" into a thinking pause'), ("stop", edit(P["stop"]), "a 1.6 s stop inside a sentence")]
+    for kind, t0, what in want:
+        hit = [f for f in F if f["kind"] == kind and f["sev"] == "fix" and t0 - 0.5 <= f["t"] <= t0 + 3]
+        print(f"  {'caught' if hit else 'MISSED'}  {kind:7s} {what}" + (f"  -> {hit[0]['msg'][:70]}" if hit else "")); ok &= bool(hit)
+    extra = [f for f in F if f["sev"] == "fix" and not any(f["kind"] == k and t0 - 0.5 <= f["t"] <= t0 + 3 for k, t0, _ in want)]
+    for f in extra: print(f"  INVENTED  {f['kind']} at {f['t']:.2f} s: {f['msg'][:80]}")
+    return ok and not extra
+
 def reading_selftest(fps=30, H=1080):
     """a 16 s card track read once a second: the face, two short cards, then a card typed in line by line. The picture moves
     throughout (live typing), so only the words on screen tell the cards apart"""
@@ -80,7 +136,7 @@ def reading_selftest(fps=30, H=1080):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut", nargs="?"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
-    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest()
+    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out)
     if not a.cut:
         print("  (no CUT.mp4: the planted-clip checks did not run)"); print("SELF-TEST PASSED" if joins_ok else "SELF-TEST FAILED"); return 0 if joins_ok else 1
     clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)

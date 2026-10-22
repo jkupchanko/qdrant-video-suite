@@ -9,6 +9,14 @@ The raw take is the hardest part to hand to anyone else: several retakes per lin
 camera tag in the corner, a mirrored webcam. This skill does the first pass a careful editor would do by
 hand, in one command, and writes down every decision so a person can change any of them.
 
+## The raw edit is one clean pass
+
+Each thought said once, no restart left in, no stop inside a sentence, no glance with words over it, nothing dropped
+from the middle of a line, whole sentences close to the script. Every threshold is measured on the speaker's own take
+first, never a constant, because everyone pauses and glances differently. The rules, how they are measured, how the
+build makes the cut (`sentence_cut.py`, `verify_pieces.py`) and how to fix what the check finds (`respan.py`):
+[references/raw-edit.md](references/raw-edit.md). The steps below are the older per-take cutter (`--cutter takes`).
+
 ## What it does, in order
 
 1. **Transcribes** the recording with word timestamps.

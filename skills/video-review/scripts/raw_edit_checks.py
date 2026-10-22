@@ -1,0 +1,163 @@
+"""raw_edit_checks.py: does the raw edit read as one clean pass? Every thought said once, no restart left in, no stop in the
+middle of a sentence, no glance away with words over it, nothing dropped from the middle of a line.
+
+  python raw_edit_checks.py TAKE.mp4 CUTLIST.md --literal WORDS_LITERAL.json [--gaze RAW_GAZE.json] [--out report.md]
+  checks(take, cutlist, literal, gaze=None) -> ([dict(t, kind, sev, msg)], speaker)
+
+These are the faults a presenter flagged, one at a time, on the Get Started raw edit (2026-10-22): a sentence started,
+stopped and said again ("Now this can be useful if you want more of a... / Now this can be useful..." at 1:24), a stop in
+the middle of a sentence (1:32), a glance away with a word or two over it (0:33, 2:44, 2:33), and a list item lost from the
+middle of a line ("run requests" dropped from "explore the clusters, manage collections, run requests, and follow...").
+
+No number in here is a constant for everyone. People pause, glance and restart differently, so every threshold is
+measured on this speaker's own take first (`speaker()`): their normal pause between words, their eyes' resting place and
+spread, their room's quiet and voice levels. A fast talker's 0.3 s stop is a stop; a slow talker's is a breath.
+
+The words come from transcribe_literal.py (the editing skill), which writes every attempt where it was said. Whisper's
+default transcript tidies a restart into one clean sentence, so a check on it cannot see one.
+"""
+import re, json, numpy as np
+
+STOP = set("a an the to of and or but so in on at for with as by from that this is are was be it you we i your our my can will just then now also".split())
+CUTOFF = set("a an the to of and or but in on at for with as by from that this your our my is are was be can will".split())   # a sentence cannot end here
+
+def norm(w): return re.sub(r"[^a-z0-9']", "", w.lower())
+def ends(w): return bool(re.search(r"[.?!]$", w))
+def ts(t): return f"{int(t // 60)}:{t % 60:04.1f}"
+
+def rows(cutlist):
+    """(edit time, source in, source out, line) per piece, in edit order"""
+    t = open(cutlist, encoding="utf-8").read()
+    return [(float(a), float(b), float(c), d.strip()) for a, b, c, d in re.findall(r"^\| ([\d.]+) \| ([\d.]+)-([\d.]+) \| x[\d.]+ \| (.*?) \|", t, flags=re.M)]
+
+def quiet_runs(voiced, t0=0.0):
+    """(start, end) in seconds of every quiet stretch of a 10 ms voiced mask"""
+    out, s = [], None
+    for i, x in enumerate(list(voiced) + [True]):
+        if not x and s is None: s = i
+        if x and s is not None: out.append((t0 + s / 100, t0 + i / 100)); s = None
+    return out
+
+def speaker(words, env, quiet, gaze=None):
+    """this speaker's own norms, from the whole take. Pauses come from the sound: a literal transcript's word times run
+    into each other (no gaps), so they cannot measure a pause"""
+    starts = [w["s"] for w in words]; mid = []
+    for a, b in quiet_runs(env > quiet):
+        k = int(np.searchsorted(starts, a)) - 1
+        if 0.1 <= b - a < 3 and k >= 0 and not re.search(r"[.,?!]$", words[k]["w"]): mid.append(b - a)
+    m = float(np.median(mid)) if mid else 0.4
+    S = dict(pause=m,                       # their typical pause inside a sentence (breath, a beat before a key word)
+             stop=max(0.5, 1.25 * m),       # longer than this inside a sentence, heard in the cut: a stop
+             phrase_gap=0.25)               # literal words further apart than this: a new phrase
+    if gaze:
+        fr = [f for f in gaze["frames"] if f.get("face")]
+        for k in ("h", "v"):
+            x = np.array([f[k] for f in fr]); m = float(np.median(x)); S[k] = (m, max(1e-3, 1.4826 * float(np.median(np.abs(x - m)))))
+        S["fps"] = 1 / max(1e-3, float(np.median(np.diff([f["t"] for f in fr]))))
+    return S
+
+def inside(w, a, b):
+    """a word is in a piece if enough of it is: a word Whisper stretched over a pause ("follow" from 934.5 to 936.9 s)
+    has its middle in the pause, outside the piece that holds its sound"""
+    if w["e"] - w["s"] < 0.05: return a <= w["s"] <= b                     # a word given no length ("manage@135.0-135.0")
+    return min(w["e"], b) - max(w["s"], a) >= min(0.15, 0.5 * (w["e"] - w["s"]))
+
+def same(a, b): return a == b or (len(a) > 3 and len(b) > 3 and (a.startswith(b) or b.startswith(a)))
+
+def checks(take, cutlist, literal, gaze=None):
+    W = json.load(open(literal, encoding="utf-8")) if isinstance(literal, str) else literal
+    G = json.load(open(gaze, encoding="utf-8")) if isinstance(gaze, str) else gaze
+    import join_checks as JC
+    env, quiet, _ = JC.envelope(take) if isinstance(take, str) else take
+    S = speaker(W, env, quiet, G); R = rows(cutlist); out = []
+    vo = lambda a, b: env[int(round(a * 100)):int(round(b * 100))] > quiet
+    # the cut as heard: every kept word, at its edit time, with the join it follows
+    kept = []
+    for k, (t, a, b, line) in enumerate(R):
+        for w in W:
+            if inside(w, a, b): kept.append(dict(w=w["w"], n=norm(w["w"]), s=w["s"], e=w["e"], et=t + w["s"] - a, piece=k, first=False))
+        ks = [x for x in kept if x["piece"] == k]
+        if ks: ks[0]["first"] = True
+    # 1. a restart left in: a phrase start said again a few words later, at another phrase start. A list says its opening
+    #    words again on purpose ("you can run it locally, you can deploy it"), so the first try must be cut off (three
+    #    words or fewer, or ending on a word a sentence cannot end on) or match three words, not two
+    def starts(i): return i == 0 or kept[i]["first"] or kept[i]["s"] - kept[i - 1]["e"] > S["phrase_gap"] or re.search(r"[,.?!…-]$", kept[i - 1]["w"])
+    i = 0
+    while i < len(kept) - 3:
+        hit = None
+        if starts(i) and kept[i]["n"] and kept[i]["n"] not in ("and", "so", "but"):        # "and so..." opens many sentences
+            for j in range(i + 2, min(len(kept) - 1, i + 14)):                               # an attempt dropped after up to a dozen words
+                if not starts(j) or not (same(kept[i]["n"], kept[j]["n"]) and same(kept[i + 1]["n"], kept[j + 1]["n"])): continue
+                three = j + 2 < len(kept) and i + 2 < j and same(kept[i + 2]["n"], kept[j + 2]["n"])
+                if j - i <= 3 or kept[j - 1]["n"] in CUTOFF or three: hit = j; break
+        if hit:
+            said = " ".join(x["w"] for x in kept[i:hit]); again = " ".join(x["w"] for x in kept[hit:hit + 4])
+            out.append(dict(t=kept[i]["et"], kind="restart", sev="fix", msg=f'said twice: "{said}" then "{again}..." (a restart left in; keep the second try)'))
+            i = hit
+        i += 1
+    # 2. a stop inside a sentence: a silence heard in the cut (inside a piece, or a piece's tail plus the next one's head)
+    #    after a word that does not end the sentence, longer than this speaker's own pause inside a sentence
+    heard = np.concatenate([vo(a, b) for _, a, b, _ in R]); src = np.concatenate([np.arange(int(round(a * 100)), int(round(a * 100)) + len(vo(a, b))) / 100 for _, a, b, _ in R])
+    for qa, qb in quiet_runs(heard):
+        if qa == 0 or qb >= len(heard) / 100: continue
+        n = qb - qa; at = src[min(len(src) - 1, int(round(qa * 100)))]
+        before = [w for w in W if w["s"] < at - 0.02]
+        if not before: continue
+        w = before[-1]
+        if ends(w["w"]) or (w["w"].endswith(",") and n < 1.5 * S["stop"]) or n <= S["stop"]: continue
+        out.append(dict(t=qa, kind="stop", sev="fix" if n > 2 * S["stop"] else "check",
+                        msg=f'a {n:.2f} s stop in the middle of a sentence, after "{w["w"]}" (this speaker pauses about {S["pause"]:.2f} s inside a sentence)'))
+    # 3. words lost from the middle of a line: words of the script line that were said in the take, between that line's
+    #    pieces, but are not in the cut. A retake or an aside between pieces is not a loss; a list item the script has is
+    groups = []
+    for k, r in enumerate(R):
+        if r[3].startswith("(same line") and groups: groups[-1].append(k)
+        else: groups.append([k])
+    for g in groups:
+        script_line = R[g[0]][3]
+        said = {x["n"] for x in kept if x["piece"] in g}
+        want = [n for n in dict.fromkeys(norm(w) for w in script_line.split()) if n and n not in STOP and not any(same(n, x) for x in said)]
+        lost = []
+        for k0, k1 in zip(g, g[1:]):
+            between = [w for w in W if inside(w, R[k0][2], R[k1][1]) and not inside(w, R[k0][1], R[k0][2]) and not inside(w, R[k1][1], R[k1][2])]
+            lost += [w for w in between if any(same(norm(w["w"]), n) for n in want)]
+        if lost:
+            names = list(dict.fromkeys(w["w"].strip(",.") for w in lost))
+            out.append(dict(t=R[g[0]][0], kind="dropped", sev="fix",
+                            msg=f'"{", ".join(names)}" is in the script line and was said (source {lost[0]["s"]:.1f} s), but the cut leaves it out: "{script_line[:80]}"'))
+    # 4. the eyes, against this speaker's own resting place: a glance is the eyes leaving it by 3 of their own spreads for
+    #    a quarter of a second, or a stop followed by any move off it at a piece's edge (a thought, then the eyes go)
+    if G:
+        fr = [f for f in G["frames"] if f.get("face")]
+        T = np.array([f["t"] for f in fr]); Z = np.sqrt(sum(((np.array([f[k] for f in fr]) - S[k][0]) / S[k][1]) ** 2 for k in ("h", "v")))
+        for k, (t, a, b, line) in enumerate(R):
+            idx = np.where((T >= a) & (T <= b))[0]                                # 0.3 s: a blink or a nod is shorter; idx = np.where(m)[0]
+            if not len(idx): continue
+            run = []
+            for q in list(idx) + [None]:
+                if q is not None and Z[q] > 3.0: run.append(q); continue
+                if run and T[run[-1]] - T[run[0]] + 1 / S["fps"] >= 0.3:
+                    over = [x["w"] for x in kept if x["piece"] == k and T[run[0]] - 0.1 <= x["s"] <= T[run[-1]] + 0.1]
+                    out.append(dict(t=t + T[run[0]] - a, kind="glance", sev="check",
+                                    msg=f"eyes off their resting place for {T[run[-1]] - T[run[0]] + 1 / S['fps']:.2f} s" + (f' over "{" ".join(over)}"' if over else "") + " (source {:.1f} s)".format(T[run[0]])))
+                run = []
+            ks = [x for x in kept if x["piece"] == k]
+            if not ks: continue
+            last = ks[-1]; v = vo(a, b); vend = a + (np.where(v)[0][-1] + 1) / 100 if v.any() else b; tail = b - vend
+            after = next((w["s"] for w in W if w["s"] > last["e"] + 0.02), b + 9) - last["e"]
+            if norm(last["w"]) in CUTOFF and not re.search(r"[,.?!]$", last["w"]) and after > 2 * S["stop"] and tail > 0.12:   # stopped mid-thought to think: the eyes go next
+                zt = Z[(T > last["e"]) & (T <= b)]
+                if len(zt) and zt.max() > 1.5:
+                    out.append(dict(t=t + last["e"] - a, kind="glance", sev="fix",
+                                    msg=f'the piece runs {tail:.2f} s past "{last["w"]}" into a {after:.1f} s thinking pause, and the eyes start to leave the lens there; end it on the word'))
+    out.sort(key=lambda d: d["t"])
+    return out, S
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(); ap.add_argument("take"); ap.add_argument("cutlist"); ap.add_argument("--literal", required=True); ap.add_argument("--gaze"); ap.add_argument("--out")
+    a = ap.parse_args(); F, S = checks(a.take, a.cutlist, a.literal, a.gaze)
+    head = f"speaker: pauses about {S['pause']:.2f} s inside a sentence, so a stop is over {S['stop']:.2f} s" + (f"; eyes rest at h {S['h'][0]:.2f} ± {S['h'][1]:.3f}, v {S['v'][0]:.2f} ± {S['v'][1]:.3f}" if "h" in S else "")
+    lines = [head] + [f"{ts(f['t'])}  {f['sev']:5s} {f['kind']:8s} {f['msg']}" for f in F]
+    print("\n".join(lines))
+    if a.out: open(a.out, "w", encoding="utf-8").write("# Raw edit check\n\n" + "\n".join(f"- {l}" for l in lines) + "\n")

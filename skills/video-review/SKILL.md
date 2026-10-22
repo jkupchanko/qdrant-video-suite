@@ -31,6 +31,7 @@ Only the video is required. Give it everything the project has: each input switc
 | `--cutlist` | the editing skill's `cutlist.md` | a line it found no take of is a **fix** (missing); one it found "said in other words" is a note |
 | `--assets` | `page_assets.py`'s `assets.json` | the page's code and figure captions count as its own words and numbers (`size=768` is the docs') |
 | `--take` | the raw recording the cut was made from (with `--cutlist`) | every join heard in the take: the next word's first sound kept at an out-point, a piece ending or starting mid-word, two pieces overlapping (heard twice) |
+| `--literal`, `--take-gaze` | the build's `cut/words_literal.json` and `cut/raw_gaze.json` (with `--take`, `--cutlist`) | the raw edit as one clean pass: `restart`, `stop`, `glance`, `dropped` (below) |
 
 Always, from the pixels (`scripts/pace_checks.py`), the pace John and his boss noticed and the review did not:
 - **`abrupt`** (fix): a hard cut into, out of or between cards. The house wants soft changes of about 0.8 s ("how quick we
@@ -52,6 +53,17 @@ The first Listed Sections build kept the first 40 ms of "when" after "...dense a
 pieces overlapped so a word was heard twice. The check found 16 fixes on that cut, none on the cut after the editing
 skill placed its cut points by the sound. When a person reports something the review missed, add the check before the fix.
 
+**The raw edit checks** (`scripts/raw_edit_checks.py`) are the faults a presenter kept flagging on the Get Started raw
+edit: a sentence started and said again (`restart`), a stop in the middle of a sentence (`stop`), a glance away with
+words over it, most often a stop mid-thought ("...allows you to") running into a thinking pause as the eyes leave
+(`glance`), and a script word said between two pieces but left out (`dropped`: "run requests"). Every threshold is
+measured on the speaker's own take first (their pause inside a sentence, their eyes' resting place and spread), because
+no constant fits everyone. They run alone on a raw edit before any visuals, too:
+`python raw_edit_checks.py RAW.mp4 cut/cutlist.md --literal cut/words_literal.json --gaze cut/raw_gaze.json`.
+The rules and how to fix each one: editing's [references/raw-edit.md](../editing/references/raw-edit.md). On the Get Started
+cuts it gives 0 fixes on the approved raw edit, the 3 real faults on the one before it, and 12 restarts on the cut
+before `verify_pieces.py`.
+
 It takes about 4 to 8 minutes for a 3.5 minute video. OCR results are cached in `REVIEW_DIR/ocr_cache.json`,
 so a re-run after a fix to the face or the B-roll is faster. `--skip ocr,face,audio,broll` leaves passes out
 while you iterate on one thing.
@@ -71,8 +83,9 @@ python ~/.claude/skills/video-review/scripts/selftest.py CUT.mp4 --gaze GAZE.jso
 ```
 
 Plants four faults in the cut's first 10 s (empty frames, a 10% stretch, the picture 3 frames behind the voice, a caption off
-the edge), reviews the clip, and fails if one is missed or a fix is reported that was not planted. It also checks the joins
-and the reading pace (two 2 s cards back to back on a moving picture must each be flagged), which need no video: without
+the edge), reviews the clip, and fails if one is missed or a fix is reported that was not planted. It also checks the joins,
+the raw edit (a restart, a dropped list item, a glance into a thinking pause, a stop, and a list that must not be called
+a restart) and the reading pace (two 2 s cards back to back on a moving picture must each be flagged), which need no video: without
 CUT.mp4 only those run. Run it after changing any check: a check that stops firing looks exactly like a clean video.
 
 Severity:

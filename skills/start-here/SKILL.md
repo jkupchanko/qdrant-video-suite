@@ -168,8 +168,11 @@ B-roll, no cards, no list, no animations, no style. The raw edit is the presente
 python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style" --style list --only cut
 ```
 
-Show `BUILD_DIR/cut/cut.mp4` (face only) and at most five short lines: the length, the lines found, the joins to listen
-to (run video-review's `join_checks.joins(RAW, cut/cutlist.md)`; give the times), the look-aways as times only. Ask
+Before showing it, read `BUILD_DIR/cut/raw_edit_check.md` and fix every **fix** in it (editing's
+`references/raw-edit.md`: restarts, stops inside a sentence, glances, script words dropped, each measured on this
+presenter), then the joins (`join_checks.joins(RAW, cut/cutlist.md)`). The presenter should not have to find these.
+Show `BUILD_DIR/cut/cut.mp4` (face only) and at most five short lines: the length, the lines found, what was fixed, the
+look-aways as times only. Ask
 what to change. Fixes stay in the raw edit and repeat until they approve it: a different take or a clipped word is fixed
 in the cut and cut again (minutes), nothing else is rebuilt.
 

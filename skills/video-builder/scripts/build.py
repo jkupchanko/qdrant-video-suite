@@ -9,8 +9,10 @@ without one, --name and --role add it (to a copy, BUILD_DIR/script.md, on the ho
 never edited), and with neither the build stops and asks (exit 2).
 
 Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage whose outputs exist is skipped unless --redo):
-  cut      editing          the take cut to the script: last complete take per line, eyes on the lens, word-boundary cuts,
-                            mirrored, Zoom tag covered, voice locked to the lips          -> cut/cut.mp4, cutlist.md, words.json
+  cut      editing          the raw edit as one clean pass: whole sentences close to the script, each said once, restarts and
+                            stops taken out, eyes on the lens, cut in the pauses, mirrored, Zoom tag covered, then checked
+                            against this speaker's own pauses and eyes (editing/references/raw-edit.md; --cutter takes for
+                            the old per-take cutter)              -> cut/cut.mp4, cutlist.md, words.json, raw_edit_check.md
   words    (glue)           the cut's words at cut time, one piece per line                -> words.json
   gaze     editing/gaze     where the eyes are, frame by frame; the look-aways on the cut  -> gaze.json, lookaways.json
   camera   camera-layout    the camera plan from the script, checked against the corpus    -> camera_plan.md
@@ -118,11 +120,28 @@ class Build:
     def cut(self):
         outs = [self.p("cut", "cut.mp4"), self.p("cut", "cutlist.md"), self.p("cut", "words.json")]
         if self.done("cut", outs): return outs, "kept"
-        cmd = [PY, os.path.join(SK, "editing", "scripts", "cut_takes.py"), self.a.take, self.a.script, "--out", self.p("cut"), "--bars", self.a.bars]
-        if self.a.mirror: cmd.append("--mirror")
-        z = self.sheet.get("zoom", {})
-        if z: cmd += ["--push", str(z.get("scale", 1.04)), "--push-blocks", str(z.get("stretches", 3))]
-        run(cmd, self.p("cut.log")); return outs, "cut from the take"
+        ED = os.path.join(SK, "editing", "scripts"); z = self.sheet.get("zoom", {}); look = ["--mirror"] if self.a.mirror else []
+        push = ["--push", str(z.get("scale", 1.04)), "--push-blocks", str(z.get("stretches", 3))] if z else []
+        if self.a.cutter == "takes":                                                     # the old cutter: last complete take per line
+            run([PY, os.path.join(ED, "cut_takes.py"), self.a.take, self.a.script, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
+            return outs, "cut from the take (last complete take per line)"
+        # the raw edit as one clean pass (editing/references/raw-edit.md): whole sentences close to the script, each said once
+        os.makedirs(self.p("cut"), exist_ok=True)
+        if not os.path.exists(outs[2]):                                                  # the take's words, as Whisper tidies them
+            sys.path.insert(0, ED); import cut_takes; json.dump(cut_takes.transcribe(self.a.take, "small.en"), open(outs[2], "w"))
+        lit, rg = self.p("cut", "words_literal.json"), self.p("cut", "raw_gaze.json")
+        if not os.path.exists(lit): run([PY, os.path.join(ED, "transcribe_literal.py"), self.a.take, "--out", lit], self.p("literal.log"))   # every attempt, where it was said
+        if not os.path.exists(rg): run([PY, os.path.join(ED, "gaze.py"), self.a.take, "--out", rg], self.p("raw_gaze.log"))                # the eyes on the whole take
+        run([PY, os.path.join(ED, "sentence_cut.py"), self.a.take, self.a.script, "--words", outs[2], "--gaze", rg, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
+        run([PY, os.path.join(ED, "verify_pieces.py"), self.p("cut"), self.a.take, "--bars", self.a.bars, "--literal", lit] + look, self.p("verify.log"))
+        return outs, self.raw_edit_check(lit, rg)
+    def raw_edit_check(self, lit, rg):
+        """the raw edit's own review (video-review/raw_edit_checks.py): restarts, stops, glances, script words dropped,
+        each measured against this speaker's own take. Written to cut/raw_edit_check.md for the person approving the cut"""
+        sys.path.insert(0, os.path.join(SK, "video-review", "scripts")); import raw_edit_checks as RE
+        F, S = RE.checks(self.a.take, self.p("cut", "cutlist.md"), lit, rg)
+        open(self.p("cut", "raw_edit_check.md"), "w", encoding="utf-8").write("# Raw edit check\n\n" + "\n".join(f"- {RE.ts(f['t'])} {f['sev']} {f['kind']}: {f['msg']}" for f in F) + "\n")
+        fx = sum(1 for f in F if f["sev"] == "fix"); return f"one-pass raw edit; check: {fx} to fix, {len(F) - fx} to look at (cut/raw_edit_check.md)"
     def words(self):
         out = self.p("words.json")
         if self.done("words", [out]): return [out], "kept"
@@ -186,6 +205,7 @@ class Build:
         cmd = [PY, os.path.join(SK, "video-review", "scripts", "review.py"), self.p("video_master.mp4"), "--out", self.p("review"), "--cut", self.p("cut", "cut.mp4"),
                "--script", self.a.script, "--words", self.p("words.json"), "--gaze", self.p("gaze.json"), "--lookaways", self.p("lookaways.json"), "--broll", self.p("broll"), "--label", self.a.label or "build",
                "--cutlist", self.p("cut", "cutlist.md"), "--assets", self.p("page_assets", "assets.json"), "--take", self.a.take]
+        if os.path.exists(self.p("cut", "words_literal.json")): cmd += ["--literal", self.p("cut", "words_literal.json"), "--take-gaze", self.p("cut", "raw_gaze.json")]
         try: run(cmd, self.p("review.log"))
         except RuntimeError as e:
             if "failed (1)" not in str(e): raise                                       # exit 1 = there is something to fix: that is a result, not an error
@@ -235,6 +255,7 @@ def main():
     ap.add_argument("--take", required=True); ap.add_argument("--script", required=True); ap.add_argument("--out", required=True); ap.add_argument("--url")
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
+    ap.add_argument("--cutter", choices=["sentences", "takes"], default="sentences", help="sentences: the raw edit as one clean pass (default); takes: the old last-complete-take cutter")
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
     ap.add_argument("--cut-from", metavar="BUILD_DIR", help="with --preview: take the cut and its eye contact from this build's approved cut instead of cutting again")
     ap.add_argument("--take-is-edited", action="store_true", help="build from a take that is already cut (a test); normally refused, it gets cut twice")
