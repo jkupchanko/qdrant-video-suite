@@ -21,7 +21,7 @@ CUTOFF = set("the a an to of and or is are was we you i it this that in on for w
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut_dir"); ap.add_argument("raw"); ap.add_argument("--mirror", action="store_true")
-    ap.add_argument("--bars", type=int, default=0); ap.add_argument("--size", default="1920x1080"); ap.add_argument("--model", default="small.en")
+    ap.add_argument("--bars", type=int, default=0); ap.add_argument("--size", default="1920x1080"); ap.add_argument("--model", default="small.en"); ap.add_argument("--literal", help="the take transcribed phrase by phrase (transcribe_literal.py), for stutters a piece heard alone smooths over")
     a = ap.parse_args()
     from faster_whisper import WhisperModel
     m = WhisperModel(a.model, device="cpu", compute_type="int8")
@@ -64,14 +64,18 @@ def main():
             changed = False; keep = [i for i in range(len(words)) if i not in drop]
             for x0_ in range(len(keep) - 1):
                 if not phrase_start(keep[x0_]) or not n[keep[x0_]]: continue
-                x = x0_                                                        # "And then on the left..." restarts as "On the left..."
-                while x + 2 < len(keep) and n[keep[x]] in FILLER: x += 1
-                for y in range(x + 1, min(len(keep) - 1, x + 15)):
-                    three = y + 2 < len(keep) and x + 2 < y and same(n[keep[x + 2]], n[keep[y + 2]])
+                xs = [x0_]                                                     # the opening as said, and without a leading "and then"
+                while xs[-1] + 2 < len(keep) and n[keep[xs[-1]]] in FILLER: xs.append(xs[-1] + 1)   # ("And then on the left..." / "On the left...");
+                for y in range(x0_ + 1, min(len(keep) - 1, x0_ + 15)):           # "Now" and "But" also stay comparable as they are
+                    if not phrase_start(keep[y]): continue
                     tried = [words[i]["w"] for i in keep[x0_:y]]                     # a false start is cut off, or very short; "you can run
                     cut_off = len(tried) <= 3 or re.search(r"(\.\.\.|…|-)$", tried[-1]) or norm(tried[-1]) in CUTOFF   # it locally, you can deploy" is a list
-                    if phrase_start(keep[y]) and same(n[keep[x]], n[keep[y]]) and same(n[keep[x + 1]], n[keep[y + 1]]) and (three or cut_off):
-                        drop |= set(keep[x0_:y]); changed = True; break
+                    for x in xs:
+                        if x >= y: break
+                        three = y + 2 < len(keep) and x + 2 < y and same(n[keep[x + 2]], n[keep[y + 2]])
+                        if same(n[keep[x]], n[keep[y]]) and same(n[keep[x + 1]], n[keep[y + 1]]) and (three or cut_off):
+                            drop |= set(keep[x0_:y]); changed = True; break
+                    if changed: break
                 if changed: break
         if len(words) > 1 and re.search(r"\.$", words[0]["w"]) and words[1]["w"][:1].isupper() and 0 not in drop:
             drop.add(0)                                                         # "this. You can also visit": the last word of the line before
@@ -98,6 +102,26 @@ def main():
                 out.append((x0, x1, float(r[3]), r[4] if first else "(same line, after a pause)", " ".join(w["w"] for w in run) if first else "",
                             (r[6] + "; restart taken out") if first else "restart taken out")); first = False
     json.dump(cache, open(cache_p, "w"))
+    # a stutter a piece heard alone smooths over ("you can only, you can only display" at 2:20 of Get Started was heard once):
+    # the take transcribed phrase by phrase (--literal) is read inside each piece, and only an immediate repeat, two or more
+    # words said again right after a pause, is taken out. Nothing wider: its word times are a little off for anything more
+    if a.literal and os.path.exists(a.literal):
+        LIT = json.load(open(a.literal, encoding="utf-8")); out2 = []
+        for p in out:
+            ws = [w for w in LIT if p[0] - 0.02 <= w["s"] < p[1]]; nw = [norm(w["w"]) for w in ws]; cut = None
+            for i in range(len(ws) - 3):
+                start_i = i == 0 or ws[i]["s"] - ws[i - 1]["e"] > 0.2 or re.search(r"[,.…]$", ws[i - 1]["w"])
+                if not start_i or not nw[i]: continue
+                for j in range(i + 2, min(len(ws) - 1, i + 7)):
+                    short = j - i <= 3 or nw[j - 1] in CUTOFF or (j + 2 < len(ws) and same(nw[i + 2], nw[j + 2]))   # not a list: "you can run
+                    if short and (ws[j]["s"] - ws[j - 1]["e"] > 0.2 or re.search(r"[,.…]$", ws[j - 1]["w"])) and same(nw[i], nw[j]) and same(nw[i + 1], nw[j + 1]):   # it locally, you can deploy"
+                        cut = (i, j); break
+                if cut: break
+            if not cut: out2.append(p); continue
+            i, j = cut; print(f"  stutter cut: {' '.join(w['w'] for w in ws[i:j])!r} before {' '.join(w['w'] for w in ws[j:j + 4])!r}")
+            if i > 0: out2.append((p[0], quiet_after(ws[i - 1]["e"], ws[i]["s"]), *p[2:]))
+            out2.append((quiet_before(ws[j]["s"], ws[j - 1]["e"]), p[1], *(p[2:] if i == 0 else (p[2], "(same line, after a pause)", "", "stutter taken out"))))
+        out = out2
     W_, H_ = (int(v) for v in a.size.split("x")); c = cv2.VideoCapture(a.raw); sw, sh = int(c.get(3)), int(c.get(4)); c.release()
     def vf(k):
         push = out[k][2]; cw, ch = int(sw / push), int(sh / push); cx, cy = (sw - cw) // 2, (sh - ch) // 2
