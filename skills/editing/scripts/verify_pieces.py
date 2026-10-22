@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from assemble import assemble
 ROW = re.compile(r"^\| ([\d.]+) \| ([\d.]+)-([\d.]+) \| x([\d.]+) \| (.*?) \| (.*?) \| (.*?) \|$")
 norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
+FILLER = set("and then so now but um uh okay well".split())
 CUTOFF = set("the a an to of and or is are was we you i it this that in on for with our your my be can will".split())
 
 def main():
@@ -61,17 +62,22 @@ def main():
         same = lambda u, v: u == v or (len(u) > 1 and len(v) > 1 and (u.startswith(v) or v.startswith(u)))   # "we" / "we're"
         while changed:                                                         # the same opening again after a pause: the first try was a false start
             changed = False; keep = [i for i in range(len(words)) if i not in drop]
-            for x in range(len(keep) - 1):
-                if not phrase_start(keep[x]) or not n[keep[x]]: continue
+            for x0_ in range(len(keep) - 1):
+                if not phrase_start(keep[x0_]) or not n[keep[x0_]]: continue
+                x = x0_                                                        # "And then on the left..." restarts as "On the left..."
+                while x + 2 < len(keep) and n[keep[x]] in FILLER: x += 1
                 for y in range(x + 1, min(len(keep) - 1, x + 15)):
                     three = y + 2 < len(keep) and x + 2 < y and same(n[keep[x + 2]], n[keep[y + 2]])
-                    tried = [words[i]["w"] for i in keep[x:y]]                     # a false start is cut off, or very short; "you can run
+                    tried = [words[i]["w"] for i in keep[x0_:y]]                     # a false start is cut off, or very short; "you can run
                     cut_off = len(tried) <= 3 or re.search(r"(\.\.\.|…|-)$", tried[-1]) or norm(tried[-1]) in CUTOFF   # it locally, you can deploy" is a list
                     if phrase_start(keep[y]) and same(n[keep[x]], n[keep[y]]) and same(n[keep[x + 1]], n[keep[y + 1]]) and (three or cut_off):
-                        drop |= set(keep[x:y]); changed = True; break
+                        drop |= set(keep[x0_:y]); changed = True; break
                 if changed: break
         if len(words) > 1 and re.search(r"\.$", words[0]["w"]) and words[1]["w"][:1].isupper() and 0 not in drop:
             drop.add(0)                                                         # "this. You can also visit": the last word of the line before
+        tiny = {k for k, r in enumerate(g) if float(r[2]) - float(r[1]) < 0.7 and len(g) > 1}   # a scrap between two halves of a line:
+        for k in tiny: drop |= {i for i, w in enumerate(words) if w["k"] == k}                 # a glance and a stray word ("you", heard as
+        if tiny: print(f"  scrap cut: {[g[k][1] + '-' + g[k][2] for k in tiny]}")              # "Thanks for watching!")
         if not drop:
             out += [(float(r[1]), float(r[2]), float(r[3]), r[4], r[5], r[6]) for r in g]; continue
         fixed += 1; kept = [w for i, w in enumerate(words) if i not in drop]
