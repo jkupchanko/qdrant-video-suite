@@ -36,6 +36,16 @@ def main():
             cache[key] = [dict(w=w.word.strip(), s=x0 + w.start, e=x0 + w.end) for s in segs for w in (s.words or []) if w.word.strip()]
             json.dump(cache, open(cache_p, "w"))
         return cache[key]
+    fr = audio[:len(audio) // 160 * 160].reshape(-1, 160); env = 20 * np.log10(np.maximum(1e-6, np.sqrt((fr ** 2).mean(axis=1))))   # 10 ms loudness
+    floor, speech = np.percentile(env, [10, 90]); quiet = floor + 0.45 * (speech - floor)
+    def quiet_after(x, limit):                                                 # the first silence after a word, or the quietest moment
+        i0, i1 = int(round(x * 100)), int(round(limit * 100))
+        k = next((k for k in range(i0, max(i0, i1 - 1)) if env[k] < quiet and env[k + 1] < quiet), None)
+        return min(limit, (k + 2) / 100) if k is not None else (i0 + int(np.argmin(env[i0:max(i0 + 1, i1)]))) / 100
+    def quiet_before(x, limit):
+        i0, i1 = int(round(x * 100)), int(round(limit * 100))
+        k = next((k for k in range(i0, i1, -1) if env[k] < quiet and env[k - 1] < quiet), None)
+        return max(limit, (k - 1) / 100) if k is not None else (i1 + int(np.argmin(env[i1:max(i1 + 1, i0)]))) / 100
     groups, cur = [], None                                                     # one script line: its pieces
     for r in rows:
         if r[4].startswith("(same line") and cur: cur.append(r)
@@ -75,8 +85,10 @@ def main():
                 if words.index(w) != words.index(run[-1]) + 1: runs.append(run); run = []
                 run.append(w)
             runs.append(run)
-            for run in runs:
-                x0 = max(float(r[1]), run[0]["s"] - 0.08); x1 = min(float(r[2]), run[-1]["e"] + 0.15)
+            pw = [w for w in words if w["k"] == k]
+            for run in runs:                                                   # a piece keeps its own edges unless a false start was cut
+                x0 = float(r[1]) if run[0] is pw[0] else quiet_before(run[0]["s"], float(r[1]))   # right there; a new edge goes to the
+                x1 = float(r[2]) if run[-1] is pw[-1] else quiet_after(run[-1]["e"], float(r[2]))  # silence (word times end early)
                 out.append((x0, x1, float(r[3]), r[4] if first else "(same line, after a pause)", " ".join(w["w"] for w in run) if first else "",
                             (r[6] + "; restart taken out") if first else "restart taken out")); first = False
     json.dump(cache, open(cache_p, "w"))
