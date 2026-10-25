@@ -107,8 +107,8 @@ def raw_edit_selftest(out):
     want = [("restart", edit(P["try1"]), "a sentence started, dropped and said again"), ("dropped", edit(P["web"]), '"run requests" left out of the list'),
             ("glance", edit(P["tool_e"]), 'a piece running past "to" into a thinking pause'), ("stop", edit(P["stop"]), "a 1.6 s stop inside a sentence")]
     for kind, t0, what in want:
-        hit = [f for f in F if f["kind"] == kind and f["sev"] == "fix" and t0 - 0.5 <= f["t"] <= t0 + 3]
-        print(f"  {'caught' if hit else 'MISSED'}  {kind:7s} {what}" + (f"  -> {hit[0]['msg'][:70]}" if hit else "")); ok &= bool(hit)
+        hit = [f for f in F if f["kind"] == kind and f["sev"] == "fix" and t0 - 0.5 <= f["t"] <= t0 + 3 and f.get("edit")]   # and it says how to fix it
+        print(f"  {'caught' if hit else 'MISSED'}  {kind:7s} {what}" + (f"  -> {hit[0]['msg'][:50]} | fix {hit[0]['edit']}"[:150] if hit else "")); ok &= bool(hit)
     extra = [f for f in F if f["sev"] == "fix" and not any(f["kind"] == k and t0 - 0.5 <= f["t"] <= t0 + 3 for k, t0, _ in want)]
     for f in extra: print(f"  INVENTED  {f['kind']} at {f['t']:.2f} s: {f['msg'][:80]}")
     return ok and not extra

@@ -4,3 +4,4 @@ __pycache__/
 *_sections.json
 *_review.json
 .venv/
+.selftest/

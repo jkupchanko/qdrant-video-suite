@@ -127,13 +127,19 @@ class Build:
             return outs, "cut from the take (last complete take per line)"
         # the raw edit as one clean pass (editing/references/raw-edit.md): whole sentences close to the script, each said once
         os.makedirs(self.p("cut"), exist_ok=True)
+        lit, rg = self.p("cut", "words_literal.json"), self.p("cut", "raw_gaze.json")
+        side = []                                                                        # three passes over the whole take, side by side
+        if not os.path.exists(lit): side.append(([PY, os.path.join(ED, "transcribe_literal.py"), self.a.take, "--out", lit], self.p("literal.log")))   # every attempt, where it was said
+        if not os.path.exists(rg): side.append(([PY, os.path.join(ED, "gaze.py"), self.a.take, "--out", rg], self.p("raw_gaze.log")))                 # the eyes on the whole take
+        procs = [(subprocess.Popen([str(c) for c in cmd], stdout=open(log, "w", encoding="utf-8"), stderr=subprocess.STDOUT), cmd, log) for cmd, log in side]
         if not os.path.exists(outs[2]):                                                  # the take's words, as Whisper tidies them
             sys.path.insert(0, ED); import cut_takes; json.dump(cut_takes.transcribe(self.a.take, "small.en"), open(outs[2], "w"))
-        lit, rg = self.p("cut", "words_literal.json"), self.p("cut", "raw_gaze.json")
-        if not os.path.exists(lit): run([PY, os.path.join(ED, "transcribe_literal.py"), self.a.take, "--out", lit], self.p("literal.log"))   # every attempt, where it was said
-        if not os.path.exists(rg): run([PY, os.path.join(ED, "gaze.py"), self.a.take, "--out", rg], self.p("raw_gaze.log"))                # the eyes on the whole take
+        for pr, cmd, log in procs:
+            if pr.wait(): raise RuntimeError(f"{os.path.basename(str(cmd[1]))} failed ({pr.returncode}); see {log}")
+        json.dump(dict(mirror=bool(self.a.mirror), bars=int(self.a.bars)), open(self.p("cut", "cut_settings.json"), "w"))   # for fix_cut.py
         run([PY, os.path.join(ED, "sentence_cut.py"), self.a.take, self.a.script, "--words", outs[2], "--gaze", rg, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
         run([PY, os.path.join(ED, "verify_pieces.py"), self.p("cut"), self.a.take, "--bars", self.a.bars, "--literal", lit] + look, self.p("verify.log"))
+        run([PY, os.path.join(ED, "fix_cut.py"), self.p("cut"), self.a.take, "--apply"], self.p("fix.log"))     # the check's own fixes, before anyone watches
         return outs, self.raw_edit_check(lit, rg)
     def raw_edit_check(self, lit, rg):
         """the raw edit's own review (video-review/raw_edit_checks.py): restarts, stops, glances, script words dropped,
@@ -141,7 +147,10 @@ class Build:
         sys.path.insert(0, os.path.join(SK, "video-review", "scripts")); import raw_edit_checks as RE
         F, S = RE.checks(self.a.take, self.p("cut", "cutlist.md"), lit, rg)
         open(self.p("cut", "raw_edit_check.md"), "w", encoding="utf-8").write("# Raw edit check\n\n" + "\n".join(f"- {RE.ts(f['t'])} {f['sev']} {f['kind']}: {f['msg']}" for f in F) + "\n")
-        fx = sum(1 for f in F if f["sev"] == "fix"); return f"one-pass raw edit; check: {fx} to fix, {len(F) - fx} to look at (cut/raw_edit_check.md)"
+        run([PY, os.path.join(SK, "video-review", "scripts", "review_page.py"), self.p("cut"), self.a.take, "--title", self.a.label or os.path.basename(self.d)], self.p("review_page.log"))
+        fixed = next((l for l in open(self.p("fix.log"), encoding="utf-8", errors="replace") if l.startswith("fixed")), "").strip() if os.path.exists(self.p("fix.log")) else ""
+        fx = sum(1 for f in F if f["sev"] == "fix")
+        return f"one-pass raw edit; {fixed + '; ' if fixed else ''}check: {fx} to fix, {len(F) - fx} to look at (cut/raw_edit_check.md; click through them in cut/review.html)"
     def words(self):
         out = self.p("words.json")
         if self.done("words", [out]): return [out], "kept"

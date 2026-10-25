@@ -71,6 +71,19 @@ def checks(take, cutlist, literal, gaze=None):
     env, quiet, _ = JC.envelope(take) if isinstance(take, str) else take
     S = speaker(W, env, quiet, G); R = rows(cutlist); out = []
     vo = lambda a, b: env[int(round(a * 100)):int(round(b * 100))] > quiet
+    # each finding carries its fix as new source spans for the pieces it touches ({edit time: [(in, out), ...]}, None to
+    # drop the piece), every cut point placed in this take's own quiet; fix_cut.py (editing) applies them with respan.py
+    key = lambda k: f"{R[k][0]:.2f}"
+    def gap(x0, x1):
+        """the longest quiet stretch in [x0, x1] of the take: where two attempts part"""
+        q = quiet_runs(vo(x0, x1), x0)
+        return max(q, key=lambda r: r[1] - r[0]) if q else ((x0 + x1) / 2, (x0 + x1) / 2)
+    def phrase(x0, x1):
+        """[x0, x1] grown out to a pause of at least half this speaker's pause on each side: the whole phrase"""
+        lo, hi = int(round(x0 * 100)), int(round(x1 * 100)); n = int(max(0.25, S["pause"] / 2) * 100)
+        while lo > n and (env[lo - n:lo] > quiet).any(): lo -= 1
+        while hi < len(env) - n and (env[hi:hi + n] > quiet).any(): hi += 1
+        return round(lo / 100 - 0.04, 2), round(hi / 100 + 0.04, 2)
     # the cut as heard: every kept word, at its edit time, with the join it follows
     kept = []
     for k, (t, a, b, line) in enumerate(R):
@@ -92,7 +105,15 @@ def checks(take, cutlist, literal, gaze=None):
                 if j - i <= 3 or kept[j - 1]["n"] in CUTOFF or three: hit = j; break
         if hit:
             said = " ".join(x["w"] for x in kept[i:hit]); again = " ".join(x["w"] for x in kept[hit:hit + 4])
-            out.append(dict(t=kept[i]["et"], kind="restart", sev="fix", msg=f'said twice: "{said}" then "{again}..." (a restart left in; keep the second try)'))
+            pi, ph = kept[i]["piece"], kept[hit]["piece"]; a_i, b_i = R[pi][1], R[pi][2]; a_h, b_h = R[ph][1], R[ph][2]
+            g0 = gap(kept[i - 1]["s"], kept[i]["s"] + 0.1) if i and not kept[i]["first"] else None        # where the first try begins
+            g1 = gap(kept[hit - 1]["s"], kept[hit]["s"] + 0.1)                                              # where the second try begins
+            if pi == ph: edit = {key(pi): ([(a_i, round(g0[0] + 0.04, 2))] if g0 else []) + [(round(g1[1] - 0.04, 2), b_h)]}
+            else:
+                edit = {key(pi): [(a_i, round(g0[0] + 0.04, 2))] if g0 else None}
+                edit.update({key(k): None for k in range(pi + 1, ph)})
+                if not kept[hit]["first"]: edit[key(ph)] = [(round(g1[1] - 0.04, 2), b_h)]
+            out.append(dict(t=kept[i]["et"], kind="restart", sev="fix", edit=edit, msg=f'said twice: "{said}" then "{again}..." (a restart left in; keep the second try)'))
             i = hit
         i += 1
     # 2. a stop inside a sentence: a silence heard in the cut (inside a piece, or a piece's tail plus the next one's head)
@@ -105,7 +126,11 @@ def checks(take, cutlist, literal, gaze=None):
         if not before: continue
         w = before[-1]
         if ends(w["w"]) or (w["w"].endswith(",") and n < 1.5 * S["stop"]) or n <= S["stop"]: continue
-        out.append(dict(t=qa, kind="stop", sev="fix" if n > 2 * S["stop"] else "check",
+        k1 = int(np.searchsorted(np.cumsum([len(vo(a, b)) for _, a, b, _ in R]), int(round(qa * 100)), side="right")); k2 = int(np.searchsorted(np.cumsum([len(vo(a, b)) for _, a, b, _ in R]), int(round(qb * 100)) - 1, side="right"))
+        s_a = float(src[min(len(src) - 1, int(round(qa * 100)))]); s_b = float(src[min(len(src) - 1, int(round(qb * 100)))]); keep = min(0.15, S["pause"] / 2)
+        edit = ({key(k1): [(R[k1][1], round(s_a + keep, 2)), (round(s_b - keep, 2), R[k1][2])]} if k1 == k2 else
+                {key(k1): [(R[k1][1], round(s_a + keep, 2))], key(k2): [(round(s_b - keep, 2), R[k2][2])]}) if k2 < len(R) else None
+        out.append(dict(t=qa, kind="stop", sev="fix" if n > 2 * S["stop"] else "check", edit=edit,
                         msg=f'a {n:.2f} s stop in the middle of a sentence, after "{w["w"]}" (this speaker pauses about {S["pause"]:.2f} s inside a sentence)'))
     # 3. words lost from the middle of a line: words of the script line that were said in the take, between that line's
     #    pieces, but are not in the cut. A retake or an aside between pieces is not a loss; a list item the script has is
@@ -117,13 +142,18 @@ def checks(take, cutlist, literal, gaze=None):
         script_line = R[g[0]][3]
         said = {x["n"] for x in kept if x["piece"] in g}
         want = [n for n in dict.fromkeys(norm(w) for w in script_line.split()) if n and n not in STOP and not any(same(n, x) for x in said)]
-        lost = []
+        lost, edit = [], {}
         for k0, k1 in zip(g, g[1:]):
             between = [w for w in W if inside(w, R[k0][2], R[k1][1]) and not inside(w, R[k0][1], R[k0][2]) and not inside(w, R[k1][1], R[k1][2])]
-            lost += [w for w in between if any(same(norm(w["w"]), n) for n in want)]
+            here = [w for w in between if any(same(norm(w["w"]), n) for n in want)]
+            if not here or edit: lost += here; continue
+            lost += here; x0, x1 = phrase(here[0]["s"], here[-1]["e"]); x0, x1 = max(x0, R[k0][2]), min(x1, R[k1][1])
+            ph = {norm(w["w"]) for w in W if inside(w, x0, x1)}; prev = [x["n"] for x in kept if x["piece"] == k0 and x["n"] not in STOP]
+            if prev and all(any(same(n, q) for q in ph) for n in prev): edit = {key(k0): [(x0, x1)]}   # a fuller retake of the piece before
+            else: edit = {key(k1): [(x0, x1), (R[k1][1], R[k1][2])]}                                   # the missing words, then the piece
         if lost:
             names = list(dict.fromkeys(w["w"].strip(",.") for w in lost))
-            out.append(dict(t=R[g[0]][0], kind="dropped", sev="fix",
+            out.append(dict(t=R[g[0]][0], kind="dropped", sev="fix", edit=edit or None,
                             msg=f'"{", ".join(names)}" is in the script line and was said (source {lost[0]["s"]:.1f} s), but the cut leaves it out: "{script_line[:80]}"'))
     # 4. the eyes, against this speaker's own resting place: a glance is the eyes leaving it by 3 of their own spreads for
     #    a quarter of a second, or a stop followed by any move off it at a piece's edge (a thought, then the eyes go)
@@ -148,7 +178,7 @@ def checks(take, cutlist, literal, gaze=None):
             if norm(last["w"]) in CUTOFF and not re.search(r"[,.?!]$", last["w"]) and after > 2 * S["stop"] and tail > 0.12:   # stopped mid-thought to think: the eyes go next
                 zt = Z[(T > last["e"]) & (T <= b)]
                 if len(zt) and zt.max() > 1.5:
-                    out.append(dict(t=t + last["e"] - a, kind="glance", sev="fix",
+                    out.append(dict(t=t + last["e"] - a, kind="glance", sev="fix", edit={key(k): [(a, round(float(vend) + 0.04, 2))]},
                                     msg=f'the piece runs {tail:.2f} s past "{last["w"]}" into a {after:.1f} s thinking pause, and the eyes start to leave the lens there; end it on the word'))
     out.sort(key=lambda d: d["t"])
     return out, S

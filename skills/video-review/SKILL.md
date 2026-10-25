@@ -60,7 +60,11 @@ words over it, most often a stop mid-thought ("...allows you to") running into a
 measured on the speaker's own take first (their pause inside a sentence, their eyes' resting place and spread), because
 no constant fits everyone. They run alone on a raw edit before any visuals, too:
 `python raw_edit_checks.py RAW.mp4 cut/cutlist.md --literal cut/words_literal.json --gaze cut/raw_gaze.json`.
-The rules and how to fix each one: editing's [references/raw-edit.md](../editing/references/raw-edit.md). On the Get Started
+The rules and how to fix each one: editing's [references/raw-edit.md](../editing/references/raw-edit.md). Each finding
+carries its own fix (`edit`: new source spans per piece), which editing's `fix_cut.py --apply` applies.
+
+**`review_page.py CUT_DIR RAW.mp4`** writes `CUT_DIR/review.html`: the cut with every flagged moment beside it, to click,
+mark Fine or Fix, and add moments nothing flagged (M). Its saved `review_notes.json` goes to `fix_cut.py --notes`. On the Get Started
 cuts it gives 0 fixes on the approved raw edit, the 3 real faults on the one before it, and 12 restarts on the cut
 before `verify_pieces.py`.
 

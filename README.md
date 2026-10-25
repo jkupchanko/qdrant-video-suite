@@ -302,17 +302,17 @@ or a pull request with what broke or what you would change. MIT licensed.
 
 ## Set up
 
-Once per computer, about 15 minutes. You need Claude Code, Python 3.12+, Google Chrome and FFmpeg.
+Once per computer, about 15 minutes. You need Claude Code, Python 3.12+ and Google Chrome.
 
-1. **Get the repo:** `git clone https://github.com/jkupchanko/qdrant-video-suite.git`
-2. **Install the skills:** copy every folder in `skills/` into `~/.claude/skills/`.
-3. **Install the Python packages:** `python -m venv .venv`, then `.venv/Scripts/pip install -r requirements.txt`
-   (Mac/Linux: `.venv/bin/pip`).
-4. **Point the builder at the engine:** make `~/camera_audit/styles` a link to this repo's `engine/` folder and
-   `~/camera_audit/assets` a link to `engine/assets/`, and put the fonts in `~/camera_audit/fonts`
-   ([details](engine/README.md)).
-5. **Check it:** `python skills/video-review/scripts/selftest.py demos/bulk-uploads-first30/face_only_720.mp4` ends with
-   `SELF-TEST PASSED`.
+```bash
+git clone https://github.com/jkupchanko/qdrant-video-suite.git
+cd qdrant-video-suite
+python setup.py
+```
+
+`setup.py` makes the Python environment, installs the packages, copies the skills into `~/.claude/skills`, points the
+build at this repo's engine and fonts, checks the B-roll browser, and runs the self-test. It ends with **Ready**, or a
+short TODO list of what to install. Run it again after every `git pull`. `python setup.py --check` changes nothing.
 
 Then open Claude Code and say **"I want to make a video"**.
 

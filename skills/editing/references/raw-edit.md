@@ -54,26 +54,48 @@ their middle.
 4. `sentence_cut.py`: whole sentences matched to the script lines, the best take of each chosen over the whole video,
    silences over 0.45 s removed from inside a line.
 5. `verify_pieces.py`: every piece heard again on its own, and false starts and stutters cut.
-6. `raw_edit_checks.py`: the rules above, against this speaker, written to `cut/raw_edit_check.md`.
+6. `fix_cut.py --apply`: every fix the check finds, applied and checked again.
+7. `raw_edit_checks.py`: what is left, against this speaker, written to `cut/raw_edit_check.md`, and `cut/review.html`
+   to click through it.
+
+Steps 1 to 3 run side by side (each reads the whole take; on a 14-core laptop they do not slow each other).
 
 `--cutter takes` runs the older last-complete-take cutter instead.
 
 ## Fixing what the check finds
 
-Read `cut/raw_edit_check.md` and fix every **fix** before showing the cut. **Check** items are for a person to look at.
-Fixes go into the cut list, and the cut is rebuilt in minutes:
+The build fixes them itself before anyone watches: every finding carries its fix (new source spans for the pieces it
+touches, each cut point in this speaker's own quiet), and `fix_cut.py --apply` applies them, rebuilds the cut, checks
+again and repeats until nothing is left to fix. What it does by kind:
+
+- **restart**: drops the first try (its piece, or the part of a piece before the second try starts).
+- **stop**: splits the piece around the silence, keeping a short natural pause.
+- **glance**: ends the piece on the last word, before the eyes move.
+- **dropped**: adds the phrase the missing words belong to, or swaps in the fuller retake when the piece before is a
+  shorter try of the same phrase ("the Quick Start" -> "You can follow the Quick Start").
+
+```bash
+python ~/.claude/skills/editing/scripts/fix_cut.py BUILD_DIR/cut RAW.mp4 --at 2:33           # what is at 2:33
+python ~/.claude/skills/editing/scripts/fix_cut.py BUILD_DIR/cut RAW.mp4 --apply             # fix every fix
+python ~/.claude/skills/editing/scripts/fix_cut.py BUILD_DIR/cut RAW.mp4 --notes review_notes.json
+```
+
+`--at` shows the pieces around a time with their words, the words said between pieces that the cut leaves out, where
+the eyes leave their resting place (`~`), and the findings there. Use it when a person names a time the check did not
+flag, then fix with `respan.py` (below).
+
+**The person reviews on a page, not in a chat.** The build writes `cut/review.html` (video-review's `review_page.py`):
+the cut with every flagged moment beside it. They click a time to jump there, mark it Fine or Fix, and press M wherever
+something is off that nothing flagged. "Save notes" gives `review_notes.json`; `fix_cut.py --notes` fixes the ones marked
+Fix and shows each added moment with `--at`. "Copy notes" gives the same as text to paste into a chat.
+
+By hand, for anything else: `respan.py` changes or drops pieces by their edit time.
 
 ```bash
 python ~/.claude/skills/editing/scripts/respan.py BUILD_DIR/cut RAW.mp4 --mirror --bars 72 --piece "EDIT_T=SRC_IN-SRC_OUT[,SRC_IN-SRC_OUT]" --drop EDIT_T
 ```
 
-- **restart**: drop the first try's piece, or move its in-point past it.
-- **stop**: split the piece around the silence (two spans in one `--piece`).
-- **glance**: move the out-point onto the end of the last word, and the next in-point to where the eyes are back.
-- **dropped**: add the missing words' span to the piece (or replace the piece with the full second try if the first
-  one was cut short).
-
-Put every cut point in a quiet stretch (the take's quiet level, from `join_checks.envelope`). Then run the join check and
+Put every cut point in a quiet stretch (the take's quiet level, from `join_checks.envelope`), then run the join check and
 the raw edit check again. Both must show no fixes before the cut goes to the presenter.
 
 ## When the presenter finds something the check missed
