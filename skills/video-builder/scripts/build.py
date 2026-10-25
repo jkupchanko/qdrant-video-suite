@@ -11,7 +11,7 @@ never edited), and with neither the build stops and asks (exit 2).
 Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage whose outputs exist is skipped unless --redo):
   cut      editing          the raw edit as one clean pass: whole sentences close to the script, each said once, restarts and
                             stops taken out, eyes on the lens, cut in the pauses, mirrored, Zoom tag covered, then checked
-                            against this speaker's own pauses and eyes (editing/references/raw-edit.md; --cutter takes for
+                            against this speaker's own pauses and eyes (the raw-edit skill; --cutter takes for
                             the old per-take cutter)              -> cut/cut.mp4, cutlist.md, words.json, raw_edit_check.md
   words    (glue)           the cut's words at cut time, one piece per line                -> words.json
   gaze     editing/gaze     where the eyes are, frame by frame; the look-aways on the cut  -> gaze.json, lookaways.json
@@ -120,16 +120,16 @@ class Build:
     def cut(self):
         outs = [self.p("cut", "cut.mp4"), self.p("cut", "cutlist.md"), self.p("cut", "words.json")]
         if self.done("cut", outs): return outs, "kept"
-        ED = os.path.join(SK, "editing", "scripts"); z = self.sheet.get("zoom", {}); look = ["--mirror"] if self.a.mirror else []
+        ED = os.path.join(SK, "editing", "scripts"); RW = os.path.join(SK, "raw-edit", "scripts"); z = self.sheet.get("zoom", {}); look = ["--mirror"] if self.a.mirror else []
         push = ["--push", str(z.get("scale", 1.04)), "--push-blocks", str(z.get("stretches", 3))] if z else []
         if self.a.cutter == "takes":                                                     # the old cutter: last complete take per line
             run([PY, os.path.join(ED, "cut_takes.py"), self.a.take, self.a.script, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
             return outs, "cut from the take (last complete take per line)"
-        # the raw edit as one clean pass (editing/references/raw-edit.md): whole sentences close to the script, each said once
+        # the raw edit as one clean pass (the raw-edit skill): whole sentences close to the script, each said once
         os.makedirs(self.p("cut"), exist_ok=True)
         lit, rg = self.p("cut", "words_literal.json"), self.p("cut", "raw_gaze.json")
         side = []                                                                        # three passes over the whole take, side by side
-        if not os.path.exists(lit): side.append(([PY, os.path.join(ED, "transcribe_literal.py"), self.a.take, "--out", lit], self.p("literal.log")))   # every attempt, where it was said
+        if not os.path.exists(lit): side.append(([PY, os.path.join(RW, "transcribe_literal.py"), self.a.take, "--out", lit], self.p("literal.log")))   # every attempt, where it was said
         if not os.path.exists(rg): side.append(([PY, os.path.join(ED, "gaze.py"), self.a.take, "--out", rg], self.p("raw_gaze.log")))                 # the eyes on the whole take
         procs = [(subprocess.Popen([str(c) for c in cmd], stdout=open(log, "w", encoding="utf-8"), stderr=subprocess.STDOUT), cmd, log) for cmd, log in side]
         if not os.path.exists(outs[2]):                                                  # the take's words, as Whisper tidies them
@@ -137,17 +137,17 @@ class Build:
         for pr, cmd, log in procs:
             if pr.wait(): raise RuntimeError(f"{os.path.basename(str(cmd[1]))} failed ({pr.returncode}); see {log}")
         json.dump(dict(mirror=bool(self.a.mirror), bars=int(self.a.bars)), open(self.p("cut", "cut_settings.json"), "w"))   # for fix_cut.py
-        run([PY, os.path.join(ED, "sentence_cut.py"), self.a.take, self.a.script, "--words", outs[2], "--gaze", rg, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
-        run([PY, os.path.join(ED, "verify_pieces.py"), self.p("cut"), self.a.take, "--bars", self.a.bars, "--literal", lit] + look, self.p("verify.log"))
-        run([PY, os.path.join(ED, "fix_cut.py"), self.p("cut"), self.a.take, "--apply"], self.p("fix.log"))     # the check's own fixes, before anyone watches
+        run([PY, os.path.join(RW, "sentence_cut.py"), self.a.take, self.a.script, "--words", outs[2], "--gaze", rg, "--out", self.p("cut"), "--bars", self.a.bars] + look + push, self.p("cut.log"))
+        run([PY, os.path.join(RW, "verify_pieces.py"), self.p("cut"), self.a.take, "--bars", self.a.bars, "--literal", lit] + look, self.p("verify.log"))
+        run([PY, os.path.join(RW, "fix_cut.py"), self.p("cut"), self.a.take, "--apply"], self.p("fix.log"))     # the check's own fixes, before anyone watches
         return outs, self.raw_edit_check(lit, rg)
     def raw_edit_check(self, lit, rg):
-        """the raw edit's own review (video-review/raw_edit_checks.py): restarts, stops, glances, script words dropped,
+        """the raw edit's own review (raw-edit/raw_edit_checks.py): restarts, stops, glances, script words dropped,
         each measured against this speaker's own take. Written to cut/raw_edit_check.md for the person approving the cut"""
-        sys.path.insert(0, os.path.join(SK, "video-review", "scripts")); import raw_edit_checks as RE
+        sys.path.insert(0, os.path.join(SK, "raw-edit", "scripts")); import raw_edit_checks as RE
         F, S = RE.checks(self.a.take, self.p("cut", "cutlist.md"), lit, rg)
         open(self.p("cut", "raw_edit_check.md"), "w", encoding="utf-8").write("# Raw edit check\n\n" + "\n".join(f"- {RE.ts(f['t'])} {f['sev']} {f['kind']}: {f['msg']}" for f in F) + "\n")
-        run([PY, os.path.join(SK, "video-review", "scripts", "review_page.py"), self.p("cut"), self.a.take, "--title", self.a.label or os.path.basename(self.d)], self.p("review_page.log"))
+        run([PY, os.path.join(SK, "raw-edit", "scripts", "review_page.py"), self.p("cut"), self.a.take, "--title", self.a.label or os.path.basename(self.d)], self.p("review_page.log"))
         fixed = next((l for l in open(self.p("fix.log"), encoding="utf-8", errors="replace") if l.startswith("fixed")), "").strip() if os.path.exists(self.p("fix.log")) else ""
         fx = sum(1 for f in F if f["sev"] == "fix")
         return f"one-pass raw edit; {fixed + '; ' if fixed else ''}check: {fx} to fix, {len(F) - fx} to look at (cut/raw_edit_check.md; click through them in cut/review.html)"

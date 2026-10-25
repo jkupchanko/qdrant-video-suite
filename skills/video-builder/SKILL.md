@@ -1,6 +1,6 @@
 ---
 name: video-builder
-description: Build a whole video from a request, using every skill of the video suite in order and ending with the review. Give it a raw talking-head take and a three-layer script (lines, B-roll markers, camera calls, transition values); it cuts the take (editing), finds the look-aways (gaze), plans the camera (camera-layout), checks the B-roll by key term and records every marker (broll-recorder), captures the docs page's figures and code (broll-recorder), renders a styled video (editing-style; the listed-sections style builds itself from the script and the page), masters the loudness, and audits the result frame by frame (video-review), then reports what the review found. Use it whenever someone asks to "build this video", "make the video", "do the whole thing", "run it end to end", "use all the skills", "go from the recording to the finished video", or asks a question that ends in a finished video, even if they name only the topic.
+description: Build a whole video from a request, using every skill of the video suite in order and ending with the review. Give it a raw talking-head take and a three-layer script (lines, B-roll markers, camera calls, transition values); it cuts the take into one clean pass (raw-edit), finds the look-aways (gaze), plans the camera (camera-layout), checks the B-roll by key term and records every marker (broll-recorder), captures the docs page's figures and code (broll-recorder), renders a styled video (editing-style; the listed-sections style builds itself from the script and the page), masters the loudness, and audits the result frame by frame (video-review), then reports what the review found. Use it whenever someone asks to "build this video", "make the video", "do the whole thing", "run it end to end", "use all the skills", "go from the recording to the finished video", or asks a question that ends in a finished video, even if they name only the topic.
 ---
 
 # Video builder
@@ -67,7 +67,7 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 
 | stage | skill | makes |
 |---|---|---|
-| cut | editing | `cut/cut.mp4`, `cut/cutlist.md` (which take each line came from), `cut/words.json`; every cut point placed by the sound, never mid-word |
+| cut | raw-edit (+ editing) | `cut/cut.mp4`, `cut/cutlist.md`, `cut/words.json`: each thought said once, no stop mid-sentence, no glance at a cut, nothing dropped, every limit measured on the presenter; what it found fixed by itself; `cut/raw_edit_check.md` and `cut/review.html` to review on. `--cutter takes` for the old per-take cutter |
 | words | (glue) | `words.json`: the cut's words at cut time, one piece per line |
 | gaze | editing (gaze.py) | `gaze.json`, `lookaways.json`: where the face must be off screen |
 | camera | camera-layout | `camera_plan.md`: the planner's plan, as a check on the script's own calls |

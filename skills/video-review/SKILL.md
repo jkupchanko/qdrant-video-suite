@@ -53,20 +53,9 @@ The first Listed Sections build kept the first 40 ms of "when" after "...dense a
 pieces overlapped so a word was heard twice. The check found 16 fixes on that cut, none on the cut after the editing
 skill placed its cut points by the sound. When a person reports something the review missed, add the check before the fix.
 
-**The raw edit checks** (`scripts/raw_edit_checks.py`) are the faults a presenter kept flagging on the Get Started raw
-edit: a sentence started and said again (`restart`), a stop in the middle of a sentence (`stop`), a glance away with
-words over it, most often a stop mid-thought ("...allows you to") running into a thinking pause as the eyes leave
-(`glance`), and a script word said between two pieces but left out (`dropped`: "run requests"). Every threshold is
-measured on the speaker's own take first (their pause inside a sentence, their eyes' resting place and spread), because
-no constant fits everyone. They run alone on a raw edit before any visuals, too:
-`python raw_edit_checks.py RAW.mp4 cut/cutlist.md --literal cut/words_literal.json --gaze cut/raw_gaze.json`.
-The rules and how to fix each one: editing's [references/raw-edit.md](../editing/references/raw-edit.md). Each finding
-carries its own fix (`edit`: new source spans per piece), which editing's `fix_cut.py --apply` applies.
-
-**`review_page.py CUT_DIR RAW.mp4`** writes `CUT_DIR/review.html`: the cut with every flagged moment beside it, to click,
-mark Fine or Fix, and add moments nothing flagged (M). Its saved `review_notes.json` goes to `fix_cut.py --notes`. On the Get Started
-cuts it gives 0 fixes on the approved raw edit, the 3 real faults on the one before it, and 12 restarts on the cut
-before `verify_pieces.py`.
+**The raw edit checks** come from the [raw-edit](../raw-edit/) skill (`raw_edit_checks.py`): a restart left in, a stop
+in the middle of a sentence, a glance away with words over it, a script word said between two pieces but left out, each
+measured on the speaker's own take. With `--literal` and `--take-gaze` they run here too, on the finished video's cut.
 
 It takes about 4 to 8 minutes for a 3.5 minute video. OCR results are cached in `REVIEW_DIR/ocr_cache.json`,
 so a re-run after a fix to the face or the B-roll is faster. `--skip ocr,face,audio,broll` leaves passes out

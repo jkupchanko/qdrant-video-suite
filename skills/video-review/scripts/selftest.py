@@ -65,7 +65,9 @@ def raw_edit_selftest(out):
       a list item of the script said between two pieces, left out -> dropped
       a piece ending on "to" that runs into a thinking pause as the eyes leave -> glance
       a 1.6 s silence inside one sentence                          -> stop
-    and a list that repeats its opening on purpose ("you can run it locally, you can deploy it") that must not be called a restart"""
+    and two lists that repeat their opening on purpose ("you can run it locally, you can deploy it"; "it can diagnose, it can
+    assemble") that must not be fixed as restarts"""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "raw-edit", "scripts"))   # the raw-edit skill
     import numpy as np, wave, raw_edit_checks as RE
     sr = 16000; W, bursts, t = [], [], 0.5
     def say(text, gap=0.12):
@@ -76,7 +78,8 @@ def raw_edit_selftest(out):
     def pause(s): 
         nonlocal t; t += s
     P = {}
-    P["list"] = t; say("You can run it locally, you can deploy it, or use the cloud."); P["list_e"] = t; pause(1.5)
+    P["list"] = t; say("You can run it locally, you can deploy it, or use the cloud."); pause(0.4)
+    say("It can diagnose, it can assemble, it can assess."); P["list_e"] = t; pause(1.5)       # a list said on purpose (49 pro videos)
     P["try1"] = t; say("Now this can be useful if you want more"); P["try1_e"] = t; pause(1.2)
     P["try2"] = t; say("Now this can be useful if you want more control."); P["try2_e"] = t; pause(1.5)
     P["web"] = t; say("The Web UI lets us explore the cluster, manage collections,"); P["web_e"] = t; pause(0.8)
@@ -93,7 +96,7 @@ def raw_edit_selftest(out):
         ft = k / 12.5; away = P["tool_e"] + 0.05 < ft < P["tool2"] - 0.3
         fr.append(dict(t=ft, face=True, h=(0.37 if away else 0.43) + rng.normal(0, 0.015), v=0.47 + rng.normal(0, 0.015), off=False))
     h = 0.06
-    spans = [(P["list"] - h, P["list_e"] + h, "You can run it locally, you can deploy it, or use the cloud."),
+    spans = [(P["list"] - h, P["list_e"] + h, "You can run it locally, you can deploy it, or use the cloud. It can diagnose, it can assemble, it can assess."),
              (P["try1"] - h, P["try1_e"] + h, "Now this can be useful if you want more control."), (P["try2"] - h, P["try2_e"] + h, "(same line, after a pause)"),
              (P["web"] - h, P["web_e"] + h, "The Web UI lets us explore the cluster, manage collections, run requests, and follow interactive tutorials."),
              (P["web2"] - h, P["web2_e"] + h, "(same line, after a pause)"),

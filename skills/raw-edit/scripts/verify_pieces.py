@@ -13,6 +13,7 @@ cut list's own push), and the old one kept as cut_before_verify.mp4.
 import argparse, json, os, re, shutil, subprocess, sys
 import numpy as np, imageio_ffmpeg, cv2
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "editing", "scripts"), os.path.join(SK, "video-review", "scripts")]   # shared: assemble, respan, gaze; join_checks
 from assemble import assemble
 ROW = re.compile(r"^\| ([\d.]+) \| ([\d.]+)-([\d.]+) \| x([\d.]+) \| (.*?) \| (.*?) \| (.*?) \|$")
 norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())

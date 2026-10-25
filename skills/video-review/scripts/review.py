@@ -433,7 +433,7 @@ def main():
     ap.add_argument("--cutlist", help="the editing skill's cut list: a line it found no take for is reported missing, not guessed at")
     ap.add_argument("--assets", help="page_assets.py's assets.json: the page's code and captions are its own words and numbers too")
     ap.add_argument("--take", help="the raw recording the cut was made from (with --cutlist): the sound at every join")
-    ap.add_argument("--literal", help="the take transcribed phrase by phrase (editing/transcribe_literal.py), with --take and --cutlist: the raw edit's own checks")
+    ap.add_argument("--literal", help="the take transcribed phrase by phrase (raw-edit/transcribe_literal.py), with --take and --cutlist: the raw edit's own checks")
     ap.add_argument("--take-gaze", help="gaze.py run on the raw take: glances, against this speaker's own resting place")
     ap.add_argument("--ocr-every", type=float, default=1.0); ap.add_argument("--face-step", type=int, default=2)
     a = ap.parse_args(); skip = set(filter(None, a.skip.split(","))); os.makedirs(a.out, exist_ok=True)
@@ -552,7 +552,7 @@ def main():
         for j in J: F.add("join", j["sev"], j["t"], j["msg"])
         stats["joins"] = f"{len(JC.rows(a.cutlist))} pieces; " + (", ".join(f"{sum(1 for j in J if j['sev'] == s_)} {s_}" for s_ in ("fix", "check", "note")) if J else "every join clean")
     if a.take and a.cutlist and a.literal and os.path.exists(a.literal) and "raw" not in skip:     # one clean pass: restarts, stops,
-        step("raw edit"); import raw_edit_checks as RE                                           # glances, script words dropped
+        step("raw edit"); sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "raw-edit", "scripts")); import raw_edit_checks as RE                                           # glances, script words dropped
         RF, RS = RE.checks(a.take, a.cutlist, a.literal, a.take_gaze if a.take_gaze and os.path.exists(a.take_gaze) else None)
         for f in RF: F.add(f["kind"], f["sev"], f["t"], f["msg"])     # times on the raw edit (the cut)
         stats["raw edit"] = f"speaker pauses about {RS['pause']:.2f} s inside a sentence; " + (", ".join(f"{n} {k}" for k, n in collections.Counter(f["kind"] for f in RF).items()) or "one clean pass")

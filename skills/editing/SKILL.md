@@ -11,11 +11,10 @@ hand, in one command, and writes down every decision so a person can change any 
 
 ## The raw edit is one clean pass
 
-Each thought said once, no restart left in, no stop inside a sentence, no glance with words over it, nothing dropped
-from the middle of a line, whole sentences close to the script. Every threshold is measured on the speaker's own take
-first, never a constant, because everyone pauses and glances differently. The rules, how they are measured, how the
-build makes the cut (`sentence_cut.py`, `verify_pieces.py`) and how to fix what the check finds (`respan.py`):
-[references/raw-edit.md](references/raw-edit.md). The steps below are the older per-take cutter (`--cutter takes`).
+The build's cut is now made by the [raw-edit](../raw-edit/) skill: each thought said once, no stop inside a sentence,
+no glance with words over it, nothing dropped from the middle of a line, every limit measured on the speaker's own take.
+This skill keeps the parts it shares with it (`assemble.py`, `respan.py`, `gaze.py`, the transcript), and the steps
+below are the older per-take cutter (`build.py --cutter takes`).
 
 ## What it does, in order
 

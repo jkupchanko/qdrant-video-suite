@@ -16,10 +16,12 @@ spread, their room's quiet and voice levels. A fast talker's 0.3 s stop is a sto
 The words come from transcribe_literal.py (the editing skill), which writes every attempt where it was said. Whisper's
 default transcript tidies a restart into one clean sentence, so a check on it cannot see one.
 """
-import re, json, numpy as np
+import os, re, json, sys, numpy as np
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "video-review", "scripts"))   # join_checks
 
 STOP = set("a an the to of and or but so in on at for with as by from that this is are was be it you we i your our my can will just then now also".split())
-CUTOFF = set("a an the to of and or but in on at for with as by from that this your our my is are was be can will".split())   # a sentence cannot end here
+CUTOFF = set("a an the to of and or but in on at for with as by from your our my".split())   # a sentence cannot end here
+# ("this", "that", "is", "are", "be" can: "we've got this", "what generics are", "the more specific you can be" - 49 pro videos)
 
 def norm(w): return re.sub(r"[^a-z0-9']", "", w.lower())
 def ends(w): return bool(re.search(r"[.?!]$", w))
@@ -44,10 +46,14 @@ def speaker(words, env, quiet, gaze=None):
     starts = [w["s"] for w in words]; mid = []
     for a, b in quiet_runs(env > quiet):
         k = int(np.searchsorted(starts, a)) - 1
-        if 0.1 <= b - a < 3 and k >= 0 and not re.search(r"[.,?!]$", words[k]["w"]): mid.append(b - a)
-    m = float(np.median(mid)) if mid else 0.4
+        if 0.1 <= b - a < 3 and k >= 0 and not re.search(r"[.,?!]$", words[k]["w"]) and k + 1 < len(words) and words[k + 1]["s"] >= b - 0.3:
+            mid.append(b - a)                                                  # (a quiet stretch inside a word Whisper stretched is no pause)
+    # the fluent pause: a raw take is full of stops to think (Get Started: median 0.52 s over all pauses inside a sentence),
+    # so only the ones under 1 s say how this person speaks (0.29 s). In 49 finished pro videos the median is 0.14 s and
+    # 90% of their pauses inside a sentence stay under 0.28 s; 90% of the videos never leave one over 0.46 s
+    fluent = [x for x in mid if x < 1.0]; m = float(np.median(fluent)) if fluent else 0.3
     S = dict(pause=m,                       # their typical pause inside a sentence (breath, a beat before a key word)
-             stop=max(0.5, 1.25 * m),       # longer than this inside a sentence, heard in the cut: a stop
+             stop=max(0.5, 2 * m),          # longer than this inside a sentence, heard in the cut: a stop
              phrase_gap=0.25)               # literal words further apart than this: a new phrase
     if gaze:
         fr = [f for f in gaze["frames"] if f.get("face")]
@@ -103,6 +109,9 @@ def checks(take, cutlist, literal, gaze=None):
                 if not starts(j) or not (same(kept[i]["n"], kept[j]["n"]) and same(kept[i + 1]["n"], kept[j + 1]["n"])): continue
                 three = j + 2 < len(kept) and i + 2 < j and same(kept[i + 2]["n"], kept[j + 2]["n"])
                 if j - i <= 3 or kept[j - 1]["n"] in CUTOFF or three: hit = j; break
+        # sure (fixed by itself) only when the second try repeats ALL of the first ("for the first, / for the first cluster")
+        # or the first stops on a word a sentence cannot end on ("just add Quadrant to the,"). Anything else may be said on
+        # purpose ("it can diagnose, it can assemble, it can assess"), so it is shown to a person, never cut by itself
         if hit:
             said = " ".join(x["w"] for x in kept[i:hit]); again = " ".join(x["w"] for x in kept[hit:hit + 4])
             pi, ph = kept[i]["piece"], kept[hit]["piece"]; a_i, b_i = R[pi][1], R[pi][2]; a_h, b_h = R[ph][1], R[ph][2]
@@ -113,7 +122,10 @@ def checks(take, cutlist, literal, gaze=None):
                 edit = {key(pi): [(a_i, round(g0[0] + 0.04, 2))] if g0 else None}
                 edit.update({key(k): None for k in range(pi + 1, ph)})
                 if not kept[hit]["first"]: edit[key(ph)] = [(round(g1[1] - 0.04, 2), b_h)]
-            out.append(dict(t=kept[i]["et"], kind="restart", sev="fix", edit=edit, msg=f'said twice: "{said}" then "{again}..." (a restart left in; keep the second try)'))
+            whole = all(same(kept[i + q]["n"], kept[hit + q]["n"]) for q in range(hit - i) if hit + q < len(kept)) and                     (hit - i >= 3 or not ends(kept[hit - 1]["w"]))          # "the server. / The server will..." is said on purpose
+            sure = whole or kept[hit - 1]["n"] in CUTOFF or re.search(r"[-…]$", kept[hit - 1]["w"])   # three words alone are not sure:
+            # in 49 pro videos the 30 left were two whole sentences opening alike ("It could be changed. / It could be made")
+            out.append(dict(t=kept[i]["et"], kind="restart", sev="fix" if sure else "check", edit=edit, msg=f'said twice: "{said}" then "{again}..." (a restart left in; keep the second try)'))
             i = hit
         i += 1
     # 2. a stop inside a sentence: a silence heard in the cut (inside a piece, or a piece's tail plus the next one's head)
@@ -166,7 +178,7 @@ def checks(take, cutlist, literal, gaze=None):
             run = []
             for q in list(idx) + [None]:
                 if q is not None and Z[q] > 3.0: run.append(q); continue
-                if run and T[run[-1]] - T[run[0]] + 1 / S["fps"] >= 0.3:
+                if run and T[run[-1]] - T[run[0]] + 1 / S["fps"] >= 1.0:      # pros glance 14 times a minute, 95% under 1.3 s
                     over = [x["w"] for x in kept if x["piece"] == k and T[run[0]] - 0.1 <= x["s"] <= T[run[-1]] + 0.1]
                     out.append(dict(t=t + T[run[0]] - a, kind="glance", sev="check",
                                     msg=f"eyes off their resting place for {T[run[-1]] - T[run[0]] + 1 / S['fps']:.2f} s" + (f' over "{" ".join(over)}"' if over else "") + " (source {:.1f} s)".format(T[run[0]])))

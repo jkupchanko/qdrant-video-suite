@@ -22,6 +22,7 @@ The output is cut.mp4 and cutlist.md in cut_takes' format (mirror, held push, ba
 import argparse, json, os, re, sys, difflib
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "editing", "scripts"), os.path.join(SK, "video-review", "scripts")]   # shared: assemble, respan, gaze; join_checks
 from assemble import assemble
 
 STOP = set("a an the and or but so to of in on at for with from by as is are was were be been it its this that these those we you i "

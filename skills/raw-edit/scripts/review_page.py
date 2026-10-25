@@ -8,7 +8,7 @@ time to jump there (2 s before it). Mark each one Fine or Fix, add a note, and p
 see something the check missed. "Save notes" downloads review_notes.json; "Copy notes" puts the same as plain text on the
 clipboard, to paste into a chat. Then:
 
-  python ~/.claude/skills/editing/scripts/fix_cut.py CUT_DIR RAW.mp4 --notes review_notes.json
+  python ~/.claude/skills/raw-edit/scripts/fix_cut.py CUT_DIR RAW.mp4 --notes review_notes.json
 
 fixes every moment marked Fix that has a fix, and shows each added moment (the words, the pauses, the eyes) to decide on.
 Decisions stay in the browser for this cut until the cut changes. The page is a local file next to the video: nothing is
@@ -16,6 +16,7 @@ uploaded, and anyone with the folder can open it.
 """
 import argparse, html, json, os, sys, webbrowser
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "editing", "scripts"), os.path.join(SK, "video-review", "scripts")]   # shared: assemble, respan, gaze; join_checks
 import raw_edit_checks as RE, join_checks as JC
 
 PAGE = r"""<!doctype html>
@@ -51,7 +52,7 @@ kbd{font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-r
 </style></head><body>
 <header><h1>Raw edit review</h1><span class="sub">__TITLE__ · __N__ flagged · click a time to jump · <kbd>M</kbd> adds a moment at the playhead · <kbd>Space</kbd> plays</span></header>
 <main>
-<section><video id="v" src="cut.mp4" controls preload="metadata"></video>
+<section><video id="v" src="cut.mp4" controls preload="metadata" poster="__POSTER__"></video>
 <div class="bar"><button class="primary" id="add">Add a moment here</button><button id="save">Save notes</button><button id="copy">Copy notes</button><span class="now" id="now">0:00.0</span></div></section>
 <section id="list"></section>
 </main>
@@ -112,7 +113,10 @@ def main():
     items += [dict(t=round(j["t"], 2), kind="join", sev=j["sev"], msg=j["msg"]) for j in JC.joins(a.raw, cl) if j["sev"] in ("fix", "check")]
     mp4 = os.path.join(a.cut_dir, "cut.mp4"); key = f"{os.path.abspath(mp4)}:{int(os.path.getmtime(mp4))}"
     title = a.title or os.path.basename(os.path.abspath(os.path.join(a.cut_dir, "..")))
-    page = PAGE.replace("__DATA__", json.dumps(dict(items=sorted(items, key=lambda d: d["t"]), key=key)).replace("</", "<\\/")).replace("__TITLE__", html.escape(title)).replace("__N__", str(len(items)))
+    import cv2, base64                                                            # a still before play (and in a screenshot)
+    c = cv2.VideoCapture(mp4); c.set(cv2.CAP_PROP_POS_FRAMES, int(c.get(cv2.CAP_PROP_FRAME_COUNT) * 0.1)); ok, fr = c.read(); c.release()
+    poster = "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", cv2.resize(fr, (960, int(960 * fr.shape[0] / fr.shape[1]))), [cv2.IMWRITE_JPEG_QUALITY, 80])[1]).decode() if ok else ""
+    page = PAGE.replace("__POSTER__", poster).replace("__DATA__", json.dumps(dict(items=sorted(items, key=lambda d: d["t"]), key=key)).replace("</", "<\\/")).replace("__TITLE__", html.escape(title)).replace("__N__", str(len(items)))
     out = os.path.join(a.cut_dir, "review.html"); open(out, "w", encoding="utf-8").write(page)
     print(f"{len(items)} flagged moments -> {out}")
     if a.open: webbrowser.open("file:///" + os.path.abspath(out).replace("\\", "/"))

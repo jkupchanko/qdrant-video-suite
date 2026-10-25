@@ -4,12 +4,12 @@
   python fix_cut.py CUT_DIR RAW.mp4 --at 2:33              what is at 2:33: the pieces, the words, the pauses, the eyes, findings
   python fix_cut.py CUT_DIR RAW.mp4 --apply                fix every fix the raw edit check and the join check report
   python fix_cut.py CUT_DIR RAW.mp4 --apply --at 2:33      fix only what is within 6 s of 2:33
-  python fix_cut.py CUT_DIR RAW.mp4 --notes review_notes.json   what a person marked on review.html (video-review's
+  python fix_cut.py CUT_DIR RAW.mp4 --notes review_notes.json   what a person marked on review.html (this skill's
                                                            review_page.py): fix the moments marked Fix, show each added one
 
 A person says "at 2:33 it gets cut off and I look away". Before this, fixing that meant reading the cut list, the transcript
 and the loudness to find a source time in a pause, then running respan.py. Now --at shows the moment, and --apply takes each
-finding's own fix (video-review/raw_edit_checks.py: new source spans for the pieces it touches, every cut point in this
+finding's own fix (raw_edit_checks.py: new source spans for the pieces it touches, every cut point in this
 take's own quiet), applies the ones that do not touch the same piece, rebuilds the cut with respan.py, checks again, and
 repeats (up to --rounds times) until nothing is left to fix. The cut before is kept as cut_before_respan.mp4.
 
@@ -18,7 +18,8 @@ build writes them) or one or two folders up; mirror and bars come from CUT_DIR/c
 """
 import argparse, json, os, re, subprocess, sys
 import numpy as np
-HERE = os.path.dirname(os.path.abspath(__file__)); RV = os.path.join(HERE, "..", "..", "video-review", "scripts"); sys.path.insert(0, RV)
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "editing", "scripts"), os.path.join(SK, "video-review", "scripts")]   # shared: assemble, respan, gaze; join_checks
 import raw_edit_checks as RE, join_checks as JC
 
 def find(cut_dir, name):
@@ -72,7 +73,7 @@ def main():
     a = ap.parse_args()
     cl = os.path.join(a.cut_dir, "cutlist.md")
     lit = a.literal or find(a.cut_dir, "words_literal.json"); gz = a.gaze or find(a.cut_dir, "raw_gaze.json")
-    if not lit: sys.exit("no words_literal.json next to the cut: run editing/scripts/transcribe_literal.py RAW --out CUT_DIR/words_literal.json")
+    if not lit: sys.exit("no words_literal.json next to the cut: run raw-edit/scripts/transcribe_literal.py RAW --out CUT_DIR/words_literal.json")
     st = json.load(open(os.path.join(a.cut_dir, "cut_settings.json"))) if os.path.exists(os.path.join(a.cut_dir, "cut_settings.json")) else {}
     mirror = a.mirror or st.get("mirror", False); bars = a.bars if a.bars is not None else st.get("bars", 0)
     W = json.load(open(lit, encoding="utf-8")); G = json.load(open(gz, encoding="utf-8")) if gz else None
@@ -102,7 +103,7 @@ def main():
             for k, spans in f["edit"].items():
                 args += ["--drop", k] if spans is None else ["--piece", f"{k}=" + ",".join(f"{x:.2f}-{y:.2f}" for x, y in spans)]
             done += 1
-        cmd = [sys.executable, os.path.join(HERE, "respan.py"), a.cut_dir, a.raw, "--bars", str(bars)] + (["--mirror"] if mirror else []) + args
+        cmd = [sys.executable, os.path.join(SK, "editing", "scripts", "respan.py"), a.cut_dir, a.raw, "--bars", str(bars)] + (["--mirror"] if mirror else []) + args
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode: sys.exit(f"respan.py failed: {r.stdout[-400:]}{r.stderr[-400:]}")
         R, F, S = check()

@@ -153,7 +153,7 @@ Already know what you need? Each skill below also works on its own. New parts of
 </tr>
 <tr>
 <td width="33%" valign="top">
-<h3><a href="skills/editing/">Editing</a></h3>
+<h3><a href="skills/editing/">Editing</a> and <a href="skills/raw-edit/">raw edit</a></h3>
 <p>Hand over the raw take and the script; get back the clean cut, the good take of every line, eyes on the lens, with a cut list of every decision.</p>
 <p><strong>Available skill</strong></p>
 </td>
@@ -259,6 +259,15 @@ and keeps the last complete one, checks eye contact on each, cuts on word bounda
 recording tag with matching bars, holds one small zoom-in for a stretch (never one at every cut), and writes a cut
 list of every decision. `respan.py` makes a small fix to an approved cut (a pause, a false start, a clipped word)
 without cutting again. The camera calls, B-roll and transitions are laid onto this cut.
+
+## 5b. The raw edit: [raw-edit](skills/raw-edit/)
+
+The first thing every build makes, and the first thing you approve: your recording cut into one clean pass. Each thought
+said once, no stop in the middle of a sentence, no glance away over your words, nothing from your script dropped between
+two pieces. Every limit is measured on your own take (your pauses, where your eyes rest), never a fixed number, and
+checked against 49 popular technical videos. It fixes what it finds by itself and gives you a page to review by clicking.
+
+![How the raw edit is made](skills/raw-edit/images/how-it-works.png)
 
 ## 6. The look: [editing styles](styles/)
 
