@@ -147,8 +147,9 @@ def review_shot(cut_dir, out):
     page = os.path.abspath(os.path.join(cut_dir, "review.html"))
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome"); pg = b.new_page(viewport={"width": 1440, "height": 820}, color_scheme="dark")
-        pg.goto("file:///" + page.replace("\\", "/")); pg.wait_for_timeout(800)
-        pg.evaluate("document.querySelectorAll('.fix')[0] && document.querySelectorAll('.fix')[0].click(); document.querySelectorAll('.fine')[1] && document.querySelectorAll('.fine')[1].click()")
+        pg.goto("file:///" + page.replace("\\", "/"))
+        pg.wait_for_function("document.getElementById('v').readyState >= 1", timeout=30000); pg.wait_for_timeout(1500)   # no loading spinner
+        pg.evaluate("document.querySelectorAll('.fix').forEach(b => b.click())")                                      # all marked Fix
         pg.screenshot(path=out); b.close()
     print("->", out)
 
