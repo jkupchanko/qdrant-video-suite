@@ -31,7 +31,8 @@ spelled. This skill does both, measuring the take first and fixing only what it 
 ## Run it
 
 The video-builder runs it: the voice stage after the cut (`cut/cut_voice.mp4`, which the style stage then uses) and
-the captions stage after the master (`captions/`). `build.py --burn-captions` adds the burned copy. By hand:
+the captions stage last, only when asked: start-here asks once the video is approved, then runs
+`build.py ... --only captions --captions file` (or `--captions burned` for the burned copy too). By hand:
 
 ```bash
 S=~/.claude/skills/audio-captions/scripts

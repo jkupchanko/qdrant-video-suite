@@ -2,7 +2,7 @@
 
   python build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR [--url DOCS_URL] [--style list]
                   [--name "NAME" --role "TITLE"] [--no-mirror] [--bars 72] [--from STAGE] [--only STAGE] [--redo STAGE,...]
-                  [--burn-captions]
+                  [--captions file|burned]
 
 The script runs the video. Before the first stage the build checks it has what only a person can give (INTAKE below):
 the presenter's name and title for the Qdrant name lower third come from the script's [**Lower third:** NAME | TITLE | 5 s];
@@ -24,14 +24,15 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
   voice    audio-captions   the cut's voice made even and clean, only what this take needs; the picture copied -> cut/cut_voice.mp4
   style    editing-style    the styled video (style 'list': the listed-sections style, built from all of the above)
   master   (editing-style)  loudness to about -14 LUFS, true peak -1.5 dBTP, picture untouched
-  captions audio-captions   subtitles to upload with the video (captions/captions.srt, .vtt), spelled the way the script
-                            spells things; with --burn-captions also a copy with them in the picture (captions/captioned.mp4)
   review   video-review     the audit: every problem with its time and frame               -> review/report.md
+  captions audio-captions   the last step, only when asked (--captions, or --only captions once the video is approved):
+                            subtitles to upload (captions/captions.srt, .vtt) heard from the finished video and spelled
+                            the way the script spells things; --captions burned adds a copy with them in the picture
 Writes BUILD_DIR/BUILD.md (what each stage did, how long it took, what the review found) and build.json.
 """
 import os, sys, re, json, time, glob, argparse, subprocess, shutil
 SK = os.path.expanduser("~/.claude/skills"); STYLES = os.path.expanduser(r"~\camera_audit\styles"); PY = sys.executable
-STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "captions", "review"]
+STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "captions"]
 
 def run(cmd, log, cwd=None):
     with open(log, "w", encoding="utf-8") as f:
@@ -216,9 +217,10 @@ class Build:
              "--report", outs[1]], self.p("voice.log"))
         return outs, "; ".join(json.load(open(outs[1]))["did"])
     def captions(self):
-        burn = self.a.burn_captions                                     # none of the 49 pro videos burn them in: a file by default
+        burn = self.a.captions == "burned"                              # none of the 49 pro videos burn them in: a file by default
         outs = [self.p("captions", "captions.srt")] + ([self.p("captions", "captioned.mp4")] if burn else [])
-        if self.done("captions", outs): return outs, "kept"
+        fresh = all(os.path.exists(o) and os.path.getmtime(o) > os.path.getmtime(self.p("video_master.mp4")) for o in outs)
+        if self.done("captions", outs) and fresh: return outs, "kept"                   # a patch since then re-hears the video
         tail = run([PY, os.path.join(SK, "audio-captions", "scripts", "captions.py"), self.p("video_master.mp4"), "--cutlist", self.p("cut", "cutlist.md"),
                     "--script", self.a.script, "--out", self.p("captions")] + (["--burn"] if burn else []), self.p("captions.log"))
         return outs, next((l.strip() for l in tail if "subtitles" in l), "captions written")
@@ -283,7 +285,8 @@ def main():
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
     ap.add_argument("--cutter", choices=["sentences", "takes"], default="sentences", help="sentences: the raw edit as one clean pass (default); takes: the old last-complete-take cutter")
-    ap.add_argument("--burn-captions", action="store_true", help="also burn the captions into a copy of the video (captions/captioned.mp4); by default only the files to upload")
+    ap.add_argument("--captions", choices=["file", "burned"], help="make captions as the last step: file = captions.srt and .vtt to upload; burned = also a copy with them in the picture (captioned.mp4). Without it a whole build makes none: they are asked for once the video is approved")
+    ap.add_argument("--burn-captions", dest="captions", action="store_const", const="burned", help=argparse.SUPPRESS)
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
     ap.add_argument("--cut-from", metavar="BUILD_DIR", help="with --preview: take the cut and its eye contact from this build's approved cut instead of cutting again")
     ap.add_argument("--take-is-edited", action="store_true", help="build from a take that is already cut (a test); normally refused, it gets cut twice")
@@ -312,6 +315,7 @@ def main():
     if not B.url: sys.exit("no docs URL: give --url, or put 'Source page: URL' or a [B-ROLL: URL | ...] marker in the script")
     if a.patch: return patch(B, a)
     stages = [a.only] if a.only else STAGES[STAGES.index(a.start):] if a.start else STAGES
+    if not a.only and not a.captions: stages = [s for s in stages if s != "captions"]          # asked for at the end, not assumed
     print(f"building {a.out} from {a.take} + {a.script} ({B.url}), style '{a.style}': {', '.join(stages)}", flush=True)
     for st in stages:
         t0 = time.time(); print(f"[{st}] ...", flush=True)

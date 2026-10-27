@@ -27,7 +27,8 @@ flowchart TD
     H --> I["7. Build the video"]
     I --> J["8. Small edits, until it is ready"]
     J -- "Another small edit" --> J
-    J -- "Ready to go" --> K["Done"]
+    J -- "Ready to go" --> L["Captions? A file to upload, burned in, or none"]
+    L --> K["Done"]
 ```
 
 **First time?** [Set it up](#set-up) once (about 15 minutes). Then open Claude Code and say **"I want to make a video"**:
@@ -123,7 +124,9 @@ goes in pieces, each shown to you before the next:
 The [review](skills/video-review/) watches the finished video frame by frame and lists each problem with its time and a
 picture; you add your own notes. Then the fixes go in as **small edits**: each one re-renders only the seconds it
 touches, in minutes, and you see just that moment, not the whole video again. Repeat until the list is empty, then one
-last full check, and the question: **ready to go?**
+last full check, and the question: **ready to go?** Then one last question: **captions?** A subtitle file to upload
+with the video (recommended), that plus a copy with the captions burned into the picture, or none. They are made from
+the finished video, so they come last.
 
 ![The review: every problem with its time and the frame it is in](docs/images/step8-review.jpg)
 
@@ -279,7 +282,8 @@ sheet sets its B-roll, presenter window, transitions and zoom.
 Your voice at one level from the first piece of the cut to the last, with room noise, hum and rumble taken out only when
 your take has them, and the voice never moved off your lips. Captions are what you said, spelled the way your script
 spells it ("Quadrant" becomes "Qdrant"), as SRT and VTT files to upload. None of 49 popular technical videos burns
-captions into the picture, so that is an option (`--burn-captions`), not the default.
+captions into the picture, so that is an option, not the default. Captions are the very last step, asked once the
+video is approved (`--captions file` or `--captions burned`).
 
 ![How the voice and captions are made](skills/audio-captions/images/how-it-works.png)
 

@@ -23,8 +23,8 @@ writes captions from what you said, spelled the way your script spells it.
   really said differently stays as you said it.
 - **A file to upload.** `captions.srt` and `captions.vtt` go to YouTube as closed captions, which viewers can turn on
   and search can read. None of the 49 popular videos burns captions into the picture, so that is the default.
-- **Burned in when you want it.** For a clip that plays without sound, `--burn-captions` adds a copy with the
-  captions in the picture, in the brand font.
+- **Burned in when you want it.** For a clip that plays without sound, a copy with the
+  captions in the picture, in the brand font, comes with it.
 
 ![Captions spelled the way the script spells things](images/captions.png)
 
@@ -37,8 +37,8 @@ Every limit was set from the same 49 videos the other skills were measured on. T
 
 ## Use it
 
-It runs inside every build (`build.py`): the voice right after the cut, the captions after the master. Add
-`--burn-captions` for the burned copy. To add a product name the captions keep getting wrong, put a line in
+It runs inside every build (`build.py`): the voice right after the cut. Captions come last: once you say the video is
+ready, Claude asks whether you want a subtitle file, the file plus a burned-in copy, or none. To add a product name the captions keep getting wrong, put a line in
 [references/glossary.txt](references/glossary.txt):
 
 ```

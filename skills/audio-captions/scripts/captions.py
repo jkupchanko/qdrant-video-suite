@@ -179,7 +179,7 @@ def main():
     import cv2
     v = cv2.VideoCapture(a.video); Wd, H = int(v.get(3)), int(v.get(4)); v.release()
     write_ass(B, os.path.join(a.out, "captions.ass"), Wd, H, st, words)
-    print(f"{len(words)} words, {sum(1 for w, _, _ in words if 'Qdrant' in w)} spelled Qdrant; {len(C)} subtitles (SRT/VTT), {len(B)} burned-in captions")
+    print(f"{len(words)} words, {sum(1 for w, _, _ in words if 'Qdrant' in w)} spelled Qdrant; {len(C)} subtitles (SRT/VTT)" + (f", {len(B)} burned-in captions" if a.burn else ""))
     if a.burn:
         out = os.path.join(a.out, "captioned.mp4"); fonts = FONTS.replace("\\", "/").replace(":", "\\:")
         subprocess.run([FF, "-v", "error", "-y", "-i", os.path.abspath(a.video), "-vf", f"subtitles=captions.ass:fontsdir='{fonts}'", "-c:v", "libx264", "-crf", "18",

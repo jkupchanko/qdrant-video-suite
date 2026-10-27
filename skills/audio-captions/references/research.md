@@ -29,7 +29,7 @@ still or come and go; a caption changes nearly every second in one band of the f
 
 1. **Captions are a file, not burned in, by default.** None of the 49 burn them in. Technical videos are watched at a
    desk, and the screen carries code, docs and cards that a caption bar would cover. YouTube shows the uploaded file as
-   closed captions the viewer can turn on, and indexes its words for search. `--burn` (`build.py --burn-captions`) still
+   closed captions the viewer can turn on, and indexes its words for search. `--burn` (`build.py --captions burned`) still
    makes a burned copy for platforms that play without sound (a social clip).
 2. **The burned look is the subtitle rules in the brand, not a copy.** With no pro example to measure, the burned style
    (`caption_style.json`) is the reading standard: two lines of up to 32 characters, held long enough to read at 17

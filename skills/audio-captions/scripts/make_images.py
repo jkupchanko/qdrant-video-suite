@@ -76,7 +76,7 @@ def captions_img(pairs, srt, frame, out):
     for h, c in pairs[:9]:
         dl.text((66, y), h, font=F(24, "Mono"), fill=SOFT); dl.text((330, y), "->", font=F(24, "Mono"), fill=SOFT); dl.text((380, y), c, font=F(24, "Mono"), fill=INK); y += 42
     dl.text((66, 740), f"{len(pairs)} different words respelled across {len(CP.re.findall(r'-->', open(srt, encoding='utf-8').read()))} captions", font=F(18, "Semi"), fill=BLUE)
-    dr, y = panel(im, (780, 120, 1560, 790), 2, "A file, or burned in", "captions.srt and .vtt go to YouTube (the default, as all 49 pros do). With --burn-captions, a copy in the picture:")
+    dr, y = panel(im, (780, 120, 1560, 790), 2, "A file, or burned in", "captions.srt and .vtt go to YouTube (the default, as all 49 pros do). Ask for burned-in captions and a copy has them in the picture:")
     f = frame.resize((640, int(640 * frame.height / frame.width)), Image.LANCZOS); im.paste(f, (806, y + 12))
     first = open(srt, encoding="utf-8").read().split("\n\n")[0].splitlines()
     yy = y + 24 + f.height

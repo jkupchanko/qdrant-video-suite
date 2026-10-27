@@ -14,7 +14,8 @@ step at a time, with a small map of where you are:
 7. **Build**: the raw edit on its own first (takes, joins, zoom; no B-roll or animations), small fixes until you
    approve it; then the visuals, a 60 second preview, and the whole video.
 8. **Small edits** until it is ready: each fix re-renders only the seconds it touches, you see just that moment, and a
-   final check ends with "ready to go?"
+   final check ends with "ready to go?" Then the last question: **captions?** A subtitle file to upload (recommended),
+   the file plus a copy with captions burned in, or none.
 
 You are never asked about the camera, the B-roll or the transitions: you see them in the script and can change them
 there.

@@ -77,8 +77,8 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 | voice | audio-captions | `cut/cut_voice.mp4`, `cut/voice.json`: every piece of the cut at one level; room noise, hum and rumble taken out only when measured over a limit; the voice never moved off the lips. The style stage uses it |
 | style | editing-style + brand-consistency | `video.mp4` (style `list`: master list, numbered items, docs figures, live-typed code, tradeoff cards) with the Qdrant name lower third; `video_overlays.json` says when it is up |
 | master | editing-style | `video_master.mp4` at about -14 LUFS |
-| captions | audio-captions | `captions/captions.srt` and `.vtt` to upload, spelled the way the script spells things; with `--burn-captions` also `captions/captioned.mp4` |
 | review | video-review | `review/report.md`, `review/sheet.jpg`, `review/frames/`; also hears every join in the raw take (`--take`) and reads the name card |
+| captions | audio-captions | the last step, only when asked (`--captions file` or `burned`; start-here asks once the video is approved): `captions/captions.srt` and `.vtt` to upload, heard from the finished video, spelled the way the script spells things; with `burned` also `captions/captioned.mp4` |
 
 `BUILD.md` sums it up: each stage, its skill, what it did, how long it took, and the review's counts.
 

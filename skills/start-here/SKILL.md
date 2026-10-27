@@ -1,6 +1,6 @@
 ---
 name: start-here
-description: The front door of the video suite. Walks a person from "I want to make a video" to a finished, reviewed video in eight steps, in order - what they have, who the video is for and what it should do (always asked), the script reviewed or written for that viewer, approving the script, picking an editing style, recording, building, checking. Use it whenever someone wants to make, start, plan or get help with a technical or Qdrant video, says "where do I start", "help me get started", "I have a script", "I have a recording", "I have an idea for a video", "new video", "start over", or names a topic they want to teach on video, even if they do not mention the suite or any skill. When the person already has an approved script and a raw take and explicitly asks to build ("build it", "run the build"), go straight to step 7 (video-builder); "help me make the video" starts at step 1.
+description: The front door of the video suite. Walks a person from "I want to make a video" to a finished, reviewed video in eight steps, in order - what they have, who the video is for and what it should do (always asked), the script reviewed or written for that viewer, approving the script, picking an editing style, recording, building, checking, and last, whether to add captions (a subtitle file, or burned in). Use it whenever someone wants to make, start, plan or get help with a technical or Qdrant video, says "where do I start", "help me get started", "I have a script", "I have a recording", "I have an idea for a video", "new video", "start over", or names a topic they want to teach on video, even if they do not mention the suite or any skill. When the person already has an approved script and a raw take and explicitly asks to build ("build it", "run the build"), go straight to step 7 (video-builder); "help me make the video" starts at step 1.
 ---
 
 # Start here
@@ -229,6 +229,34 @@ The goal now is small fixes, not a new video. Never rebuild the whole thing for 
 4. **Repeat** 2 and 3 until the list is empty. If the person does not like the video as a whole, that is not a small
    edit: go back to step 4 or 5.
 5. **Final check.** When they are happy, run the full review once more (`--only review --redo review`), show the short
-   result, and ask: **ready to go?** A yes is the end; the video is `BUILD_DIR/video_master.mp4`.
+   result, and ask: **ready to go?**
+6. **Captions, the last question.** Only after that yes, because captions are heard from the finished video and any
+   fix before it would make them stale. Always ask, in one message:
+
+   > Do you want captions?
+   > 1. **A subtitle file** to upload with the video (recommended: viewers turn them on, search reads them; all 49
+   >    popular technical videos we measured do it this way)
+   > 2. **The file, plus a copy with captions burned into the picture** (for a clip that plays without sound)
+   > 3. **No captions**
+
+   For 1 or 2 (takes a minute or two):
+
+   ```bash
+   python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style" --style list --only captions --captions file
+   ```
+
+   (`--captions burned` for 2.) Show the first few captions inline and the result line (how many captions, how many
+   names respelled), and run audio-captions' `checks.py --srt BUILD_DIR/captions/captions.srt`: a **fix** is fixed
+   before handing over (a product name it keeps missing goes into audio-captions' `references/glossary.txt`, then run
+   again with `--redo captions`). Then hand over, and the video is done:
+
+   | file | what it is for |
+   |---|---|
+   | `BUILD_DIR/video_master.mp4` | the video to upload |
+   | `BUILD_DIR/captions/captions.srt` | YouTube: Subtitles, Upload file, With timing (`.vtt` beside it for other players) |
+   | `BUILD_DIR/captions/captioned.mp4` | only with 2: the copy with captions in the picture |
+
+The voice needs no question: the build's voice stage evens and cleans it on every build (audio-captions), and the
+review listens to the result.
 
 A fault the person finds that the review missed becomes a new review check with a self-test case (video-review).
