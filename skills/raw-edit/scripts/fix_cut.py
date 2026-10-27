@@ -38,8 +38,12 @@ def join_fixes(J, R):
             out.append(dict(t=j["t"], kind="join", sev="fix", msg=j["msg"], edit={f"{R[k][0]:.2f}": [(float(m.group(1)), R[k][2])]}))
     return out
 
-def show(at, R, W, G, S, F, env, quiet):
+def show(at, R, W, G, S, F, env, quiet, cut=None):
+    """each piece near AT as the viewer hears it (the cut's own sound), with the eyes; words said in the take between two
+    pieces are listed only when the cut does not say them"""
     ts = RE.ts; print(f"around {ts(at)} (edit time):")
+    H = RE.hear_cut(cut, at - 7, at + 8) if cut and os.path.exists(cut) else None     # what the viewer hears
+    said = {RE.norm(w["w"]) for w in H} if H is not None else set()
     Z = None
     if G:
         fr = [f for f in G["frames"] if f.get("face")]; T = np.array([f["t"] for f in fr])
@@ -47,8 +51,8 @@ def show(at, R, W, G, S, F, env, quiet):
     for t, a, b, line in R:
         if t + (b - a) < at - 6 or t > at + 6: continue
         words = []
-        for w in W:
-            if not RE.inside(w, a, b): continue
+        heard = [dict(w=h["w"], s=a + h["s"] - t, e=a + h["e"] - t) for h in H if t <= (h["s"] + h["e"]) / 2 < t + (b - a)] if H is not None else None
+        for w in (heard if heard is not None else [w for w in W if RE.inside(w, a, b)]):   # heard words, on source time for the eyes
             eyes = ""
             if Z is not None:
                 m = (Z[0] >= w["s"]) & (Z[0] <= w["e"] + 0.04)
@@ -59,11 +63,12 @@ def show(at, R, W, G, S, F, env, quiet):
         nxt = [r for r in R if r[0] > t][:1]
         if nxt:
             between = [w["w"] for w in W if b < w["s"] < nxt[0][1] and nxt[0][1] - b < 30]
-            if between: print(f"           not in the cut, said before the next piece: {' '.join(between)[:110]}")
+            if H is not None: between = [x for x in between if RE.norm(x) not in said]              # the cut says them
+            if between: print(f"           said in the take before the next piece, and not heard in the cut: {' '.join(between)[:110]}")
     near = [f for f in F if abs(f["t"] - at) <= 6]
     print("findings here: " + ("none" if not near else ""))
     for f in near: print(f"  {ts(f['t'])} {f['sev']} {f['kind']}: {f['msg'][:120]}")
-    print("(~ = the eyes leave their resting place on that word)")
+    print(("(words as heard in the cut; " if H is not None else "(") + "~ = the eyes leave their resting place on that word)")
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -85,12 +90,12 @@ def main():
         N = json.load(open(a.notes, encoding="utf-8"))["items"]
         marked = [i["t"] for i in N if i["decision"] == "fix"]
         for i in N:
-            if i["decision"] == "look": print(f"\nyour moment at {RE.ts(i['t'])}: {i['note'] or '(no note)'}"); show(i["t"], R, W, G, S, F, E[0], E[1])
+            if i["decision"] == "look": print(f"\nyour moment at {RE.ts(i['t'])}: {i['note'] or '(no note)'}"); show(i["t"], R, W, G, S, F, E[0], E[1], os.path.join(a.cut_dir, "cut.mp4"))
         a.apply = bool(marked)
         if not marked: print("\nnothing marked Fix"); return
     if not a.apply:
         if at is None: sys.exit("give --at TIME to look at a moment, or --apply to fix")
-        show(at, R, W, G, S, F, E[0], E[1]); return
+        show(at, R, W, G, S, F, E[0], E[1], os.path.join(a.cut_dir, "cut.mp4")); return
     done = 0
     for rnd in range(a.rounds):
         todo = [f for f in F if f.get("edit") and (f["sev"] == "fix" or marked) and (at is None or abs(f["t"] - at) <= a.near)

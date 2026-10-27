@@ -140,6 +140,37 @@ def reading_selftest(fps=30, H=1080):
     for r in extra: print(f"  INVENTED  read at {r[1]:.1f}-{r[2]:.1f} s: {r[4][:80]}")
     return ok and not extra
 
+def said_twice_selftest(out):
+    """the raw edit heard in the cut (raw_edit_checks.said_twice), on a spoken take (a Windows system voice): a false start
+    left before its retake ("run requests in" / "run requests and follow the tutorials") -> caught, with a fix that drops
+    the false start; a list said on purpose ("or maybe memory," / "or maybe a balance between them") -> nothing. The
+    take's transcript can write such a restart once; only the two sides of the join heard apart show it (Get Started 2:36)"""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "raw-edit", "scripts")); import raw_edit_checks as RE
+    import numpy as np, wave
+    lines = ["Run requests in", "Run requests and follow the tutorials.", "You can tune it for memory, or maybe memory,", "or maybe a balance between them."]
+    sr, x, spans = 16000, [np.zeros(8000, np.int16)], []
+    for i, line in enumerate(lines):
+        w = os.path.abspath(os.path.join(out, f"said{i}.wav"))
+        r = subprocess.run(["powershell", "-NoProfile", "-Command", "Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+                            f"$s.SetOutputToWaveFile('{w}'); $s.Speak('{line}'); $s.Dispose()"], capture_output=True) if os.name == "nt" else None
+        if not r or r.returncode or not os.path.exists(w):
+            print("  skipped  said twice (no system voice to speak a test take)"); return True
+        y = np.frombuffer(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", w, "-ac", "1", "-ar", str(sr), "-f", "s16le", "-"], capture_output=True).stdout, np.int16)
+        t0 = sum(len(z) for z in x) / sr; x += [y, np.zeros(int(0.8 * sr), np.int16)]; spans.append((round(t0, 2), round(t0 + len(y) / sr, 2), line))
+    take = os.path.join(out, "said_take.wav")
+    with wave.open(take, "w") as f: f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr); f.writeframes(np.concatenate(x).tobytes())
+    e, rows = 0.0, []
+    for a, b, line in spans: rows.append(f"| {e:.2f} | {a:.2f}-{b:.2f} | x1.00 | {line} | {line} | test |"); e += b - a
+    cl = os.path.join(out, "said_cutlist.md"); open(cl, "w").write("| edit time | source | push | script line | said | take |\n|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
+    cache = os.path.join(out, "said_heard_joins.json")
+    if os.path.exists(cache): os.remove(cache)
+    R = RE.rows(cl); F = RE.said_twice(take, R, lambda k: f"{R[k][0]:.2f}", cache)
+    hit = [f for f in F if f["t"] < R[1][0] and f.get("edit") == {f"{R[0][0]:.2f}": None}]
+    extra = [f for f in F if f not in hit]
+    print(f"  {'caught' if hit else 'MISSED'}  said twice: a false start left before its retake" + (f"  -> {hit[0]['msg'][:60]}" if hit else f"  -> {F}"))
+    for f in extra: print(f"  INVENTED  said twice at {f['t']:.2f} s: {f['msg'][:80]}  (the list said on purpose must not count)")
+    return bool(hit) and not extra
+
 def caption_selftest(out):
     """captions checked against a made-up video (words as voiced bursts, what was heard, its captions, a burned copy) with
     six faults planted, and the same video captioned cleanly, which must give no fix:
@@ -204,7 +235,7 @@ def caption_selftest(out):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut", nargs="?"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
-    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out) & caption_selftest(a.out)
+    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out) & said_twice_selftest(a.out) & caption_selftest(a.out)
     if not a.cut:
         print("  (no CUT.mp4: the planted-clip checks did not run)"); print("SELF-TEST PASSED" if joins_ok else "SELF-TEST FAILED"); return 0 if joins_ok else 1
     clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)

@@ -51,6 +51,23 @@ python $S/review_page.py CUT RAW.mp4                                         # C
 
 `words.json` is the take's ordinary transcript (editing's `cut_takes.transcribe`; the build writes it).
 
+## Heard in the cut, not read off the take's transcript
+
+The take's transcript says where words were said; only the cut's own sound says what the viewer hears. Around a restart
+the transcript's word times smear, so three things are checked by ear (`raw_edit_checks.hear_cut`, `said_twice`):
+
+- **Words said twice across a join.** The end of each piece and the start of the next are heard apart, so recognition
+  cannot tidy a repeat away (heard as one stream it writes "run requests, and follow" once). A false start ends there
+  or on a little word ("Run requests in..."); a list item finishes ("or maybe a mount, / or maybe a balance") and is left
+  alone. The fix drops the false start. Found on the approved Get Started cut at 2:36, nowhere on three other cuts.
+- **Words dropped.** Before a phrase is put back, the cut is heard over that line: removing "Run requests in..." from
+  Get Started looked like a drop to the transcript, but the retake still says "run requests", and the old check would
+  have added it twice.
+- **`fix_cut.py --at`** shows each piece as heard. It once said "Make sure you subscribe" at 5:18 was not in the cut;
+  it was.
+
+What is heard is kept next to the cut (`heard_cut.json`, `heard_joins.json`), so only changed pieces are heard again.
+
 ## When the presenter names a time, or reviews on the page
 
 - **A time in chat** ("at 2:33 it cuts me off"): `fix_cut.py CUT RAW --at 2:33` shows the pieces there, their words, the
