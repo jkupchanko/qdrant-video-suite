@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """captions.py: captions for a cut, spelled the way the script spells things, as a subtitle file and burned into the video.
 
-  python captions.py VIDEO.mp4 --cutlist cutlist.md --words words.json [--script SCRIPT.md] --out DIR [--burn]
+  python captions.py VIDEO.mp4 --cutlist cutlist.md [--script SCRIPT.md] --out DIR [--burn] [--words words.json]
       -> DIR/captions.srt, captions.vtt (upload to YouTube), captions.ass, and with --burn DIR/captioned.mp4
 
-VIDEO is anything on the cut's timeline (the cut, cut_voice.mp4, or the styled video). The words are the take's transcript
-in source time (editing's words.json), placed on the cut through the cut list.
+VIDEO is anything on the cut's timeline (the cut, cut_voice.mp4, or the styled video). Its own sound is transcribed
+(DIR/heard.json, kept for the next run), so the captions are what the viewer hears. The take's transcript placed through
+the cut list (--words) is the old way: around a restart its word times smear, and Get Started's captions lost "Make sure
+you subscribe" at 5:18 that way, with the words plainly in the cut.
 
   spelling   what was said wins, spelled as the script spells it: each line's words are aligned to its script line and a
              word that is a close miss of the script's word takes the script's spelling ("Quadrant" -> "Qdrant", "web ui"
@@ -42,6 +44,30 @@ def placed(words, R):
     for t, a, b, line in R:
         ws = [(w["w"], round(t + max(w["s"], a) - a, 3), round(t + min(w["e"], b) - a, 3)) for w in words
               if min(w["e"], b) - max(w["s"], a) >= min(0.08, 0.5 * max(0.01, w["e"] - w["s"]))]
+        if line.startswith("(same line") and out: out[-1][0].extend(ws)
+        else: out.append([ws, line])
+    return out
+
+def hear(video, cache):
+    """the video's own words on its own timeline: [{w, s, e}]"""
+    if os.path.exists(cache) and os.path.getmtime(cache) > os.path.getmtime(video): return json.load(open(cache, encoding="utf-8"))
+    try: import av                                                     # faster-whisper imports av only to read files; on a machine
+    except ImportError: sys.modules["av"] = type(sys)("av")            # whose policy blocks av's DLL, the audio goes in as an array
+    from faster_whisper import WhisperModel
+    import numpy as np
+    x = np.frombuffer(subprocess.run([FF, "-v", "error", "-i", video, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"], capture_output=True).stdout,
+                      np.int16).astype(np.float32) / 32768
+    segs, _ = WhisperModel("small.en", device="cpu", compute_type="int8").transcribe(x, language="en", beam_size=5, word_timestamps=True,
+                                                                                     condition_on_previous_text=False)
+    W = [dict(w=w.word.strip(), s=round(w.start, 3), e=round(w.end, 3)) for sg in segs for w in (sg.words or []) if w.word.strip()]
+    json.dump(W, open(cache, "w", encoding="utf-8")); return W
+
+def heard_groups(W, R):
+    """the heard words grouped by script line: each word goes to the cut list row its middle falls in"""
+    out, starts = [], [t for t, _, _, _ in R]
+    for k, (t, a, b, line) in enumerate(R):
+        end = starts[k + 1] if k + 1 < len(starts) else 1e9
+        ws = [(w["w"], w["s"], w["e"]) for w in W if t <= (w["s"] + w["e"]) / 2 < end]
         if line.startswith("(same line") and out: out[-1][0].extend(ws)
         else: out.append([ws, line])
     return out
@@ -141,11 +167,12 @@ def write_ass(C, p, W, H, st, words=None):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("video"); ap.add_argument("--cutlist", required=True); ap.add_argument("--words", required=True); ap.add_argument("--script")
+    ap.add_argument("video"); ap.add_argument("--cutlist", required=True); ap.add_argument("--words", help="the take's transcript placed through the cut list, instead of hearing VIDEO"); ap.add_argument("--script")
     ap.add_argument("--out", required=True); ap.add_argument("--burn", action="store_true"); ap.add_argument("--style", default=os.path.join(SKILL, "references", "caption_style.json"))
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); G = glossary()
-    st = json.load(open(a.style, encoding="utf-8")); W_ = json.load(open(a.words, encoding="utf-8"))
-    groups = placed(W_, rows(a.cutlist)); words = [w for g, line in groups for w in respell(g, line if not line.startswith("(") else "", G)]
+    st = json.load(open(a.style, encoding="utf-8")); R = rows(a.cutlist)
+    groups = placed(json.load(open(a.words, encoding="utf-8")), R) if a.words else heard_groups(hear(a.video, os.path.join(a.out, "heard.json")), R)
+    words = [w for g, line in groups for w in respell(g, line if not line.startswith("(") else "", G)]
     words = sentence_case(sorted(words, key=lambda w: w[1]))
     C = cues(words, **SRT_RULES); write_srt(C, os.path.join(a.out, "captions.srt")); write_vtt(C, os.path.join(a.out, "captions.vtt"))
     B = cues(words, st["chars"], st["lines"], st["min_s"], st["max_s"], st["cps"])

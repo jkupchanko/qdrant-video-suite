@@ -18,7 +18,7 @@ spelled. This skill does both, measuring the take first and fixing only what it 
    high-pass only when over 5% of the energy is under 100 Hz; a notch only for a mains hum 6 dB out of the quiet. A clean
    take is left alone.
 3. **The voice stays on the lips.** Every filter's delay is measured and taken back; the length is kept to the sample.
-4. **Captions are what was said, spelled as the script spells it.** A word heard close to the script's word takes the
+4. **Captions are what the viewer hears, spelled as the script spells it.** The video's own sound is transcribed. A word heard close to the script's word takes the
    script's spelling ("quadrant" -> "Qdrant", "web ui" -> "Web UI"); a real word that differs was said, and stays. Then
    `references/glossary.txt` for names the script does not carry.
 5. **A file by default, burned in on request.** None of the 49 pro videos burns captions in. SRT and VTT to upload;
@@ -36,13 +36,15 @@ the captions stage after the master (`captions/`). `build.py --burn-captions` ad
 ```bash
 S=~/.claude/skills/audio-captions/scripts
 python $S/voice_clean.py CUT/cut.mp4 --out CUT/cut_voice.mp4 --cutlist CUT/cutlist.md --report CUT/voice.json
-python $S/captions.py VIDEO.mp4 --cutlist CUT/cutlist.md --words CUT/words.json --script SCRIPT.md --out CAPTIONS [--burn]
+python $S/captions.py VIDEO.mp4 --cutlist CUT/cutlist.md --script SCRIPT.md --out CAPTIONS [--burn]
 python $S/checks.py --srt CAPTIONS/captions.srt --voice CUT/voice.json     # exit 1 if anything is to fix
 python $S/selftest.py                                                       # the tools still catch what they should
 ```
 
-VIDEO is anything on the cut's timeline (the cut, the cleaned cut, the styled master). `words.json` is the take's
-transcript in source time (the cut stage writes it).
+VIDEO is anything on the cut's timeline (the cut, the cleaned cut, the styled master). Its own sound is transcribed
+(`CAPTIONS/heard.json`), so the captions are what the viewer hears. Do not caption from the take's transcript placed
+through the cut list (`--words`): around a restart its word times smear, and Get Started's captions lost 143 words that
+way, sentence openings above all ("Make sure you subscribe" at 5:18), with every one of them in the cut.
 
 ![Captions spelled the way the script spells things](images/captions.png)
 

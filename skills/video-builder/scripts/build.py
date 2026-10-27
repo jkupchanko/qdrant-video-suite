@@ -220,7 +220,7 @@ class Build:
         outs = [self.p("captions", "captions.srt")] + ([self.p("captions", "captioned.mp4")] if burn else [])
         if self.done("captions", outs): return outs, "kept"
         tail = run([PY, os.path.join(SK, "audio-captions", "scripts", "captions.py"), self.p("video_master.mp4"), "--cutlist", self.p("cut", "cutlist.md"),
-                    "--words", self.p("cut", "words.json"), "--script", self.a.script, "--out", self.p("captions")] + (["--burn"] if burn else []), self.p("captions.log"))
+                    "--script", self.a.script, "--out", self.p("captions")] + (["--burn"] if burn else []), self.p("captions.log"))
         return outs, next((l.strip() for l in tail if "subtitles" in l), "captions written")
     def master(self):
         out = self.p("video_master.mp4")

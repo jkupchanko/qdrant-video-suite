@@ -3,8 +3,8 @@
 
   python make_images.py --cut CUT_DIR --captions CAPTIONS_DIR --script SCRIPT.md --audit CORPUS_DIR --out ../images
 
-CUT_DIR holds cut.mp4, cut_voice.mp4, cutlist.md, words.json and voice.json (the voice stage's outputs); CAPTIONS_DIR is
-captions.py's output for that cut; CORPUS_DIR holds audio_captions_audit/ and voice_measure_49.json.
+CUT_DIR holds cut.mp4, cut_voice.mp4, cutlist.md and voice.json (the voice stage's outputs); CAPTIONS_DIR is
+captions.py's output for that cut (with heard.json); CORPUS_DIR holds audio_captions_audit/ and voice_measure_49.json.
 
   how-it-works.png   the four steps: measure, clean only what is needed, even the pieces, captions from the script
   voice-levels.png   every piece of the cut, before and after evening
@@ -25,10 +25,10 @@ def levels(cut_dir):
     b = V.measure(V.decode(os.path.join(cut_dir, "cut.mp4")), P); a = V.measure(V.decode(os.path.join(cut_dir, "cut_voice.mp4")), P)
     return b, a
 
-def respelled(cut_dir, script):
-    """(heard, caption) pairs where the caption changed what the transcript wrote"""
-    W = json.load(open(os.path.join(cut_dir, "words.json"), encoding="utf-8")); G = CP.glossary(); out = []
-    for g, line in CP.placed(W, CP.rows(os.path.join(cut_dir, "cutlist.md"))):
+def respelled(cut_dir, cap_dir):
+    """(heard, caption) pairs where the caption changed what the transcript heard"""
+    W = json.load(open(os.path.join(cap_dir, "heard.json"), encoding="utf-8")); G = CP.glossary(); out = []
+    for g, line in CP.heard_groups(W, CP.rows(os.path.join(cut_dir, "cutlist.md"))):
         for (h, _, _), (c, _, _) in zip(g, CP.respell(g, line if not line.startswith("(") else "", G)):
             if h.strip(".,?!") != c.strip(".,?!") and (h.strip(".,?!"), c.strip(".,?!")) not in out: out.append((h.strip(".,?!"), c.strip(".,?!")))
     return sorted(out, key=lambda hc: CP.norm(hc[0]) == CP.norm(hc[1]))      # real misspellings first, then capitals for names
@@ -149,7 +149,7 @@ def main():
     ap.add_argument("--cut", required=True); ap.add_argument("--captions", required=True); ap.add_argument("--script", required=True)
     ap.add_argument("--audit", required=True); ap.add_argument("--out", default=os.path.join(os.path.dirname(HERE), "images"))
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
-    B, A = levels(a.cut); pairs = respelled(a.cut, a.script); rep = json.load(open(os.path.join(a.cut, "voice.json")))
+    B, A = levels(a.cut); pairs = respelled(a.cut, a.captions); rep = json.load(open(os.path.join(a.cut, "voice.json")))
     print("respelled:", pairs)
     frame = burned_frame(a.cut, a.captions, 5.0, os.path.join(a.captions, "frame_burned.png"))
     voice_levels(B, A, os.path.join(a.out, "voice-levels.png"))

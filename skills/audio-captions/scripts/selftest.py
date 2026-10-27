@@ -9,9 +9,11 @@ voice      a two-piece take, the second 7 dB quieter, with a 60 Hz hum and room 
 captions   a transcript saying "quadrant" and "started" for a script that says "Qdrant" and "start" -> "Qdrant" (a
            misspelling of the script's word), "started" kept (a real word that was said); "web ui" -> "Web UI";
            "Quadrant's" -> "Qdrant's" (the possessive kept); "quadrant .tech" -> "qdrant.tech" (one web address)
+hearing    a spoken test line (a Windows system voice) captioned from the video's own sound, with no word list: every
+           phrase there, "Quadrant" as "Qdrant"
 checks     a subtitle file with "Quadrant", a 60-character line and two overlapping cues -> each a fix; a clean one -> none
 """
-import argparse, json, os, subprocess, sys, wave
+import argparse, json, os, shutil, subprocess, sys, wave
 import numpy as np, imageio_ffmpeg
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 FF = imageio_ffmpeg.get_ffmpeg_exe(); SR = 48000
@@ -70,9 +72,28 @@ def checks_test(out):
     for f in extra: print(f"  INVENTED checks   {f['kind']}: {f['msg']}")
     return ok and not extra
 
+def hear_test(out):
+    """captions from the video's own sound: a spoken take whose word list would be wrong is still captioned in full"""
+    wav = os.path.join(out, "spoken.wav"); mp4 = os.path.join(out, "spoken.mp4")
+    say = "Make sure you subscribe to the Quadrant YouTube channel. You can also visit the docs."
+    if os.name != "nt" or subprocess.run(["powershell", "-NoProfile", "-Command", "Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+                                          f"$s.SetOutputToWaveFile('{os.path.abspath(wav)}'); $s.Speak('{say}'); $s.Dispose()"], capture_output=True).returncode or not os.path.exists(wav):
+        print("  skipped  captions heard from the video (no system voice to speak a test line)"); return True
+    subprocess.run([FF, "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x180:r=25", "-i", wav, "-c:v", "libx264", "-c:a", "aac", "-shortest", mp4], check=True)
+    open(os.path.join(out, "spoken_cutlist.md"), "w").write("| edit time | source | push | script line | said | take |\n|---|---|---|---|---|---|\n"
+        "| 0.00 | 0.00-3.50 | x1.00 | Make sure you subscribe to the Qdrant YouTube channel. | x | t |\n| 3.50 | 3.50-9.00 | x1.00 | You can also visit the docs. | x | t |\n")
+    cap = os.path.join(out, "spoken_captions"); shutil.rmtree(cap, ignore_errors=True)
+    subprocess.run([sys.executable, os.path.join(HERE, "captions.py"), mp4, "--cutlist", os.path.join(out, "spoken_cutlist.md"), "--out", cap], check=True, capture_output=True)
+    text = " ".join(open(os.path.join(cap, "captions.srt"), encoding="utf-8").read().split())
+    ok = True
+    for what, good in (('"Make sure you subscribe" heard', "Make sure you subscribe" in text), ('"Quadrant" heard, captioned "Qdrant"', "Qdrant" in text and "Quadrant" not in text),
+                       ('the last line heard', "visit the docs" in text)):
+        print(f"  {'caught' if good else 'MISSED'}  captions {what}" + ("" if good else f"  -> {text[:120]}")); ok &= good
+    return ok
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--out", default="audio_captions_selftest"); a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
-    ok = voice_test(a.out) & caption_test(a.out) & checks_test(a.out)
+    ok = voice_test(a.out) & caption_test(a.out) & hear_test(a.out) & checks_test(a.out)
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED"); return 0 if ok else 1
 
 if __name__ == "__main__":
