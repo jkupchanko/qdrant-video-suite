@@ -22,7 +22,7 @@ there.
 
 ## Use it
 
-Copy this folder, and the other skill folders, into `~/.claude/skills/`, then say something like:
+Run `python setup.py` in the suite's folder once (it links this and the other skills into `~/.claude/skills/`), then say something like:
 
 > I want to make a video. Where do I start?
 

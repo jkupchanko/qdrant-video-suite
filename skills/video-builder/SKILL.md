@@ -94,6 +94,19 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 3. Report to the person: the video's path, what the review found (from `report.json`, not memory), what was fixed, what
    is left to check (with frames), and how long each stage took.
 
+## Prove the whole chain still works
+
+```bash
+python ~/.claude/skills/video-builder/scripts/chain_test.py
+```
+
+Builds the repo's 30-second demo (`demos/bulk-uploads-first30`) through every stage, captions included, and checks what
+each stage made: every script line found, the cleaned voice the cut's length to the millisecond, the B-roll clip
+recorded, the master the cut's length at about -14 LUFS, the review written, the captions spelled right with nothing to
+fix. Several minutes; needs the network and Chrome. Run it after changing any skill and before every push: each skill's
+self-test proves that skill, and only this proves they still work one after another. A number that moved since the last
+pass (a length, the loudness, the review's counts) is printed even when it passes.
+
 ## Styles
 
 - `list` (default, automatic): the listed-sections style (`camera_audit/styles/style_list.py`). The list is the script's

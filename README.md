@@ -332,9 +332,19 @@ cd qdrant-video-suite
 python setup.py
 ```
 
-`setup.py` makes the Python environment, installs the packages, copies the skills into `~/.claude/skills`, points the
-build at this repo's engine and fonts, checks the B-roll browser, and runs the self-test. It ends with **Ready**, or a
-short TODO list of what to install. Run it again after every `git pull`. `python setup.py --check` changes nothing.
+`setup.py` makes the Python environment and installs the packages. Then it loads every library the build uses, the way
+the build loads it, so a file your computer blocks is named now rather than an hour into a build. It links the skills
+into `~/.claude/skills`, points the build at this repo's engine and fonts, checks the B-roll browser, and runs the
+self-test. It ends with **Ready**, or a short TODO list of what to install. The skills are links to this folder, so a
+`git pull` reaches Claude at once; run setup again only when `requirements.txt` changes. `python setup.py --check`
+changes nothing.
+
+**Before you push a change**, run the whole suite once on the 30-second demo (several minutes; needs the network and
+Chrome). It builds the demo through every step and checks what each step made:
+
+```bash
+python skills/video-builder/scripts/chain_test.py
+```
 
 Then open Claude Code and say **"I want to make a video"**.
 

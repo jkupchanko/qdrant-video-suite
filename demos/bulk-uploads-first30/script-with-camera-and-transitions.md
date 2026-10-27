@@ -1,11 +1,15 @@
 # Bulk Uploading Data to Qdrant: first 30 s, all layers
 
-Edited from the Zoom take (cut list in `bulk_uploads_first30_cutlist.md`). Camera, B-roll and transitions
-applied by the suite's rules; nothing added that the model videos do not do.
+<!-- Source page: https://qdrant.tech/documentation/production-operations/bulk-data-import/ -->
+<!-- Edited from the Zoom take (cut list in `cutlist.md`). Camera, B-roll and transitions applied by the suite's rules. -->
+<!-- The suite's chain test (video-builder/scripts/chain_test.py) builds this script: keep it in the script form. -->
 
 ## Hook   0:00 to 0:15
 
 When uploading large amounts of data, Qdrant isn't just storing vectors.
+
+[**Lower third:** John Kupchanko | Developer Relations Engineer | 5 s]
+
 It's also handling payloads, indexes, and much more in the background.
 There's no single configuration that works for all workloads.
 So we will go over a few different options and best practices you can try.
@@ -23,7 +27,7 @@ while sparse vectors use a separate sparse index.
 
 [**Camera:** NONE. The two index names are the one thing in these 30 s the viewer benefits from seeing; the Bulk Uploading docs page has a section on exactly that. Face off for 5 s, back on the next line. **Show:** The "Why Vector Type Matters" section of the bulk data import page, slow push into the heading. **Transition:** the docs card pushes in from the right, 0.3 s (the one push in the opening); cut back to the face.]
 
-[**B-ROLL: https://qdrant.tech/documentation/production-operations/bulk-data-import/ | dense vectors use HNSW while sparse vectors use a separate sparse index | section: Why Vector Type Matters | 5s]
+[B-ROLL: https://qdrant.tech/documentation/production-operations/bulk-data-import/ | dense vectors use HNSW while sparse vectors use a separate sparse index | section: Why Vector Type Matters | 5s | name: dense_vs_sparse]
 
 Because they're indexed differently, they can create different memory and performance considerations during bulk uploads.
 
