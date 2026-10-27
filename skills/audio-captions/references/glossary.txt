@@ -1,0 +1,10 @@
+# Spellings captions always use, whatever the transcript heard (RIGHT <- wrong, wrong).
+# The script's own spelling wins first; this catches what the script does not say. Add a team's terms here.
+Qdrant <- quadrant, quadrants, qdrants, cudrant, kudrant, q-drant
+Qdrant's <- quadrant's
+FastEmbed <- fastembed, fast-embed
+LangChain <- langchain
+LlamaIndex <- llamaindex
+Kubernetes <- kubernetes, cubernetes
+PostgreSQL <- postgresql, postgres-ql
+gRPC <- grpc

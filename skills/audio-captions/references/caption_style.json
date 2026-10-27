@@ -1,0 +1,12 @@
+{
+ "why": "None of the 49 pro videos burn captions in (research.md), so there is no house look to copy. This is the look for when someone asks for burned-in captions: the subtitle rules (two short lines, held long enough to read) in the brand font, low in the frame, clear of a lower third.",
+ "chars": 32,
+ "lines": 2,
+ "min_s": 1.0,
+ "max_s": 5.0,
+ "cps": 17.0,
+ "y": 0.86,
+ "text_height": 0.045,
+ "caps": false,
+ "highlight": false
+}

@@ -175,9 +175,9 @@ Already know what you need? Each skill below also works on its own. New parts of
 <p><strong>Coming soon</strong></p>
 </td>
 <td width="33%" valign="top">
-<h3>Audio and captions</h3>
-<p>Keep speech clear, music restrained and captions readable.</p>
-<p><strong>Coming soon</strong></p>
+<h3><a href="skills/audio-captions/">Audio and captions</a></h3>
+<p>One even, clean voice with only the fixes the take needs, and captions spelled the way the script spells things.</p>
+<p><strong>Available skill</strong></p>
 </td>
 <td width="33%" valign="top">
 <h3><a href="skills/video-review/">Final review</a></h3>
@@ -273,6 +273,15 @@ checked against 49 popular technical videos. It fixes what it finds by itself an
 
 The finished look laid onto the cut. Listed Sections builds itself from the script and the docs page, and its style
 sheet sets its B-roll, presenter window, transitions and zoom.
+
+## 6b. Voice and captions: [audio-captions](skills/audio-captions/)
+
+Your voice at one level from the first piece of the cut to the last, with room noise, hum and rumble taken out only when
+your take has them, and the voice never moved off your lips. Captions are what you said, spelled the way your script
+spells it ("Quadrant" becomes "Qdrant"), as SRT and VTT files to upload. None of 49 popular technical videos burns
+captions into the picture, so that is an option (`--burn-captions`), not the default.
+
+![How the voice and captions are made](skills/audio-captions/images/how-it-works.png)
 
 ## 7. Review: [video-review](skills/video-review/)
 

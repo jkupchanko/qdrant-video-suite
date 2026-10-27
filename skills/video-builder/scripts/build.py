@@ -2,6 +2,7 @@
 
   python build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR [--url DOCS_URL] [--style list]
                   [--name "NAME" --role "TITLE"] [--no-mirror] [--bars 72] [--from STAGE] [--only STAGE] [--redo STAGE,...]
+                  [--burn-captions]
 
 The script runs the video. Before the first stage the build checks it has what only a person can give (INTAKE below):
 the presenter's name and title for the Qdrant name lower third come from the script's [**Lower third:** NAME | TITLE | 5 s];
@@ -20,14 +21,17 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
   broll    broll-recorder   every [B-ROLL] marker recorded: the first of each page arrives on it (title, menu, a click into
                             the section), the rest read through their section and settle; 1.4x page zoom -> broll/
   assets   broll-recorder   the docs page's figures and code, sharp, with its Best fit / Watch for lines -> page_assets/
+  voice    audio-captions   the cut's voice made even and clean, only what this take needs; the picture copied -> cut/cut_voice.mp4
   style    editing-style    the styled video (style 'list': the listed-sections style, built from all of the above)
   master   (editing-style)  loudness to about -14 LUFS, true peak -1.5 dBTP, picture untouched
+  captions audio-captions   subtitles to upload with the video (captions/captions.srt, .vtt), spelled the way the script
+                            spells things; with --burn-captions also a copy with them in the picture (captions/captioned.mp4)
   review   video-review     the audit: every problem with its time and frame               -> review/report.md
 Writes BUILD_DIR/BUILD.md (what each stage did, how long it took, what the review found) and build.json.
 """
 import os, sys, re, json, time, glob, argparse, subprocess, shutil
 SK = os.path.expanduser("~/.claude/skills"); STYLES = os.path.expanduser(r"~\camera_audit\styles"); PY = sys.executable
-STAGES = ["cut", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review"]
+STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "captions", "review"]
 
 def run(cmd, log, cwd=None):
     with open(log, "w", encoding="utf-8") as f:
@@ -198,12 +202,26 @@ class Build:
     def style(self):
         out = self.p("video.mp4")
         if self.done("style", [out]): return [out], "kept"
-        cfg = dict(cut=self.p("cut", "cut.mp4"), cutlist=self.p("cut", "cutlist.md"), raw_words=self.p("cut", "words.json"), words=self.p("words.json"),
+        cut = self.p("cut", "cut_voice.mp4") if os.path.exists(self.p("cut", "cut_voice.mp4")) else self.p("cut", "cut.mp4")   # the cleaned voice
+        cfg = dict(cut=cut, cutlist=self.p("cut", "cutlist.md"), raw_words=self.p("cut", "words.json"), words=self.p("words.json"),
                    lookaways=self.p("lookaways.json"), script=os.path.abspath(self.a.script), assets=self.p("page_assets", "assets.json"), broll=self.p("broll"), out=out,
                    sheet=self.sheet_path)
         json.dump(cfg, open(self.p("style_config.json"), "w"), indent=1)
         tail = run([PY, os.path.join(STYLES, f"style_{self.a.style}.py"), self.p("style_config.json")], self.p("style.log"), cwd=STYLES)
         return [out], next((l.strip() for l in tail if l.startswith("->")), "rendered")
+    def voice(self):
+        outs = [self.p("cut", "cut_voice.mp4"), self.p("cut", "voice.json")]
+        if self.done("voice", outs): return outs, "kept"
+        run([PY, os.path.join(SK, "audio-captions", "scripts", "voice_clean.py"), self.p("cut", "cut.mp4"), "--out", outs[0], "--cutlist", self.p("cut", "cutlist.md"),
+             "--report", outs[1]], self.p("voice.log"))
+        return outs, "; ".join(json.load(open(outs[1]))["did"])
+    def captions(self):
+        burn = self.a.burn_captions                                     # none of the 49 pro videos burn them in: a file by default
+        outs = [self.p("captions", "captions.srt")] + ([self.p("captions", "captioned.mp4")] if burn else [])
+        if self.done("captions", outs): return outs, "kept"
+        tail = run([PY, os.path.join(SK, "audio-captions", "scripts", "captions.py"), self.p("video_master.mp4"), "--cutlist", self.p("cut", "cutlist.md"),
+                    "--words", self.p("cut", "words.json"), "--script", self.a.script, "--out", self.p("captions")] + (["--burn"] if burn else []), self.p("captions.log"))
+        return outs, next((l.strip() for l in tail if "subtitles" in l), "captions written")
     def master(self):
         out = self.p("video_master.mp4")
         if self.done("master", [out]): return [out], "kept"
@@ -265,6 +283,7 @@ def main():
     ap.add_argument("--style", default="list"); ap.add_argument("--no-mirror", dest="mirror", action="store_false"); ap.add_argument("--bars", default="72"); ap.add_argument("--label")
     ap.add_argument("--from", dest="start"); ap.add_argument("--only"); ap.add_argument("--redo", default="")
     ap.add_argument("--cutter", choices=["sentences", "takes"], default="sentences", help="sentences: the raw edit as one clean pass (default); takes: the old last-complete-take cutter")
+    ap.add_argument("--burn-captions", action="store_true", help="also burn the captions into a copy of the video (captions/captioned.mp4); by default only the files to upload")
     ap.add_argument("--name", help="the presenter's name for the lower third, when the script has no [**Lower third:** ...]"); ap.add_argument("--role", help="the title under it")
     ap.add_argument("--cut-from", metavar="BUILD_DIR", help="with --preview: take the cut and its eye contact from this build's approved cut instead of cutting again")
     ap.add_argument("--take-is-edited", action="store_true", help="build from a take that is already cut (a test); normally refused, it gets cut twice")
@@ -302,7 +321,7 @@ def main():
         print(f"[{st}] {'ok' if ok else 'FAILED'} in {time.time() - t0:.0f} s: {note}", flush=True)
         if not ok: break
     L = [f"# Build: {a.label or os.path.basename(a.out)}", "", f"Take `{a.take}`, script `{a.script}`, page {B.url}, style `{a.style}`.", "", "| stage | skill | result | time |", "|---|---|---|---|"]
-    skill = dict(cut="editing", words="glue", gaze="editing (gaze)", camera="camera-layout", keyterms="broll-recorder", broll="broll-recorder", assets="broll-recorder", style="editing-style", master="editing-style", review="video-review")
+    skill = dict(cut="raw-edit", voice="audio-captions", captions="audio-captions", words="glue", gaze="editing (gaze)", camera="camera-layout", keyterms="broll-recorder", broll="broll-recorder", assets="broll-recorder", style="editing-style", master="editing-style", review="video-review")
     for st in STAGES:
         s = B.state.get(st)
         if s: L.append(f"| {st} | {skill[st]} | {'ok' if s['ok'] else 'FAILED'}: {s['note'][:160]} | {s['seconds']:.0f} s |")

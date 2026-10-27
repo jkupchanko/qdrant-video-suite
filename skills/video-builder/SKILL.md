@@ -1,6 +1,6 @@
 ---
 name: video-builder
-description: Build a whole video from a request, using every skill of the video suite in order and ending with the review. Give it a raw talking-head take and a three-layer script (lines, B-roll markers, camera calls, transition values); it cuts the take into one clean pass (raw-edit), finds the look-aways (gaze), plans the camera (camera-layout), checks the B-roll by key term and records every marker (broll-recorder), captures the docs page's figures and code (broll-recorder), renders a styled video (editing-style; the listed-sections style builds itself from the script and the page), masters the loudness, and audits the result frame by frame (video-review), then reports what the review found. Use it whenever someone asks to "build this video", "make the video", "do the whole thing", "run it end to end", "use all the skills", "go from the recording to the finished video", or asks a question that ends in a finished video, even if they name only the topic.
+description: Build a whole video from a request, using every skill of the video suite in order and ending with the review. Give it a raw talking-head take and a three-layer script (lines, B-roll markers, camera calls, transition values); it cuts the take into one clean pass (raw-edit), finds the look-aways (gaze), plans the camera (camera-layout), checks the B-roll by key term and records every marker (broll-recorder), captures the docs page's figures and code (broll-recorder), evens and cleans the voice (audio-captions), renders a styled video (editing-style; the listed-sections style builds itself from the script and the page), masters the loudness, writes captions spelled like the script (audio-captions), and audits the result frame by frame (video-review), then reports what the review found. Use it whenever someone asks to "build this video", "make the video", "do the whole thing", "run it end to end", "use all the skills", "go from the recording to the finished video", or asks a question that ends in a finished video, even if they name only the topic.
 ---
 
 # Video builder
@@ -74,8 +74,10 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 | keyterms | broll-recorder | `keyterms.md`: which lines the key-term rule gives B-roll, against the script's markers |
 | broll | broll-recorder | `broll/`: every marker recorded (readthrough, 1.4x page zoom, section pinned) |
 | assets | broll-recorder | `page_assets/`: the page's figures and code (2x, sharp) and its Best fit / Watch for lines |
+| voice | audio-captions | `cut/cut_voice.mp4`, `cut/voice.json`: every piece of the cut at one level; room noise, hum and rumble taken out only when measured over a limit; the voice never moved off the lips. The style stage uses it |
 | style | editing-style + brand-consistency | `video.mp4` (style `list`: master list, numbered items, docs figures, live-typed code, tradeoff cards) with the Qdrant name lower third; `video_overlays.json` says when it is up |
 | master | editing-style | `video_master.mp4` at about -14 LUFS |
+| captions | audio-captions | `captions/captions.srt` and `.vtt` to upload, spelled the way the script spells things; with `--burn-captions` also `captions/captioned.mp4` |
 | review | video-review | `review/report.md`, `review/sheet.jpg`, `review/frames/`; also hears every join in the raw take (`--take`) and reads the name card |
 
 `BUILD.md` sums it up: each stage, its skill, what it did, how long it took, and the review's counts.
