@@ -32,6 +32,7 @@ Only the video is required. Give it everything the project has: each input switc
 | `--assets` | `page_assets.py`'s `assets.json` | the page's code and figure captions count as its own words and numbers (`size=768` is the docs') |
 | `--take` | the raw recording the cut was made from (with `--cutlist`) | every join heard in the take: the next word's first sound kept at an out-point, a piece ending or starting mid-word, two pieces overlapping (heard twice) |
 | `--literal`, `--take-gaze` | the build's `cut/words_literal.json` and `cut/raw_gaze.json` (with `--take`, `--cutlist`) | the raw edit as one clean pass: `restart`, `stop`, `glance`, `dropped` (below) |
+| `--captions` | the build's `captions/` folder (audio-captions) | the captions against the video (below) |
 
 Always, from the pixels (`scripts/pace_checks.py`), the pace John and his boss noticed and the review did not:
 - **`abrupt`** (fix): a hard cut into, out of or between cards. The house wants soft changes of about 0.8 s ("how quick we
@@ -57,6 +58,18 @@ skill placed its cut points by the sound. When a person reports something the re
 in the middle of a sentence, a glance away with words over it, a script word said between two pieces but left out, each
 measured on the speaker's own take. With `--literal` and `--take-gaze` they run here too, on the finished video's cut.
 
+**The caption checks** (`scripts/caption_checks.py`). Captions are the last step of a build, after this review, so the
+build's captions stage runs them itself (`captions/captions_report.md`); `--captions` runs them here too.
+- `caption_missing`, `caption_extra` (fix): 4 or more words said but not in the captions, or captioned but not said,
+  against the video's own sound. Captions placed from the take's transcript once lost 143 words of Get Started this way.
+- `caption_gap`, `caption_silent` (fix): 2 s of speech with no caption up; a caption up over silence.
+- `caption_word` (check): a caption word where the script has a different, similar real word ("Dense factors" for
+  "Dense vectors" in Bulk Uploads; "right" for "write"). No speller can catch it; a person listens.
+- `caption_covers` (fix; the mouth is a check): the burned copy's caption over the name card, over text on screen (read
+  under the caption where the burn changed the picture), or over the mouth. On Bulk Uploads, burned captions covered
+  list items and docs diagrams 19 times: the reason the file is the default.
+- the audio-captions checks too: names against the glossary, line length, overlaps, reading speed.
+
 It takes about 4 to 8 minutes for a 3.5 minute video. OCR results are cached in `REVIEW_DIR/ocr_cache.json`,
 so a re-run after a fix to the face or the B-roll is faster. `--skip ocr,face,audio,broll` leaves passes out
 while you iterate on one thing.
@@ -78,8 +91,9 @@ python ~/.claude/skills/video-review/scripts/selftest.py CUT.mp4 --gaze GAZE.jso
 Plants four faults in the cut's first 10 s (empty frames, a 10% stretch, the picture 3 frames behind the voice, a caption off
 the edge), reviews the clip, and fails if one is missed or a fix is reported that was not planted. It also checks the joins,
 the raw edit (a restart, a dropped list item, a glance into a thinking pause, a stop, and a list that must not be called
-a restart) and the reading pace (two 2 s cards back to back on a moving picture must each be flagged), which need no video: without
-CUT.mp4 only those run. Run it after changing any check: a check that stops firing looks exactly like a clean video.
+a restart), the reading pace (two 2 s cards back to back on a moving picture must each be flagged) and the captions
+(seven planted faults on a made-up captioned video, and the same video captioned right with no fix), which need no real
+clip: without CUT.mp4 only those run. Run it after changing any check: a check that stops firing looks exactly like a clean video.
 
 Severity:
 - **fix**: wrong, whatever the style. A word clipped at a join, a missing or misspelled name card, face during a look-away, stretched face, desync, wrong B-roll section, ghost frames, text cut at the edge, black frames, clipping.

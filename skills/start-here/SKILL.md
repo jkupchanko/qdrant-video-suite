@@ -246,9 +246,12 @@ The goal now is small fixes, not a new video. Never rebuild the whole thing for 
    ```
 
    (`--captions burned` for 2.) Show the first few captions inline and the result line (how many captions, how many
-   names respelled), and run audio-captions' `checks.py --srt BUILD_DIR/captions/captions.srt`: a **fix** is fixed
-   before handing over (a product name it keeps missing goes into audio-captions' `references/glossary.txt`, then run
-   again with `--redo captions`). Then hand over, and the video is done:
+   names respelled). The same step checks the captions against the video (video-review's `caption_checks.py`, in
+   `BUILD_DIR/captions/captions_report.md`): words said but left out, words nobody says, speech with no caption, a word
+   misheard against the script, and for 2, the burned caption covering the name card, text on screen or the mouth. A
+   **fix** is fixed before handing over (a misheard name goes into audio-captions' `references/glossary.txt`; burned
+   captions over the screen's text: say so and recommend the file alone), then run again with `--redo captions`. Then
+   hand over, and the video is done:
 
    | file | what it is for |
    |---|---|

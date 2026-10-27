@@ -17,6 +17,9 @@ Everything but VIDEO is optional; each input switches on the checks that need it
   (always)       the pace: a graphic cut in or out with no transition (the house wants soft changes), a card gone before
                  its words can be read, accents outside the Qdrant palette on the graphics
   (with --broll) the first B-roll of each page shows which page it is (its title, breadcrumb, menu)
+  --captions     (a captions folder: captions.srt, heard.json, captioned.mp4) the captions against the video: words said and
+                 left out, words nobody says, speech with no caption, a caption over silence, misheard words against the
+                 script, the burned copy covering the name card, text on screen or the mouth (caption_checks.py)
   (with --script) the brand: the presenter's name lower third ([**Lower third:** NAME | TITLE | 5 s]) read on screen,
                  spelled as the script gives it, held its time, low left, with the face on screen; a script without
                  one is a fix (Qdrant videos always show the presenter's name)
@@ -63,6 +66,13 @@ FIXES = {
     "repeat": "a retake is left in the cut: keep one take (editing skill: the last complete take wins) and re-cut",
     "dead_air": "a long silence is left in the cut: tighten the cut (editing skill, --max-gap) or cover it",
     "count": "the script's Count section disagrees with the script itself: correct the claim",
+    "caption_missing": "words said are not in the captions: make them from the video's own sound (audio-captions captions.py, no --words)",
+    "caption_extra": "the captions say words nobody says here: remake them from the video's own sound",
+    "caption_gap": "speech with no caption up: remake the captions; if it persists, the cut list's rows do not match the video",
+    "caption_silent": "a caption over silence: remake the captions from the video's own sound",
+    "caption_word": "listen: if the script's word was said, add the misheard word to audio-captions' references/glossary.txt (Right <- wrong)",
+    "caption_covers": "a burned caption covers something: raise the captions while it is up (caption_style.json y), or ship the subtitle file only",
+    "caption_spelling": "add the term to audio-captions' references/glossary.txt and make the captions again",
 }
 
 class Video:
@@ -435,6 +445,7 @@ def main():
     ap.add_argument("--take", help="the raw recording the cut was made from (with --cutlist): the sound at every join")
     ap.add_argument("--literal", help="the take transcribed phrase by phrase (raw-edit/transcribe_literal.py), with --take and --cutlist: the raw edit's own checks")
     ap.add_argument("--take-gaze", help="gaze.py run on the raw take: glances, against this speaker's own resting place")
+    ap.add_argument("--captions", help="the captions folder (audio-captions' output): checked against this video (caption_checks.py)")
     ap.add_argument("--ocr-every", type=float, default=1.0); ap.add_argument("--face-step", type=int, default=2)
     a = ap.parse_args(); skip = set(filter(None, a.skip.split(","))); os.makedirs(a.out, exist_ok=True)
     v = Video(a.video); F = Findings(); stats = collections.OrderedDict(); T0 = time.time()
@@ -547,6 +558,12 @@ def main():
                 what = f"nearly the whole frame ({pct}) is empty" if cur[0][1] == "all" else f"the {cur[0][1]} {pct} of the frame is empty, edge to edge"
                 F.add("dead", "check", cur[0][0] / v.fps, f"{what} for {(cur[-1][0] - cur[0][0]) / v.fps:.1f} s", t1=cur[-1][0] / v.fps, frame=cur[0][0])
             cur = [(i, key, frac)] if (i is not None and key) else []
+    if a.captions and os.path.exists(os.path.join(a.captions, "captions.srt")) and "captions" not in skip:
+        step("captions"); import caption_checks as CC
+        ov = os.path.join(os.path.dirname(os.path.abspath(a.video)), "video_overlays.json")
+        CF = CC.findings(a.video, a.captions, ov, a.script)
+        for f in CF: F.add(f["kind"], f["sev"], f["t"], f["msg"], t1=f.get("t1"), frame=f.get("frame"))
+        stats["captions"] = ", ".join(f"{sum(1 for f in CF if f['sev'] == s_)} {s_}" for s_ in ("fix", "check")) or "clean"
     if a.take and a.cutlist and os.path.exists(a.cutlist) and "joins" not in skip:
         step("joins"); import join_checks as JC; J = JC.joins(a.take, a.cutlist)
         for j in J: F.add("join", j["sev"], j["t"], j["msg"])

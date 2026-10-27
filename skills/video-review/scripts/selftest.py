@@ -15,7 +15,10 @@ And the reading pace, on a made-up card track (OCR reads, no video) where the pi
   Cards split by motion merge all three into one long card and miss both (build 4, 0:43-0:53).
 And the raw edit (raw_edit_checks), on a made-up take: a restart left in, a script list item dropped, a piece running into
   a thinking pause as the eyes leave, a stop inside a sentence -> each caught; a list that repeats its opening -> nothing.
-Without CUT.mp4 only the joins, the reading pace and the raw edit run (they need no video).
+And the captions (caption_checks), on a made-up video with its captions and a burned copy: words said and left out, a
+  gap with no caption, words nobody says over silence, a misheard word against the script, the burned caption over a
+  card's text and over the name card -> each caught; the same video captioned right -> no fix.
+Without CUT.mp4 only the joins, the reading pace, the raw edit and the captions run (they need no real clip).
 Run it after changing any check. Exit 1 if a fault is missed or a fix is invented.
 """
 import os, sys, json, argparse, subprocess, cv2, imageio_ffmpeg
@@ -137,9 +140,71 @@ def reading_selftest(fps=30, H=1080):
     for r in extra: print(f"  INVENTED  read at {r[1]:.1f}-{r[2]:.1f} s: {r[4][:80]}")
     return ok and not extra
 
+def caption_selftest(out):
+    """captions checked against a made-up video (words as voiced bursts, what was heard, its captions, a burned copy) with
+    six faults planted, and the same video captioned cleanly, which must give no fix:
+      seven words said and left out of the captions                -> caption_missing (and caption_gap: 2 s uncaptioned)
+      a caption of four words nobody says, over silence             -> caption_extra, caption_silent
+      "dense factors" heard where the script says "dense vectors"  -> caption_word (a check)
+      the burned caption over a card's text, and over the name card -> caption_covers"""
+    import numpy as np, wave, caption_checks as CC
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "audio-captions", "scripts")); import captions as CP
+    sr, fps, W_, H_ = 48000, 25, 640, 360; FF = imageio_ffmpeg.get_ffmpeg_exe(); ok = True
+    said = ("Bulk uploads are faster when you batch your points together. Dense factors use a graph while sparse vectors "
+            "use an inverted index. Start with one worker and add more when the writes stay slow.").split()
+    W, t = [], 0.4
+    for w in said: d = 0.06 * len(w.strip(",.")) + 0.12; W.append(dict(w=w, s=round(t, 2), e=round(t + d, 2))); t += d + 0.08
+    dur = t + 3.0; n = int(dur * sr); tt = np.arange(n) / sr; x = np.random.default_rng(5).normal(0, 0.0005, n)
+    for w in W:
+        m = (tt >= w["s"]) & (tt < w["e"]); x[m] += 0.3 * np.sin(2 * np.pi * 170 * tt[m])
+    wav = os.path.join(out, "cap_take.wav")
+    with wave.open(wav, "w") as f: f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr); f.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
+    card = (W[12]["s"], W[17]["e"])                                                    # a card whose text sits where the captions go
+    def render(name, with_card):
+        raw = os.path.join(out, name + "_raw.mp4"); vw = cv2.VideoWriter(raw, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W_, H_))
+        for k in range(int(dur * fps)):
+            fr = np.full((H_, W_, 3), 60, np.uint8)
+            if with_card and card[0] <= k / fps <= card[1]: cv2.putText(fr, "Store the sparse index on disk", (150, 318), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            vw.write(fr)
+        vw.release(); v = os.path.join(out, name + ".mp4")
+        subprocess.run([FF, "-v", "error", "-y", "-i", raw, "-i", wav, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", v], check=True); return v
+    video, plain = render("cap_video", True), render("cap_plain", False)
+    script = os.path.join(out, "cap_script.md"); open(script, "w", encoding="utf-8").write(" ".join(said).replace("factors", "vectors") + "\n")
+    words = [(w["w"], w["s"], w["e"]) for w in W]
+    def make(name, keep, extra=None, video=video):
+        d = os.path.join(out, name); os.makedirs(d, exist_ok=True); json.dump(W, open(os.path.join(d, "heard.json"), "w"))
+        runs, cur = [], []                                                             # captions on each side of a hole, not across it
+        for k, w in enumerate(words):
+            if keep(k): cur.append(w)
+            elif cur: runs.append(cur); cur = []
+        C = [c for r in runs + [cur] if r for c in CP.cues(r, **CP.SRT_RULES)]
+        if extra: C.append(extra)
+        CP.write_srt(C, os.path.join(d, "captions.srt"))
+        st = json.load(open(os.path.join(os.path.dirname(os.path.dirname(HERE)), "audio-captions", "references", "caption_style.json")))
+        CP.write_ass(CP.cues([w for k, w in enumerate(words) if keep(k)], st["chars"], st["lines"], st["min_s"], st["max_s"], st["cps"]), os.path.join(d, "captions.ass"), W_, H_, st)
+        fonts = os.path.join(os.path.dirname(os.path.dirname(HERE)), "brand-consistency", "assets", "fonts").replace("\\", "/").replace(":", "\\:")
+        subprocess.run([FF, "-v", "error", "-y", "-i", os.path.abspath(video), "-vf", f"subtitles=captions.ass:fontsdir='{fonts}'", "-c:a", "copy", "captioned.mp4"], check=True, cwd=d)
+        return d
+    bad = make("cap_bad", lambda k: not 3 <= k <= 9, (dur - 2.6, dur - 1.4, ["thanks for the coffee"]))
+    lower = [dict(kind="lower_third", name="Test Presenter", t_in=W[18]["s"], t_out=W[22]["e"], box=[100, 280, 440, 70])]
+    F = CC.findings(video, bad, None, script); json.dump(lower, open(os.path.join(out, "cap_overlays.json"), "w"))
+    F += [f for f in CC.findings(video, bad, os.path.join(out, "cap_overlays.json"), None) if "lower third" in f["msg"]]
+    want = [("caption_missing", W[3]["s"], "seven words said, left out"), ("caption_gap", W[3]["s"], "speech with no caption up"),
+            ("caption_extra", dur - 2.6, "words nobody says"), ("caption_silent", dur - 2.6, "a caption over silence"),
+            ("caption_word", W[10]["s"], '"factors" where the script says "vectors"'), ("caption_covers", card[0], "burned over a card's text"),
+            ("caption_covers", W[18]["s"], "burned over the name card")]
+    for kind, t0, what in want:
+        hit = [f for f in F if f["kind"] == kind and t0 - 1.0 <= f["t"] <= t0 + 2.5 and (kind != "caption_covers" or ("lower third" in f["msg"]) == ("name card" in what))]
+        print(f"  {'caught' if hit else 'MISSED'}  {kind:15s} {what}" + (f"  -> {hit[0]['msg'][:60]}" if hit else "")); ok &= bool(hit)
+    good = make("cap_good", lambda k: True, video=plain)                                # nothing under the captions, nothing left out
+    clean = [f for f in CC.findings(plain, good, None, None) if f["sev"] == "fix"]
+    for f in clean: print(f"  INVENTED  {f['kind']} at {f['t']:.2f} s: {f['msg'][:80]}")
+    print(f"  {'clean' if not clean else 'NOT CLEAN'}   captions made right: no fix")
+    return ok and not clean
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut", nargs="?"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
-    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out)
+    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out) & caption_selftest(a.out)
     if not a.cut:
         print("  (no CUT.mp4: the planted-clip checks did not run)"); print("SELF-TEST PASSED" if joins_ok else "SELF-TEST FAILED"); return 0 if joins_ok else 1
     clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)

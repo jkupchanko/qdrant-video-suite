@@ -223,7 +223,11 @@ class Build:
         if self.done("captions", outs) and fresh: return outs, "kept"                   # a patch since then re-hears the video
         tail = run([PY, os.path.join(SK, "audio-captions", "scripts", "captions.py"), self.p("video_master.mp4"), "--cutlist", self.p("cut", "cutlist.md"),
                     "--script", self.a.script, "--out", self.p("captions")] + (["--burn"] if burn else []), self.p("captions.log"))
-        return outs, next((l.strip() for l in tail if "subtitles" in l), "captions written")
+        made = next((l.strip() for l in tail if "subtitles" in l), "captions written")
+        ck = subprocess.run([PY, os.path.join(SK, "video-review", "scripts", "caption_checks.py"), self.p("video_master.mp4"), self.p("captions"),
+                             "--overlays", self.p("video_overlays.json"), "--script", self.a.script], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        said = next((l.strip() for l in ck.stdout.splitlines()[::-1] if l.startswith("captions:")), "the caption check did not run: " + ck.stderr.strip()[-200:])
+        return outs + [self.p("captions", "captions_report.md")], f"{made}; checked against the video: {said.split(' -> ')[0].replace('captions: ', '')} (captions/captions_report.md)"
     def master(self):
         out = self.p("video_master.mp4")
         if self.done("master", [out]): return [out], "kept"
