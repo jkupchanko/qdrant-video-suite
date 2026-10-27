@@ -55,6 +55,25 @@ def measure(path, fps=10, start=0.0, end=0.0):
         i += 1
     cap.release(); det.close(); return out
 
+def _kmeans_loop_fallback():
+    """scikit-learn's k-means inner loop (_k_means_lloyd), in numpy, for a machine whose policy blocks that one DLL
+    (this one, since 2026-10-26). GaussianMixture starts from k-means, so the same loop keeps the same fit."""
+    try: import sklearn.cluster._k_means_lloyd; return
+    except ImportError: pass
+    m = type(sys)("sklearn.cluster._k_means_lloyd")
+    def dense(X, sample_weight, centers_old, centers_new, weight_in_clusters, labels, center_shift, n_threads, update_centers=True):
+        d = (centers_old ** 2).sum(1)[None, :] - 2 * X @ centers_old.T                 # the loop's own distance: |c|^2 - 2 x.c
+        labels[:] = d.argmin(1)
+        if not update_centers: return
+        centers_new[:] = 0; weight_in_clusters[:] = 0
+        np.add.at(centers_new, labels, X * sample_weight[:, None]); np.add.at(weight_in_clusters, labels, sample_weight)
+        from sklearn.cluster._k_means_common import _relocate_empty_clusters_dense
+        _relocate_empty_clusters_dense(X, sample_weight, centers_old, centers_new, weight_in_clusters, labels)
+        nz = weight_in_clusters > 0; centers_new[nz] /= weight_in_clusters[nz][:, None]
+        center_shift[:] = np.sqrt(((centers_new - centers_old) ** 2).sum(1))
+    def sparse(*a, **k): raise NotImplementedError("sparse k-means is not needed here")
+    m.lloyd_iter_chunked_dense, m.lloyd_iter_chunked_sparse = dense, sparse; sys.modules[m.__name__] = m
+
 def _smooth(recs, keys=("h", "v", "yaw"), k=3):
     """median of k neighbouring frames, so one noisy landmark frame does not flip the call"""
     out = {}
@@ -104,7 +123,7 @@ def classify(recs, min_len=0.25, bridge=0.3, pad=0.1, z=3.5, dv=0.10, lens_at=No
     A run shorter than `min_len` still counts when one of its frames is plainly on another target (lens
     probability under 0.1 or distance over 4.5): on Bulk Uploads that separated a real 0.15 s glance to the
     side (probability 0, distance 5 to 7) from landmark noise (0.3 to 0.5, under 3.1)."""
-    from sklearn.mixture import GaussianMixture
+    _kmeans_loop_fallback(); from sklearn.mixture import GaussianMixture
     sm = _smooth(recs); opens = [r["open"] for r in recs if r["face"]]
     if not opens: return recs, [], {}
     mo = float(np.median(opens))

@@ -26,6 +26,8 @@ SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "edit
 
 def words_of(mp4, out):
     if os.path.exists(out): return json.load(open(out, encoding="utf-8"))
+    try: import av                                    # faster-whisper imports av only to read files; where a policy blocks
+    except ImportError: sys.modules["av"] = type(sys)("av")   # av's DLL, the audio goes in as an array
     from faster_whisper import WhisperModel
     import imageio_ffmpeg
     audio = np.frombuffer(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", mp4, "-t", str(SPAN), "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],

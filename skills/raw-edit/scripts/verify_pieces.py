@@ -24,6 +24,8 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut_dir"); ap.add_argument("raw"); ap.add_argument("--mirror", action="store_true")
     ap.add_argument("--bars", type=int, default=0); ap.add_argument("--size", default="1920x1080"); ap.add_argument("--model", default="small.en"); ap.add_argument("--literal", help="the take transcribed phrase by phrase (transcribe_literal.py), for stutters a piece heard alone smooths over")
     a = ap.parse_args()
+    try: import av                                    # faster-whisper imports av only to read files; where a policy blocks
+    except ImportError: sys.modules["av"] = type(sys)("av")   # av's DLL, the audio goes in as an array
     from faster_whisper import WhisperModel
     m = WhisperModel(a.model, device="cpu", compute_type="int8")
     FF = imageio_ffmpeg.get_ffmpeg_exe(); cl = os.path.join(a.cut_dir, "cutlist.md"); L = open(cl, encoding="utf-8").read().splitlines()

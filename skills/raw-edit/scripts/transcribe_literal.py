@@ -10,12 +10,14 @@ the pauses. A cut built on that keeps both attempts and the stop between them. H
 of 0.3 s (voice activity), and every stretch is transcribed on its own, with nothing carried over, so each attempt is
 written where it was said.
 """
-import argparse, json, subprocess
+import argparse, json, subprocess, sys
 import numpy as np, imageio_ffmpeg
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("raw"); ap.add_argument("--out", required=True); ap.add_argument("--model", default="small.en")
     a = ap.parse_args()
+    try: import av                                    # faster-whisper imports av only to read files; where a policy blocks
+    except ImportError: sys.modules["av"] = type(sys)("av")   # av's DLL, the audio goes in as an array
     from faster_whisper import WhisperModel
     audio = np.frombuffer(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", a.raw, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
                                          capture_output=True).stdout, np.int16).astype(np.float32) / 32768

@@ -35,6 +35,8 @@ def script_lines(path):
     return out
 
 def transcribe(path, model_name):
+    try: import av                                    # faster-whisper imports av only to read files; where a policy blocks
+    except ImportError: sys.modules["av"] = type(sys)("av")   # av's DLL, the audio goes in as an array
     from faster_whisper import WhisperModel
     import imageio_ffmpeg
     raw = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-i", path, "-f", "f32le", "-ac", "1", "-ar", "16000", "-"], capture_output=True, check=True).stdout

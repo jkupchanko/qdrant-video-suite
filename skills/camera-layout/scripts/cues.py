@@ -38,6 +38,8 @@ def main():
     ap.add_argument("--model", default="base.en")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    try: import av                                    # faster-whisper imports av only to read files; where a policy blocks
+    except ImportError: sys.modules["av"] = type(sys)("av")   # av's DLL, the audio goes in as an array
     from faster_whisper import WhisperModel
     model = WhisperModel(a.model, device="cpu", compute_type="int8")
     by_transition = defaultdict(Counter); lines_by_transition = defaultdict(list)
