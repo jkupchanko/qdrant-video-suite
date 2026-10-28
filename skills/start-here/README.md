@@ -15,7 +15,8 @@ step at a time, with a small map of where you are:
    approve it; then the visuals, a 60 second preview, and the whole video.
 8. **Small edits** until it is ready: each fix re-renders only the seconds it touches, you see just that moment, and a
    final check ends with "ready to go?" Then the last question: **captions?** A subtitle file to upload (recommended),
-   the file plus a copy with captions burned in, or none.
+   the file plus a copy with captions burned in, or none. Then pick a title from three, and get the description with
+   its chapters (timed by the cut) ready to paste into YouTube.
 
 You are never asked about the camera, the B-roll or the transitions: you see them in the script and can change them
 there.

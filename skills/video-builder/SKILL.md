@@ -78,6 +78,7 @@ done: `--from style` starts at a stage, `--only review` runs one, `--redo broll,
 | style | editing-style + brand-consistency | `video.mp4` (style `list`: master list, numbered items, docs figures, live-typed code, tradeoff cards) with the Qdrant name lower third; `video_overlays.json` says when it is up |
 | master | editing-style | `video_master.mp4` at about -14 LUFS |
 | review | video-review | `review/report.md`, `review/sheet.jpg`, `review/frames/`; also hears every join in the raw take (`--take`) and reads the name card |
+| upload | upload-kit | `upload/title.txt` (a draft), `upload/description.txt`, `upload/chapters.txt`: the description leads with what the viewer gets and links the docs; one chapter per script section, timed by the cut; checked against YouTube's chapter rules |
 | captions | audio-captions | the last step, only when asked (`--captions file` or `burned`; start-here asks once the video is approved): `captions/captions.srt` and `.vtt` to upload, heard from the finished video, spelled the way the script spells things; with `burned` also `captions/captioned.mp4` |
 
 `BUILD.md` sums it up: each stage, its skill, what it did, how long it took, and the review's counts.

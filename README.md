@@ -28,7 +28,8 @@ flowchart TD
     I --> J["8. Small edits, until it is ready"]
     J -- "Another small edit" --> J
     J -- "Ready to go" --> L["Captions? A file to upload, burned in, or none"]
-    L --> K["Done"]
+    L --> M["Pick a title; the description and chapters are ready"]
+    M --> K["Done"]
 ```
 
 **First time?** [Set it up](#set-up) once (about 15 minutes). Then open Claude Code and say **"I want to make a video"**:
@@ -200,6 +201,9 @@ Already know what you need? Each skill below also works on its own. New parts of
 <p><strong>Available</strong></p>
 </td>
 <td width="33%" valign="top">
+<h3><a href="skills/upload-kit/">Upload kit</a></h3>
+<p>The title, a description that links the docs, and chapters timed by the cut, checked against YouTube's rules.</p>
+<p><strong>Available skill</strong></p>
 </td>
 </tr>
 </table>

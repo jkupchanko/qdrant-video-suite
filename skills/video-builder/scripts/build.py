@@ -25,6 +25,8 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
   style    editing-style    the styled video (style 'list': the listed-sections style, built from all of the above)
   master   (editing-style)  loudness to about -14 LUFS, true peak -1.5 dBTP, picture untouched
   review   video-review     the audit: every problem with its time and frame               -> review/report.md
+  upload   upload-kit       what YouTube asks for besides the video: a title, a description with chapters (from the
+                            script's sections, timed by the cut) and the pages shown, checked -> upload/
   captions audio-captions   the last step, only when asked (--captions, or --only captions once the video is approved):
                             subtitles to upload (captions/captions.srt, .vtt) heard from the finished video and spelled
                             the way the script spells things; --captions burned adds a copy with them in the picture
@@ -32,7 +34,7 @@ Writes BUILD_DIR/BUILD.md (what each stage did, how long it took, what the revie
 """
 import os, sys, re, json, time, glob, argparse, subprocess, shutil
 SK = os.path.expanduser("~/.claude/skills"); STYLES = os.path.expanduser(r"~\camera_audit\styles"); PY = sys.executable
-STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "captions"]
+STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "upload", "captions"]
 
 def run(cmd, log, cwd=None):
     with open(log, "w", encoding="utf-8") as f:
@@ -216,6 +218,15 @@ class Build:
         run([PY, os.path.join(SK, "audio-captions", "scripts", "voice_clean.py"), self.p("cut", "cut.mp4"), "--out", outs[0], "--cutlist", self.p("cut", "cutlist.md"),
              "--report", outs[1]], self.p("voice.log"))
         return outs, "; ".join(json.load(open(outs[1]))["did"])
+    def upload(self):
+        outs = [self.p("upload", n) for n in ("title.txt", "description.txt", "chapters.txt")]
+        if self.done("upload", outs): return outs, "kept"
+        r = subprocess.run([PY, os.path.join(SK, "upload-kit", "scripts", "upload_kit.py"), self.a.script, self.p("cut", "cutlist.md"), "--out", self.p("upload")],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")    # a fix is reported, not a failed build
+        open(self.p("upload.log"), "w", encoding="utf-8").write(r.stdout + r.stderr); tail = (r.stdout + r.stderr).splitlines()
+        if not os.path.exists(outs[0]): raise RuntimeError("upload_kit.py wrote nothing: " + "\n  ".join(tail[-6:]))
+        n = sum(1 for l in open(outs[2], encoding="utf-8") if l.strip()) if os.path.exists(outs[2]) else 0
+        return outs, f"{n} chapters; " + next((l.strip() for l in tail if l.startswith("upload kit:")), "written").replace("upload kit: ", "checks: ")
     def captions(self):
         burn = self.a.captions == "burned"                              # none of the 49 pro videos burn them in: a file by default
         outs = [self.p("captions", "captions.srt")] + ([self.p("captions", "captioned.mp4")] if burn else [])
@@ -329,7 +340,7 @@ def main():
         print(f"[{st}] {'ok' if ok else 'FAILED'} in {time.time() - t0:.0f} s: {note}", flush=True)
         if not ok: break
     L = [f"# Build: {a.label or os.path.basename(a.out)}", "", f"Take `{a.take}`, script `{a.script}`, page {B.url}, style `{a.style}`.", "", "| stage | skill | result | time |", "|---|---|---|---|"]
-    skill = dict(cut="raw-edit", voice="audio-captions", captions="audio-captions", words="glue", gaze="editing (gaze)", camera="camera-layout", keyterms="broll-recorder", broll="broll-recorder", assets="broll-recorder", style="editing-style", master="editing-style", review="video-review")
+    skill = dict(upload="upload-kit", cut="raw-edit", voice="audio-captions", captions="audio-captions", words="glue", gaze="editing (gaze)", camera="camera-layout", keyterms="broll-recorder", broll="broll-recorder", assets="broll-recorder", style="editing-style", master="editing-style", review="video-review")
     for st in STAGES:
         s = B.state.get(st)
         if s: L.append(f"| {st} | {skill[st]} | {'ok' if s['ok'] else 'FAILED'}: {s['note'][:160]} | {s['seconds']:.0f} s |")

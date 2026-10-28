@@ -14,6 +14,7 @@ stage, captions included, then checks what each stage made, not only that it fin
   broll         the script's one marker recorded as a clip
   master        video_master.mp4 opens, within 1.5 s of the cut's length, about -14 LUFS (within 1.5)
   review        review/report.json written
+  upload        a title and a description written, the description passing upload-kit's checks with nothing to fix
   captions      captions.srt written, "Qdrant" spelled right, and the caption check with nothing to fix
 
 The numbers a run gives (lengths, loudness, the review's counts, the caption count) are kept in DIR/baseline.json from the
@@ -53,7 +54,7 @@ def main():
     S = json.load(open(os.path.join(B, "build.json"), encoding="utf-8")) if os.path.exists(os.path.join(B, "build.json")) else {}
     checks, got = [], {}
     def check(what, ok, detail=""): checks.append((what, bool(ok), detail))
-    for st in ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "captions"]:
+    for st in ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "upload", "captions"]:
         s = S.get(st); check(f"stage {st}", s and s["ok"], (s or {}).get("note", "did not run")[:110] if not (s and s["ok"]) else f"{s['seconds']:.0f} s")
         if s: got[f"seconds {st}"] = s["seconds"]
     p = lambda *x: os.path.join(B, *x)
@@ -71,6 +72,12 @@ def main():
     if os.path.exists(rj):
         R = json.load(open(rj, encoding="utf-8")).get("findings", [])
         for sev in ("fix", "check"): got[f"review {sev}"] = sum(1 for f in R if f.get("sev") == sev)
+    if os.path.exists(p("upload", "description.txt")):
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "upload-kit", "scripts")); import upload_kit as UK
+        T, D = open(p("upload", "title.txt"), encoding="utf-8").read().strip(), open(p("upload", "description.txt"), encoding="utf-8").read()
+        U = UK.check(T, D); got["upload check"] = sum(1 for s_, _ in U if s_ == "check")
+        check("upload: title and description, nothing to fix", T and not [m for s_, m in U if s_ == "fix"], "; ".join(m for s_, m in U if s_ == "fix")[:110])
+    else: check("upload: description written", False, "no upload/description.txt")
     srt = p("captions", "captions.srt"); check("captions: file written", os.path.exists(srt), "no captions/captions.srt")
     if os.path.exists(srt):
         txt = open(srt, encoding="utf-8").read(); got["captions"] = txt.count("-->")

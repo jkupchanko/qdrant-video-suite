@@ -250,12 +250,21 @@ The goal now is small fixes, not a new video. Never rebuild the whole thing for 
    `BUILD_DIR/captions/captions_report.md`): words said but left out, words nobody says, speech with no caption, a word
    misheard against the script, and for 2, the burned caption covering the name card, text on screen or the mouth. A
    **fix** is fixed before handing over (a misheard name goes into audio-captions' `references/glossary.txt`; burned
-   captions over the screen's text: say so and recommend the file alone), then run again with `--redo captions`. Then
-   hand over, and the video is done:
+   captions over the screen's text: say so and recommend the file alone), then run again with `--redo captions`.
+7. **The title, in one message.** The build's upload step (upload-kit) already wrote `BUILD_DIR/upload/`: a draft
+   title (the script's own), a description (the intro's promise, the docs link in its first lines, the chapters timed
+   by the cut, the pages shown) and the chapters. Propose three titles by upload-kit's rules (20 to 70 characters, the
+   product named, what the viewer gets, no emoji, at most one word in capitals) and ask which, or their own. Show the
+   description inline. Write the title they pick into `title.txt`, make any change they ask in `description.txt`, and
+   run `python ~/.claude/skills/upload-kit/scripts/upload_kit.py --check BUILD_DIR/upload`: a **fix** (chapters YouTube
+   would not show, a placeholder address) is fixed before handing over. No thumbnail: it is made by hand for now.
+   Then hand over, and the video is done:
 
    | file | what it is for |
    |---|---|
    | `BUILD_DIR/video_master.mp4` | the video to upload |
+   | `BUILD_DIR/upload/title.txt` | YouTube: Title |
+   | `BUILD_DIR/upload/description.txt` | YouTube: Description (the chapters inside it become the chapters on the progress bar) |
    | `BUILD_DIR/captions/captions.srt` | YouTube: Subtitles, Upload file, With timing (`.vtt` beside it for other players) |
    | `BUILD_DIR/captions/captioned.mp4` | only with 2: the copy with captions in the picture |
 
