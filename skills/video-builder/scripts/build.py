@@ -4,7 +4,9 @@
                   [--name "NAME" --role "TITLE"] [--no-mirror] [--bars 72] [--from STAGE] [--only STAGE] [--redo STAGE,...]
                   [--captions file|burned]
 
-The script runs the video. Before the first stage the build checks it has what only a person can give (INTAKE below):
+The script runs the video. Before the first stage the build checks the script against its form (script_check.py: a bold or nameless B-roll marker,
+notes read as spoken lines, an unclosed comment, no docs page; it stops on a fix, with the line), then that it has what
+only a person can give (INTAKE below):
 the presenter's name and title for the Qdrant name lower third come from the script's [**Lower third:** NAME | TITLE | 5 s];
 without one, --name and --role add it (to a copy, BUILD_DIR/script.md, on the hook's second line; the script you gave is
 never edited), and with neither the build stops and asks (exit 2).
@@ -308,6 +310,11 @@ def main():
     ap.add_argument("--patch", type=float, nargs=2, metavar=("T0", "T1"), help="a small edit to a finished build: re-render only T0-T1 s (grown to whole shots) with the script as it is now, splice it in and master; minutes, not hours")
     ap.add_argument("--preview", type=float, metavar="SECONDS", help="build only the sections that start in the first SECONDS (try 30): minutes instead of hours, to check the direction first")
     a = ap.parse_args(); a.redo = set(filter(None, a.redo.split(",")))
+    import script_check as SCK                                            # the person's own script against its form, in seconds,
+    SF = [f for f in SCK.check(a.script) if "no name card" not in f[2]]    # before an hour of build (the name card is the intake's)
+    for sev, n, msg in SF: print(f"script {sev:5s} line {n}: {msg}")
+    if any(sev == "fix" for sev, _, _ in SF):
+        print(f"stopped before building: fix the lines above in {a.script} (start-here's references/script-form.md shows the form)"); return 2
     if not LOWER.search(open(a.script, encoding="utf-8").read()):
         if not (a.name and a.role): print(INTAKE); return 2
         os.makedirs(a.out, exist_ok=True); a.script = with_lower_third(a.script, os.path.abspath(a.out), a.name, a.role)

@@ -43,6 +43,9 @@ still be run one by one for a quick fix, but the build is the script's.
 
 ## Run it
 
+The build first checks the script against its form (`scripts/script_check.py`) and stops on a fix with the line to
+change: a bold or nameless B-roll marker, a note read as a spoken line, an unclosed comment, no docs page.
+
 ```bash
 python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style"
 ```

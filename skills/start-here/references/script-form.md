@@ -59,3 +59,6 @@ Because they're indexed differently, they create different memory and performanc
 - **Notes written as plain text.** An introduction or production note in plain sentences is read as a spoken line, and
   the review reports it as missing from the cut. Put notes in `<!-- ... -->` comments.
 - **No name card.** The build stops and asks for one.
+
+`video-builder/scripts/script_check.py SCRIPT.md` finds every mistake above, with its line, in a second; the build runs
+it before anything else and stops on a fix.

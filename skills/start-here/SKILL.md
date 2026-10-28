@@ -88,7 +88,7 @@ Then recommend **one** of the ten structures in the script library's `README.md`
 | Right ending | Does the close resolve what the hook promised, then ask for the step 2 next step? |
 | Sources | Each section of the script against the step 2 sources: which source, and which part of it, backs that section. A section with none is flagged: propose a source (search qdrant.tech docs, articles and blog), or keep that section on the presenter. |
 | Correct | Code and claims against those sources as they are today (fetch them). Old syntax, numbers the sources do not give. |
-| Ready to build | The suite's form ([references/script-form.md](references/script-form.md)): name card, source note, section times, directions. Missing pieces are filled in, not asked about. |
+| Ready to build | The suite's form ([references/script-form.md](references/script-form.md)): name card, source note, section times, directions. Missing pieces are filled in, not asked about. Then `python ~/.claude/skills/video-builder/scripts/script_check.py SCRIPT.md` must show nothing to fix (the build runs it too, and stops on a fix). |
 
 Run the B-roll and camera passes quietly; their results go into the script, not into questions. The key-term pass reads
 one page at a time, so run it once per source and keep, for each line, the best match across them:
