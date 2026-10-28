@@ -253,8 +253,9 @@ The goal now is small fixes, not a new video. Never rebuild the whole thing for 
    captions over the screen's text: say so and recommend the file alone), then run again with `--redo captions`.
 7. **The title, in one message.** The build's upload step (upload-kit) already wrote `BUILD_DIR/upload/`: a draft
    title (the script's own), a description (the intro's promise, the docs link in its first lines, the chapters timed
-   by the cut, the pages shown) and the chapters. Propose three titles by upload-kit's rules (20 to 70 characters, the
-   product named, what the viewer gets, no emoji, at most one word in capitals) and ask which, or their own. Show the
+   by the cut, the pages shown) and the chapters. Propose three titles by upload-kit's rules, true to the video, and
+   score them with `python ~/.claude/skills/upload-kit/scripts/titles.py --score "..." "..." "..."` (and the script's
+   own ideas: `titles.py SCRIPT.md --minutes N`). Show each with its score in one plain line, and ask which, or their own. Show the
    description inline. Write the title they pick into `title.txt`, make any change they ask in `description.txt`, and
    run `python ~/.claude/skills/upload-kit/scripts/upload_kit.py --check BUILD_DIR/upload`: a **fix** (chapters YouTube
    would not show, a placeholder address) is fixed before handing over. No thumbnail: it is made by hand for now.

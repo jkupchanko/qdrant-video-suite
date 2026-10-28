@@ -10,14 +10,16 @@ from the script's markers and notes. The title starts as the script's own title 
 options from the measured norms below and the person picks; the draft is a starting point, never the final word.
 
 Checked against what the 49 audited videos do (references/research.md):
-  title        20 to 70 characters (their middle 80% runs 28 to 67; YouTube cuts off near 70 in search, and refuses over
-               100: fix); no emoji (none of the 49 has one); at most one word in capitals; the product named
+  title        20 to 70 characters (their middle 80% runs 28 to 67; YouTube refuses over 100: fix); no emoji (none of the
+               49 has one); at most one word in capitals; the product named; and what the 19,463-title study found
+               trailing on DevRel channels (titles.py): 70+ characters, a year, a part number, an event name, "live"
   description  a link in the first two lines (33 of 49); chapters valid for YouTube (the first at 0:00, three or more,
                10 s apart or more, in order: fix); no placeholder address (YOUR-CLUSTER...: fix); under 5,000 characters
 """
 import argparse, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import chapters as CH
+import titles as TI
 PLACEHOLDER = re.compile(r"YOUR[-_]|EXAMPLE|<[^>]+>|localhost|127\.0\.0\.1", re.I)
 
 def script_title(script):
@@ -51,7 +53,7 @@ def check(title, description):
     F = []
     n = len(title)
     if n > 100: F.append(("fix", f"title is {n} characters; YouTube refuses over 100"))
-    elif n > 70: F.append(("check", f"title is {n} characters; search cuts it near 70 (the 49 run 28 to 67)"))
+    F += [f for f in TI.check(title) if not (n > 100 and "characters" in f[1])]    # the 19,463-title study (titles.py)
     if n < 20: F.append(("check", f"title is {n} characters; the 49 run 28 to 67: say what the viewer gets"))
     if re.search(r"[\U0001F300-\U0001FAFF☀-➿]", title): F.append(("check", "an emoji in the title; none of the 49 has one"))
     if sum(1 for w in title.split() if len(w) > 2 and w.isupper()) > 1: F.append(("check", "more than one word in capitals in the title"))

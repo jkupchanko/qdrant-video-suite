@@ -71,6 +71,14 @@ def main():
                               ("no link in the first two lines", "no link in the first", "check"), ("first chapter not at 0:00", "not at 0:00", "fix"),
                               ("two chapters 5 s apart", "under 10 s apart", "fix"), ("a placeholder address", "placeholder", "fix")):
         hit = any(s == sev and needle in m for s, m in F); print(f"  {'caught' if hit else 'MISSED'}  checks: {what}"); ok &= hit
+    import titles as TI                                               # the 19,463-title study: what trails, caught; what leads, ranked first
+    F = UK.check("Qdrant Webinar Part 3: Vector Search at KubeCon 2025 with Jane Smith and the Whole Team Live", "https://qdrant.tech")
+    for what, needle in (("a title of 70+ characters", "70+"), ("a year in the title", "a year"), ("a part number", "part or episode"),
+                         ("an event name", "event name"), ("live / webinar", "live, webinar")):
+        hit = any(s == "check" and needle in m for s, m in F); print(f"  {'caught' if hit else 'MISSED'}  title study: {what}"); ok &= hit
+    good, bad = "Getting Started with Qdrant in 5 Minutes", "Qdrant Meetup 2024: Part 2"
+    hit = TI.score(good)[0] > TI.score(bad)[0] and not TI.check(good)
+    print(f"  {'caught' if hit else 'MISSED'}  title study: \"{good}\" ranks over \"{bad}\", with nothing to check"); ok &= hit
     clean = [m for s, m in UK.check(T, D) if s == "fix"]
     for m in clean: print(f"  INVENTED  {m}")
     print("SELF-TEST PASSED" if ok and not clean else "SELF-TEST FAILED"); return 0 if ok and not clean else 1

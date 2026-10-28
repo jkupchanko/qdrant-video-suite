@@ -1,0 +1,1541 @@
+{
+ "measured": "2026-10-28",
+ "titles": 19463,
+ "channels": [
+  "1littlecoder",
+  "3Blue1Brown",
+  "AI Jason",
+  "AWS Developers",
+  "All About AI",
+  "Anthropic",
+  "ArjanCodes",
+  "Beyond Fireship",
+  "ByteByteGo",
+  "Cloudflare Developers",
+  "Cole Medin",
+  "Computerphile",
+  "Corey Schafer",
+  "Dave Ebbelaar",
+  "DevOps & AI Toolkit",
+  "Docker",
+  "Elastic",
+  "Fireship",
+  "GitHub",
+  "Google Cloud Tech",
+  "Google for Developers",
+  "Hugging Face",
+  "Hussein Nasser",
+  "IBM Technology",
+  "James Briggs",
+  "Jeff Geerling",
+  "JetBrains",
+  "Kevin Powell",
+  "LangChain",
+  "Low Level",
+  "Matt Williams",
+  "Matthew Berman",
+  "Microsoft Developer",
+  "MongoDB",
+  "Neon Postgres",
+  "Net Ninja",
+  "NetworkChuck",
+  "NeuralNine",
+  "Pinecone",
+  "PlanetScale",
+  "Postman",
+  "Programming with Mosh",
+  "Prompt Engineering",
+  "Qdrant Vector Search",
+  "Redis",
+  "Sam Witteveen",
+  "StatQuest with Josh Starmer",
+  "Supabase",
+  "Tech With Tim",
+  "TechWorld with Nana",
+  "The Coding Train",
+  "The PrimeTime",
+  "Theo - t3\u2024gg",
+  "Traversy Media",
+  "Two Minute Papers",
+  "Vercel",
+  "Weaviate vector database",
+  "Web Dev Simplified",
+  "Yannic Kilcher",
+  "freeCodeCamp.org",
+  "mCoding",
+  "sentdex",
+  "zilliz"
+ ],
+ "min_per_side": 6,
+ "neighbours": 30,
+ "effects": {
+  "all": {
+   "length: under 30 chars": {
+    "x": 1.056,
+    "lo": 0.946,
+    "hi": 1.196,
+    "n": 50,
+    "pos": 0.54,
+    "used": 0.1031
+   },
+   "length: 30-49 chars": {
+    "x": 1.078,
+    "lo": 1.047,
+    "hi": 1.166,
+    "n": 63,
+    "pos": 0.698,
+    "used": 0.3758
+   },
+   "length: 50-69 chars": {
+    "x": 1.035,
+    "lo": 0.971,
+    "hi": 1.094,
+    "n": 63,
+    "pos": 0.524,
+    "used": 0.3487
+   },
+   "length: 70+ chars": {
+    "x": 0.827,
+    "lo": 0.799,
+    "hi": 0.894,
+    "n": 55,
+    "pos": 0.236,
+    "used": 0.1724
+   },
+   "shape: two parts (colon)": {
+    "x": 0.949,
+    "lo": 0.863,
+    "hi": 1.016,
+    "n": 51,
+    "pos": 0.431,
+    "used": 0.2001
+   },
+   "shape: two parts (dash)": {
+    "x": 1.049,
+    "lo": 0.938,
+    "hi": 1.105,
+    "n": 51,
+    "pos": 0.51,
+    "used": 0.1863
+   },
+   "shape: two parts (pipe)": {
+    "x": 0.93,
+    "lo": 0.792,
+    "hi": 1.175,
+    "n": 32,
+    "pos": 0.469,
+    "used": 0.0803
+   },
+   "shape: question": {
+    "x": 1.009,
+    "lo": 0.89,
+    "hi": 1.148,
+    "n": 41,
+    "pos": 0.512,
+    "used": 0.0486
+   },
+   "shape: exclamation": {
+    "x": 1.141,
+    "lo": 1.048,
+    "hi": 1.192,
+    "n": 44,
+    "pos": 0.659,
+    "used": 0.0926
+   },
+   "shape: (parentheses) or [brackets]": {
+    "x": 1.054,
+    "lo": 0.948,
+    "hi": 1.179,
+    "n": 56,
+    "pos": 0.571,
+    "used": 0.1385
+   },
+   "opens: How to": {
+    "x": 1.136,
+    "lo": 0.984,
+    "hi": 1.423,
+    "n": 36,
+    "pos": 0.583,
+    "used": 0.0396
+   },
+   "opens: How (not to)": {
+    "x": 0.822,
+    "lo": 0.788,
+    "hi": 1.11,
+    "n": 29,
+    "pos": 0.379,
+    "used": 0.0277
+   },
+   "opens: Why": {
+    "x": 1.176,
+    "lo": 1.04,
+    "hi": 1.38,
+    "n": 13,
+    "pos": 0.769,
+    "used": 0.0123
+   },
+   "opens: What is/are": {
+    "x": 2.044,
+    "lo": 1.613,
+    "hi": 2.732,
+    "n": 12,
+    "pos": 0.917,
+    "used": 0.0119
+   },
+   "opens: a number": {
+    "x": 1.032,
+    "lo": 0.862,
+    "hi": 1.268,
+    "n": 27,
+    "pos": 0.519,
+    "used": 0.0301
+   },
+   "opens: I / I'm / I've": {
+    "x": 0.915,
+    "lo": 0.845,
+    "hi": 1.061,
+    "n": 20,
+    "pos": 0.35,
+    "used": 0.0208
+   },
+   "opens: Stop / Don't / Never": {
+    "x": 1.005,
+    "lo": 0.844,
+    "hi": 1.172,
+    "n": 6,
+    "pos": 0.5,
+    "used": 0.006
+   },
+   "opens: a tool's name": {
+    "x": 1.39,
+    "lo": 1.18,
+    "hi": 1.578,
+    "n": 58,
+    "pos": 0.776,
+    "used": 0.1295
+   },
+   "opens: The": {
+    "x": 1.042,
+    "lo": 0.934,
+    "hi": 1.153,
+    "n": 46,
+    "pos": 0.587,
+    "used": 0.0456
+   },
+   "has: a number": {
+    "x": 0.993,
+    "lo": 0.916,
+    "hi": 1.042,
+    "n": 62,
+    "pos": 0.484,
+    "used": 0.3491
+   },
+   "has: the year": {
+    "x": 0.816,
+    "lo": 0.644,
+    "hi": 0.952,
+    "n": 33,
+    "pos": 0.333,
+    "used": 0.0627
+   },
+   "has: a time (in N minutes/seconds)": {
+    "x": 1.538,
+    "lo": 1.287,
+    "hi": 2.355,
+    "n": 24,
+    "pos": 0.792,
+    "used": 0.0225
+   },
+   "has: Tutorial": {
+    "x": 1.297,
+    "lo": 1.122,
+    "hi": 1.759,
+    "n": 24,
+    "pos": 0.75,
+    "used": 0.0517
+   },
+   "has: for Beginners": {
+    "x": 2.159,
+    "lo": 1.601,
+    "hi": 3.123,
+    "n": 15,
+    "pos": 0.933,
+    "used": 0.0191
+   },
+   "has: Explained": {
+    "x": 1.851,
+    "lo": 1.326,
+    "hi": 2.141,
+    "n": 21,
+    "pos": 0.952,
+    "used": 0.0302
+   },
+   "has: Crash Course / Full Course": {
+    "x": 2.309,
+    "lo": 1.271,
+    "hi": 4.049,
+    "n": 8,
+    "pos": 0.75,
+    "used": 0.0154
+   },
+   "has: Guide": {
+    "x": 1.871,
+    "lo": 1.318,
+    "hi": 3.041,
+    "n": 12,
+    "pos": 0.833,
+    "used": 0.0096
+   },
+   "has: Getting Started / Get Started": {
+    "x": 2.301,
+    "lo": 1.669,
+    "hi": 4.098,
+    "n": 10,
+    "pos": 0.8,
+    "used": 0.0081
+   },
+   "has: Intro / Introduction": null,
+   "has: vs": {
+    "x": 1.131,
+    "lo": 0.906,
+    "hi": 1.356,
+    "n": 20,
+    "pos": 0.65,
+    "used": 0.0171
+   },
+   "has: Build / Building": {
+    "x": 1.089,
+    "lo": 1.04,
+    "hi": 1.244,
+    "n": 43,
+    "pos": 0.674,
+    "used": 0.0681
+   },
+   "has: from Scratch": null,
+   "has: Step by Step": null,
+   "has: Best Practices": null,
+   "has: Mistakes": null,
+   "has: Easy / Simple": {
+    "x": 1.007,
+    "lo": 0.854,
+    "hi": 1.783,
+    "n": 10,
+    "pos": 0.5,
+    "used": 0.0101
+   },
+   "has: you / your": {
+    "x": 0.996,
+    "lo": 0.917,
+    "hi": 1.09,
+    "n": 57,
+    "pos": 0.491,
+    "used": 0.0893
+   },
+   "has: I / my (in the title)": {
+    "x": 0.96,
+    "lo": 0.784,
+    "hi": 1.077,
+    "n": 35,
+    "pos": 0.457,
+    "used": 0.0526
+   },
+   "has: New / Finally / Just": {
+    "x": 1.112,
+    "lo": 1.013,
+    "hi": 1.207,
+    "n": 41,
+    "pos": 0.634,
+    "used": 0.0506
+   },
+   "has: a word in capitals (not a tool)": {
+    "x": 1.028,
+    "lo": 1.001,
+    "hi": 1.077,
+    "n": 62,
+    "pos": 0.629,
+    "used": 0.2198
+   },
+   "has: an emoji": {
+    "x": 0.908,
+    "lo": 0.763,
+    "hi": 1.114,
+    "n": 11,
+    "pos": 0.455,
+    "used": 0.0154
+   },
+   "has: Live / Webinar / Stream / Podcast / Ep": {
+    "x": 0.728,
+    "lo": 0.441,
+    "hi": 0.906,
+    "n": 18,
+    "pos": 0.278,
+    "used": 0.0291
+   },
+   "has: Part N / #N / Ep N (a series)": {
+    "x": 0.768,
+    "lo": 0.661,
+    "hi": 0.939,
+    "n": 39,
+    "pos": 0.359,
+    "used": 0.0736
+   },
+   "has: an event (Conf, Summit, | EVENT 2025)": {
+    "x": 0.686,
+    "lo": 0.442,
+    "hi": 1.348,
+    "n": 6,
+    "pos": 0.333,
+    "used": 0.0107
+   },
+   "has: a person's name (with NAME / - Name Surname)": {
+    "x": 1.056,
+    "lo": 0.929,
+    "hi": 1.089,
+    "n": 49,
+    "pos": 0.551,
+    "used": 0.0805
+   },
+   "names a tool": {
+    "x": 1.237,
+    "lo": 1.129,
+    "hi": 1.322,
+    "n": 62,
+    "pos": 0.774,
+    "used": 0.495
+   },
+   "case: Title Case (most words capitalised)": {
+    "x": 0.982,
+    "lo": 0.946,
+    "hi": 1.012,
+    "n": 63,
+    "pos": 0.444,
+    "used": 0.5683
+   },
+   "case: sentence case": {
+    "x": 0.996,
+    "lo": 0.967,
+    "hi": 1.107,
+    "n": 54,
+    "pos": 0.481,
+    "used": 0.1704
+   }
+  },
+  "tutorials": {
+   "length: under 30 chars": {
+    "x": 1.95,
+    "lo": 1.237,
+    "hi": 3.444,
+    "n": 7,
+    "pos": 0.857,
+    "used": 0.0424
+   },
+   "length: 30-49 chars": {
+    "x": 1.153,
+    "lo": 1.07,
+    "hi": 1.24,
+    "n": 48,
+    "pos": 0.667,
+    "used": 0.2861
+   },
+   "length: 50-69 chars": {
+    "x": 0.953,
+    "lo": 0.885,
+    "hi": 1.022,
+    "n": 48,
+    "pos": 0.417,
+    "used": 0.4355
+   },
+   "length: 70+ chars": {
+    "x": 0.763,
+    "lo": 0.594,
+    "hi": 0.878,
+    "n": 36,
+    "pos": 0.222,
+    "used": 0.2359
+   },
+   "shape: two parts (colon)": {
+    "x": 0.937,
+    "lo": 0.832,
+    "hi": 1.078,
+    "n": 31,
+    "pos": 0.484,
+    "used": 0.2189
+   },
+   "shape: two parts (dash)": {
+    "x": 1.289,
+    "lo": 1.213,
+    "hi": 1.316,
+    "n": 25,
+    "pos": 0.76,
+    "used": 0.279
+   },
+   "shape: two parts (pipe)": {
+    "x": 0.855,
+    "lo": 0.608,
+    "hi": 1.145,
+    "n": 17,
+    "pos": 0.412,
+    "used": 0.1006
+   },
+   "shape: question": null,
+   "shape: exclamation": {
+    "x": 1.218,
+    "lo": 0.91,
+    "hi": 2.239,
+    "n": 5,
+    "pos": 0.6,
+    "used": 0.0358
+   },
+   "shape: (parentheses) or [brackets]": {
+    "x": 0.78,
+    "lo": 0.68,
+    "hi": 0.991,
+    "n": 30,
+    "pos": 0.367,
+    "used": 0.1643
+   },
+   "opens: How to": {
+    "x": 0.912,
+    "lo": 0.695,
+    "hi": 1.036,
+    "n": 35,
+    "pos": 0.371,
+    "used": 0.1817
+   },
+   "opens: How (not to)": null,
+   "opens: Why": null,
+   "opens: What is/are": null,
+   "opens: a number": null,
+   "opens: I / I'm / I've": null,
+   "opens: Stop / Don't / Never": null,
+   "opens: a tool's name": {
+    "x": 1.546,
+    "lo": 1.101,
+    "hi": 2.108,
+    "n": 25,
+    "pos": 0.8,
+    "used": 0.197
+   },
+   "opens: The": null,
+   "has: a number": {
+    "x": 1.008,
+    "lo": 0.831,
+    "hi": 1.17,
+    "n": 44,
+    "pos": 0.5,
+    "used": 0.3486
+   },
+   "has: the year": {
+    "x": 0.836,
+    "lo": 0.677,
+    "hi": 2.18,
+    "n": 8,
+    "pos": 0.375,
+    "used": 0.037
+   },
+   "has: a time (in N minutes/seconds)": {
+    "x": 2.129,
+    "lo": 1.319,
+    "hi": 9.828,
+    "n": 6,
+    "pos": 1.0,
+    "used": 0.0259
+   },
+   "has: Tutorial": {
+    "x": 1.0,
+    "lo": 0.773,
+    "hi": 1.372,
+    "n": 24,
+    "pos": 0.5,
+    "used": 0.2371
+   },
+   "has: for Beginners": {
+    "x": 1.933,
+    "lo": 1.46,
+    "hi": 2.595,
+    "n": 15,
+    "pos": 0.867,
+    "used": 0.0874
+   },
+   "has: Explained": null,
+   "has: Crash Course / Full Course": {
+    "x": 1.977,
+    "lo": 1.006,
+    "hi": 3.575,
+    "n": 8,
+    "pos": 0.75,
+    "used": 0.0707
+   },
+   "has: Guide": {
+    "x": 1.623,
+    "lo": 1.285,
+    "hi": 2.837,
+    "n": 12,
+    "pos": 0.833,
+    "used": 0.0438
+   },
+   "has: Getting Started / Get Started": {
+    "x": 2.15,
+    "lo": 0.87,
+    "hi": 2.935,
+    "n": 10,
+    "pos": 0.7,
+    "used": 0.037
+   },
+   "has: Intro / Introduction": null,
+   "has: vs": null,
+   "has: Build / Building": {
+    "x": 0.837,
+    "lo": 0.716,
+    "hi": 0.959,
+    "n": 42,
+    "pos": 0.333,
+    "used": 0.3123
+   },
+   "has: from Scratch": null,
+   "has: Step by Step": null,
+   "has: Best Practices": null,
+   "has: Mistakes": null,
+   "has: Easy / Simple": null,
+   "has: you / your": {
+    "x": 0.923,
+    "lo": 0.765,
+    "hi": 1.092,
+    "n": 26,
+    "pos": 0.462,
+    "used": 0.0851
+   },
+   "has: I / my (in the title)": null,
+   "has: New / Finally / Just": null,
+   "has: a word in capitals (not a tool)": {
+    "x": 1.02,
+    "lo": 0.857,
+    "hi": 1.096,
+    "n": 35,
+    "pos": 0.571,
+    "used": 0.1836
+   },
+   "has: an emoji": null,
+   "has: Live / Webinar / Stream / Podcast / Ep": {
+    "x": 0.647,
+    "lo": 0.303,
+    "hi": 1.143,
+    "n": 5,
+    "pos": 0.2,
+    "used": 0.0273
+   },
+   "has: Part N / #N / Ep N (a series)": {
+    "x": 0.565,
+    "lo": 0.408,
+    "hi": 0.718,
+    "n": 11,
+    "pos": 0.273,
+    "used": 0.1261
+   },
+   "has: an event (Conf, Summit, | EVENT 2025)": null,
+   "has: a person's name (with NAME / - Name Surname)": {
+    "x": 0.958,
+    "lo": 0.715,
+    "hi": 1.185,
+    "n": 21,
+    "pos": 0.429,
+    "used": 0.1016
+   },
+   "names a tool": {
+    "x": 1.319,
+    "lo": 1.186,
+    "hi": 1.541,
+    "n": 49,
+    "pos": 0.694,
+    "used": 0.6436
+   },
+   "case: Title Case (most words capitalised)": {
+    "x": 0.968,
+    "lo": 0.909,
+    "hi": 1.205,
+    "n": 45,
+    "pos": 0.489,
+    "used": 0.6491
+   },
+   "case: sentence case": {
+    "x": 1.152,
+    "lo": 0.941,
+    "hi": 1.488,
+    "n": 17,
+    "pos": 0.588,
+    "used": 0.1013
+   }
+  },
+  "devrel": {
+   "length: under 30 chars": {
+    "x": 1.35,
+    "lo": 1.189,
+    "hi": 2.122,
+    "n": 21,
+    "pos": 0.81,
+    "used": 0.0845
+   },
+   "length: 30-49 chars": {
+    "x": 1.221,
+    "lo": 1.083,
+    "hi": 1.309,
+    "n": 24,
+    "pos": 0.792,
+    "used": 0.2918
+   },
+   "length: 50-69 chars": {
+    "x": 1.071,
+    "lo": 0.917,
+    "hi": 1.198,
+    "n": 24,
+    "pos": 0.625,
+    "used": 0.3791
+   },
+   "length: 70+ chars": {
+    "x": 0.744,
+    "lo": 0.675,
+    "hi": 0.823,
+    "n": 24,
+    "pos": 0.083,
+    "used": 0.2445
+   },
+   "shape: two parts (colon)": {
+    "x": 0.84,
+    "lo": 0.741,
+    "hi": 0.958,
+    "n": 23,
+    "pos": 0.348,
+    "used": 0.2819
+   },
+   "shape: two parts (dash)": {
+    "x": 0.812,
+    "lo": 0.6,
+    "hi": 0.938,
+    "n": 18,
+    "pos": 0.278,
+    "used": 0.0991
+   },
+   "shape: two parts (pipe)": {
+    "x": 0.84,
+    "lo": 0.573,
+    "hi": 1.141,
+    "n": 16,
+    "pos": 0.438,
+    "used": 0.1311
+   },
+   "shape: question": {
+    "x": 1.556,
+    "lo": 1.162,
+    "hi": 1.837,
+    "n": 14,
+    "pos": 0.786,
+    "used": 0.0267
+   },
+   "shape: exclamation": {
+    "x": 1.171,
+    "lo": 0.988,
+    "hi": 1.261,
+    "n": 12,
+    "pos": 0.667,
+    "used": 0.041
+   },
+   "shape: (parentheses) or [brackets]": {
+    "x": 1.024,
+    "lo": 0.733,
+    "hi": 1.287,
+    "n": 21,
+    "pos": 0.524,
+    "used": 0.1007
+   },
+   "opens: How to": {
+    "x": 1.482,
+    "lo": 1.206,
+    "hi": 1.744,
+    "n": 16,
+    "pos": 0.812,
+    "used": 0.0469
+   },
+   "opens: How (not to)": {
+    "x": 0.893,
+    "lo": 0.623,
+    "hi": 1.122,
+    "n": 15,
+    "pos": 0.4,
+    "used": 0.0371
+   },
+   "opens: Why": null,
+   "opens: What is/are": {
+    "x": 2.278,
+    "lo": 1.613,
+    "hi": 3.84,
+    "n": 7,
+    "pos": 1.0,
+    "used": 0.0194
+   },
+   "opens: a number": {
+    "x": 1.328,
+    "lo": 0.85,
+    "hi": 1.978,
+    "n": 6,
+    "pos": 0.667,
+    "used": 0.0105
+   },
+   "opens: I / I'm / I've": null,
+   "opens: Stop / Don't / Never": null,
+   "opens: a tool's name": {
+    "x": 1.34,
+    "lo": 0.937,
+    "hi": 1.632,
+    "n": 22,
+    "pos": 0.545,
+    "used": 0.1036
+   },
+   "opens: The": {
+    "x": 0.848,
+    "lo": 0.626,
+    "hi": 1.464,
+    "n": 17,
+    "pos": 0.412,
+    "used": 0.0359
+   },
+   "has: a number": {
+    "x": 0.844,
+    "lo": 0.79,
+    "hi": 1.008,
+    "n": 23,
+    "pos": 0.348,
+    "used": 0.3291
+   },
+   "has: the year": {
+    "x": 0.761,
+    "lo": 0.567,
+    "hi": 0.881,
+    "n": 14,
+    "pos": 0.214,
+    "used": 0.1238
+   },
+   "has: a time (in N minutes/seconds)": {
+    "x": 2.283,
+    "lo": 1.516,
+    "hi": 2.688,
+    "n": 10,
+    "pos": 0.9,
+    "used": 0.0149
+   },
+   "has: Tutorial": {
+    "x": 0.973,
+    "lo": 0.525,
+    "hi": 8.014,
+    "n": 5,
+    "pos": 0.4,
+    "used": 0.0116
+   },
+   "has: for Beginners": null,
+   "has: Explained": {
+    "x": 2.376,
+    "lo": 1.538,
+    "hi": 4.024,
+    "n": 8,
+    "pos": 1.0,
+    "used": 0.0192
+   },
+   "has: Crash Course / Full Course": null,
+   "has: Guide": {
+    "x": 2.065,
+    "lo": 1.318,
+    "hi": 4.26,
+    "n": 7,
+    "pos": 0.857,
+    "used": 0.0116
+   },
+   "has: Getting Started / Get Started": {
+    "x": 2.301,
+    "lo": 1.169,
+    "hi": 3.903,
+    "n": 8,
+    "pos": 0.75,
+    "used": 0.0154
+   },
+   "has: Intro / Introduction": null,
+   "has: vs": {
+    "x": 1.88,
+    "lo": 1.112,
+    "hi": 3.043,
+    "n": 6,
+    "pos": 1.0,
+    "used": 0.0184
+   },
+   "has: Build / Building": {
+    "x": 1.284,
+    "lo": 1.05,
+    "hi": 1.55,
+    "n": 23,
+    "pos": 0.696,
+    "used": 0.113
+   },
+   "has: from Scratch": null,
+   "has: Step by Step": null,
+   "has: Best Practices": null,
+   "has: Mistakes": null,
+   "has: Easy / Simple": null,
+   "has: you / your": {
+    "x": 1.065,
+    "lo": 0.884,
+    "hi": 1.14,
+    "n": 22,
+    "pos": 0.545,
+    "used": 0.0848
+   },
+   "has: I / my (in the title)": {
+    "x": 1.141,
+    "lo": 0.71,
+    "hi": 1.325,
+    "n": 6,
+    "pos": 0.667,
+    "used": 0.0128
+   },
+   "has: New / Finally / Just": {
+    "x": 1.264,
+    "lo": 1.005,
+    "hi": 1.86,
+    "n": 16,
+    "pos": 0.688,
+    "used": 0.0378
+   },
+   "has: a word in capitals (not a tool)": {
+    "x": 0.857,
+    "lo": 0.759,
+    "hi": 1.052,
+    "n": 23,
+    "pos": 0.348,
+    "used": 0.2042
+   },
+   "has: an emoji": {
+    "x": 0.832,
+    "lo": 0.541,
+    "hi": 1.174,
+    "n": 6,
+    "pos": 0.333,
+    "used": 0.0136
+   },
+   "has: Live / Webinar / Stream / Podcast / Ep": {
+    "x": 0.796,
+    "lo": 0.453,
+    "hi": 0.963,
+    "n": 12,
+    "pos": 0.25,
+    "used": 0.0508
+   },
+   "has: Part N / #N / Ep N (a series)": {
+    "x": 0.742,
+    "lo": 0.605,
+    "hi": 1.299,
+    "n": 16,
+    "pos": 0.375,
+    "used": 0.0647
+   },
+   "has: an event (Conf, Summit, | EVENT 2025)": {
+    "x": 0.686,
+    "lo": 0.442,
+    "hi": 1.348,
+    "n": 6,
+    "pos": 0.333,
+    "used": 0.0274
+   },
+   "has: a person's name (with NAME / - Name Surname)": {
+    "x": 0.848,
+    "lo": 0.733,
+    "hi": 1.07,
+    "n": 22,
+    "pos": 0.409,
+    "used": 0.107
+   },
+   "names a tool": {
+    "x": 1.19,
+    "lo": 1.073,
+    "hi": 1.275,
+    "n": 23,
+    "pos": 0.739,
+    "used": 0.5478
+   },
+   "case: Title Case (most words capitalised)": {
+    "x": 1.007,
+    "lo": 0.901,
+    "hi": 1.098,
+    "n": 24,
+    "pos": 0.542,
+    "used": 0.5147
+   },
+   "case: sentence case": {
+    "x": 1.117,
+    "lo": 0.979,
+    "hi": 1.3,
+    "n": 22,
+    "pos": 0.591,
+    "used": 0.166
+   }
+  },
+  "educator": {
+   "length: under 30 chars": {
+    "x": 0.931,
+    "lo": 0.848,
+    "hi": 1.031,
+    "n": 20,
+    "pos": 0.35,
+    "used": 0.1322
+   },
+   "length: 30-49 chars": {
+    "x": 1.062,
+    "lo": 1.023,
+    "hi": 1.139,
+    "n": 26,
+    "pos": 0.692,
+    "used": 0.4405
+   },
+   "length: 50-69 chars": {
+    "x": 0.962,
+    "lo": 0.911,
+    "hi": 1.044,
+    "n": 26,
+    "pos": 0.423,
+    "used": 0.3195
+   },
+   "length: 70+ chars": {
+    "x": 0.88,
+    "lo": 0.739,
+    "hi": 0.91,
+    "n": 19,
+    "pos": 0.316,
+    "used": 0.1078
+   },
+   "shape: two parts (colon)": {
+    "x": 0.974,
+    "lo": 0.848,
+    "hi": 1.167,
+    "n": 17,
+    "pos": 0.471,
+    "used": 0.1389
+   },
+   "shape: two parts (dash)": {
+    "x": 1.083,
+    "lo": 0.973,
+    "hi": 1.146,
+    "n": 20,
+    "pos": 0.65,
+    "used": 0.2417
+   },
+   "shape: two parts (pipe)": {
+    "x": 0.87,
+    "lo": 0.775,
+    "hi": 1.289,
+    "n": 12,
+    "pos": 0.417,
+    "used": 0.0556
+   },
+   "shape: question": {
+    "x": 0.885,
+    "lo": 0.824,
+    "hi": 1.101,
+    "n": 17,
+    "pos": 0.412,
+    "used": 0.0617
+   },
+   "shape: exclamation": {
+    "x": 1.172,
+    "lo": 1.037,
+    "hi": 1.332,
+    "n": 20,
+    "pos": 0.7,
+    "used": 0.0723
+   },
+   "shape: (parentheses) or [brackets]": {
+    "x": 1.059,
+    "lo": 0.925,
+    "hi": 1.143,
+    "n": 24,
+    "pos": 0.583,
+    "used": 0.1447
+   },
+   "opens: How to": {
+    "x": 0.886,
+    "lo": 0.557,
+    "hi": 0.998,
+    "n": 13,
+    "pos": 0.231,
+    "used": 0.0377
+   },
+   "opens: How (not to)": {
+    "x": 0.812,
+    "lo": 0.788,
+    "hi": 1.191,
+    "n": 12,
+    "pos": 0.417,
+    "used": 0.0268
+   },
+   "opens: Why": {
+    "x": 1.176,
+    "lo": 1.148,
+    "hi": 1.38,
+    "n": 11,
+    "pos": 0.818,
+    "used": 0.0188
+   },
+   "opens: What is/are": {
+    "x": 1.975,
+    "lo": 0.849,
+    "hi": 2.882,
+    "n": 5,
+    "pos": 0.8,
+    "used": 0.0098
+   },
+   "opens: a number": {
+    "x": 0.983,
+    "lo": 0.783,
+    "hi": 1.264,
+    "n": 15,
+    "pos": 0.467,
+    "used": 0.0529
+   },
+   "opens: I / I'm / I've": {
+    "x": 0.88,
+    "lo": 0.757,
+    "hi": 0.977,
+    "n": 13,
+    "pos": 0.231,
+    "used": 0.0369
+   },
+   "opens: Stop / Don't / Never": null,
+   "opens: a tool's name": {
+    "x": 1.539,
+    "lo": 1.15,
+    "hi": 1.701,
+    "n": 23,
+    "pos": 0.913,
+    "used": 0.1528
+   },
+   "opens: The": {
+    "x": 1.056,
+    "lo": 1.01,
+    "hi": 1.212,
+    "n": 19,
+    "pos": 0.737,
+    "used": 0.0546
+   },
+   "has: a number": {
+    "x": 1.016,
+    "lo": 0.932,
+    "hi": 1.081,
+    "n": 26,
+    "pos": 0.538,
+    "used": 0.3235
+   },
+   "has: the year": {
+    "x": 1.075,
+    "lo": 0.747,
+    "hi": 1.467,
+    "n": 13,
+    "pos": 0.615,
+    "used": 0.0264
+   },
+   "has: a time (in N minutes/seconds)": {
+    "x": 1.495,
+    "lo": 1.03,
+    "hi": 2.702,
+    "n": 10,
+    "pos": 0.7,
+    "used": 0.028
+   },
+   "has: Tutorial": {
+    "x": 1.328,
+    "lo": 1.063,
+    "hi": 2.331,
+    "n": 11,
+    "pos": 0.909,
+    "used": 0.0911
+   },
+   "has: for Beginners": {
+    "x": 2.561,
+    "lo": 1.446,
+    "hi": 3.123,
+    "n": 11,
+    "pos": 0.909,
+    "used": 0.0363
+   },
+   "has: Explained": {
+    "x": 1.753,
+    "lo": 1.115,
+    "hi": 1.96,
+    "n": 10,
+    "pos": 0.9,
+    "used": 0.0292
+   },
+   "has: Crash Course / Full Course": {
+    "x": 2.309,
+    "lo": 1.271,
+    "hi": 4.049,
+    "n": 8,
+    "pos": 0.75,
+    "used": 0.0359
+   },
+   "has: Guide": null,
+   "has: Getting Started / Get Started": null,
+   "has: Intro / Introduction": null,
+   "has: vs": {
+    "x": 1.316,
+    "lo": 1.076,
+    "hi": 1.378,
+    "n": 9,
+    "pos": 0.778,
+    "used": 0.0172
+   },
+   "has: Build / Building": {
+    "x": 1.05,
+    "lo": 1.017,
+    "hi": 1.754,
+    "n": 11,
+    "pos": 0.727,
+    "used": 0.033
+   },
+   "has: from Scratch": null,
+   "has: Step by Step": null,
+   "has: Best Practices": null,
+   "has: Mistakes": null,
+   "has: Easy / Simple": {
+    "x": 0.941,
+    "lo": 0.776,
+    "hi": 1.073,
+    "n": 7,
+    "pos": 0.286,
+    "used": 0.0138
+   },
+   "has: you / your": {
+    "x": 0.992,
+    "lo": 0.866,
+    "hi": 1.076,
+    "n": 23,
+    "pos": 0.435,
+    "used": 0.0985
+   },
+   "has: I / my (in the title)": {
+    "x": 0.937,
+    "lo": 0.701,
+    "hi": 1.15,
+    "n": 18,
+    "pos": 0.389,
+    "used": 0.0845
+   },
+   "has: New / Finally / Just": {
+    "x": 1.195,
+    "lo": 1.033,
+    "hi": 1.208,
+    "n": 15,
+    "pos": 0.733,
+    "used": 0.0326
+   },
+   "has: a word in capitals (not a tool)": {
+    "x": 1.093,
+    "lo": 1.034,
+    "hi": 1.292,
+    "n": 26,
+    "pos": 0.808,
+    "used": 0.1805
+   },
+   "has: an emoji": null,
+   "has: Live / Webinar / Stream / Podcast / Ep": {
+    "x": 0.298,
+    "lo": 0.05,
+    "hi": 3.226,
+    "n": 5,
+    "pos": 0.4,
+    "used": 0.0206
+   },
+   "has: Part N / #N / Ep N (a series)": {
+    "x": 0.737,
+    "lo": 0.454,
+    "hi": 0.926,
+    "n": 16,
+    "pos": 0.25,
+    "used": 0.102
+   },
+   "has: an event (Conf, Summit, | EVENT 2025)": null,
+   "has: a person's name (with NAME / - Name Surname)": {
+    "x": 1.04,
+    "lo": 0.881,
+    "hi": 1.19,
+    "n": 16,
+    "pos": 0.562,
+    "used": 0.0534
+   },
+   "names a tool": {
+    "x": 1.252,
+    "lo": 1.084,
+    "hi": 1.429,
+    "n": 26,
+    "pos": 0.731,
+    "used": 0.4514
+   },
+   "case: Title Case (most words capitalised)": {
+    "x": 0.968,
+    "lo": 0.908,
+    "hi": 1.035,
+    "n": 26,
+    "pos": 0.423,
+    "used": 0.5835
+   },
+   "case: sentence case": {
+    "x": 0.984,
+    "lo": 0.837,
+    "hi": 1.136,
+    "n": 22,
+    "pos": 0.409,
+    "used": 0.2157
+   }
+  },
+  "ai_builder": {
+   "length: under 30 chars": {
+    "x": 0.925,
+    "lo": 0.755,
+    "hi": 1.043,
+    "n": 9,
+    "pos": 0.333,
+    "used": 0.0789
+   },
+   "length: 30-49 chars": {
+    "x": 1.016,
+    "lo": 0.889,
+    "hi": 1.075,
+    "n": 13,
+    "pos": 0.538,
+    "used": 0.3988
+   },
+   "length: 50-69 chars": {
+    "x": 1.09,
+    "lo": 0.987,
+    "hi": 1.161,
+    "n": 13,
+    "pos": 0.538,
+    "used": 0.3517
+   },
+   "length: 70+ chars": {
+    "x": 0.948,
+    "lo": 0.833,
+    "hi": 1.087,
+    "n": 12,
+    "pos": 0.417,
+    "used": 0.1707
+   },
+   "shape: two parts (colon)": {
+    "x": 1.02,
+    "lo": 0.863,
+    "hi": 1.298,
+    "n": 11,
+    "pos": 0.545,
+    "used": 0.1741
+   },
+   "shape: two parts (dash)": {
+    "x": 1.105,
+    "lo": 0.985,
+    "hi": 1.196,
+    "n": 13,
+    "pos": 0.615,
+    "used": 0.2338
+   },
+   "shape: two parts (pipe)": null,
+   "shape: question": {
+    "x": 0.917,
+    "lo": 0.873,
+    "hi": 1.009,
+    "n": 10,
+    "pos": 0.3,
+    "used": 0.0621
+   },
+   "shape: exclamation": {
+    "x": 1.074,
+    "lo": 0.936,
+    "hi": 1.2,
+    "n": 12,
+    "pos": 0.583,
+    "used": 0.2264
+   },
+   "shape: (parentheses) or [brackets]": {
+    "x": 1.082,
+    "lo": 0.855,
+    "hi": 1.19,
+    "n": 11,
+    "pos": 0.636,
+    "used": 0.1946
+   },
+   "opens: How to": {
+    "x": 1.385,
+    "lo": 0.971,
+    "hi": 2.69,
+    "n": 7,
+    "pos": 0.714,
+    "used": 0.0303
+   },
+   "opens: How (not to)": null,
+   "opens: Why": null,
+   "opens: What is/are": null,
+   "opens: a number": {
+    "x": 1.172,
+    "lo": 0.645,
+    "hi": 2.009,
+    "n": 6,
+    "pos": 0.5,
+    "used": 0.02
+   },
+   "opens: I / I'm / I've": {
+    "x": 0.946,
+    "lo": 0.755,
+    "hi": 1.094,
+    "n": 6,
+    "pos": 0.5,
+    "used": 0.0205
+   },
+   "opens: Stop / Don't / Never": null,
+   "opens: a tool's name": {
+    "x": 1.382,
+    "lo": 1.241,
+    "hi": 1.428,
+    "n": 13,
+    "pos": 0.923,
+    "used": 0.13
+   },
+   "opens: The": {
+    "x": 1.091,
+    "lo": 0.843,
+    "hi": 1.201,
+    "n": 10,
+    "pos": 0.6,
+    "used": 0.0451
+   },
+   "has: a number": {
+    "x": 1.087,
+    "lo": 0.988,
+    "hi": 1.124,
+    "n": 13,
+    "pos": 0.615,
+    "used": 0.4365
+   },
+   "has: the year": {
+    "x": 0.563,
+    "lo": 0.256,
+    "hi": 0.881,
+    "n": 6,
+    "pos": 0.0,
+    "used": 0.0244
+   },
+   "has: a time (in N minutes/seconds)": null,
+   "has: Tutorial": {
+    "x": 1.311,
+    "lo": 0.793,
+    "hi": 1.905,
+    "n": 8,
+    "pos": 0.75,
+    "used": 0.0459
+   },
+   "has: for Beginners": null,
+   "has: Explained": null,
+   "has: Crash Course / Full Course": null,
+   "has: Guide": null,
+   "has: Getting Started / Get Started": null,
+   "has: Intro / Introduction": null,
+   "has: vs": {
+    "x": 0.848,
+    "lo": 0.569,
+    "hi": 0.876,
+    "n": 5,
+    "pos": 0.0,
+    "used": 0.0145
+   },
+   "has: Build / Building": {
+    "x": 1.032,
+    "lo": 0.786,
+    "hi": 1.089,
+    "n": 9,
+    "pos": 0.556,
+    "used": 0.0567
+   },
+   "has: from Scratch": null,
+   "has: Step by Step": null,
+   "has: Best Practices": null,
+   "has: Mistakes": null,
+   "has: Easy / Simple": null,
+   "has: you / your": {
+    "x": 0.993,
+    "lo": 0.824,
+    "hi": 1.16,
+    "n": 12,
+    "pos": 0.5,
+    "used": 0.0794
+   },
+   "has: I / my (in the title)": {
+    "x": 0.939,
+    "lo": 0.77,
+    "hi": 1.077,
+    "n": 11,
+    "pos": 0.455,
+    "used": 0.0612
+   },
+   "has: New / Finally / Just": {
+    "x": 0.982,
+    "lo": 0.882,
+    "hi": 1.048,
+    "n": 10,
+    "pos": 0.4,
+    "used": 0.1095
+   },
+   "has: a word in capitals (not a tool)": {
+    "x": 1.027,
+    "lo": 1.0,
+    "hi": 1.17,
+    "n": 13,
+    "pos": 0.769,
+    "used": 0.326
+   },
+   "has: an emoji": null,
+   "has: Live / Webinar / Stream / Podcast / Ep": null,
+   "has: Part N / #N / Ep N (a series)": {
+    "x": 1.027,
+    "lo": 0.599,
+    "hi": 1.523,
+    "n": 7,
+    "pos": 0.571,
+    "used": 0.033
+   },
+   "has: an event (Conf, Summit, | EVENT 2025)": null,
+   "has: a person's name (with NAME / - Name Surname)": {
+    "x": 1.099,
+    "lo": 1.087,
+    "hi": 1.3,
+    "n": 11,
+    "pos": 0.818,
+    "used": 0.0863
+   },
+   "names a tool": {
+    "x": 1.284,
+    "lo": 1.117,
+    "hi": 1.596,
+    "n": 13,
+    "pos": 0.923,
+    "used": 0.4863
+   },
+   "case: Title Case (most words capitalised)": {
+    "x": 0.982,
+    "lo": 0.935,
+    "hi": 1.051,
+    "n": 13,
+    "pos": 0.308,
+    "used": 0.6348
+   },
+   "case: sentence case": {
+    "x": 0.96,
+    "lo": 0.731,
+    "hi": 1.038,
+    "n": 10,
+    "pos": 0.4,
+    "used": 0.0883
+   }
+  }
+ }
+}
