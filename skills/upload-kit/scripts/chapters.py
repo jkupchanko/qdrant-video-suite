@@ -12,7 +12,7 @@ A section the cut leaves under 10 s (--min) joins the next one and both titles a
 no topic disappears from the list; a section the cut does not say at all has no chapter.
 --offset: seconds before the cut starts in the finished video (an intro card), added to every chapter after the first.
 """
-import argparse, difflib, re, sys
+import argparse, difflib, os, re, sys
 
 def norm(s): return re.sub(r"[^a-z0-9 ]", "", s.lower().replace("’", "'")).strip()
 
@@ -33,12 +33,40 @@ def rows(cutlist):
 
 def ts(t): t = int(round(t)); return f"{t // 3600}:{t % 3600 // 60:02d}:{t % 60:02d}" if t >= 3600 else f"{t // 60}:{t % 60:02d}"
 
+def heard(cutlist):
+    """the cut's pieces holding the words the cut itself says (raw-edit's heard_cut.json beside the cut list, while it is still
+    the cut's), in video-review's piece form: [(t0, t1, words, times)]"""
+    import json, os
+    d = os.path.dirname(os.path.abspath(cutlist)); p, cut = os.path.join(d, "heard_cut.json"), os.path.join(d, "cut.mp4")
+    if not (os.path.exists(p) and os.path.exists(cut)): return None
+    D = json.load(open(p, encoding="utf-8"))
+    if D.get("mtime") != os.path.getmtime(cut): return None
+    T = [t for t, _ in rows(cutlist)]; T.append(1e9); out = []
+    for a, b in zip(T, T[1:]):
+        ws = [w for w in D["words"] if a <= (w["s"] + w["e"]) / 2 < b and norm(w["w"])]
+        out.append((a, b, [norm(w["w"]) for w in ws], [w["s"] for w in ws]))
+    return out
+
+def said_at(line, pcs, after):
+    """when the cut starts saying a script line, matched the way the style places it (video-review's find_line, reworded
+    lines kept by their content words), and not before `after`: a near-twin line later on must not pull it out of order"""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "video-review", "scripts")); import script_checks as SC
+    i0 = next((k for k, p in enumerate(pcs) if p[1] > after), len(pcs))
+    i, t, r = SC.find_line(line, pcs[i0:])
+    if i is None or (r < 0.38 and SC.recall(line, pcs[i0:], i) < 0.5): return None
+    return t
+
 def chapters(script, cutlist, offset=0.0, min_s=10.0):
     S, R = sections(script), rows(cutlist)
+    H = heard(cutlist)
     starts, k_seen = [], set()
     for title, lines in S:
         want = [norm(l) for l in lines]
-        hit = [t for t, line in R if line and not line.startswith("(") and any(norm(line) == w or difflib.SequenceMatcher(None, norm(line), w).ratio() >= 0.85 for w in want)]
+        if H:                                    # where the cut says it: the cut list's labels smear at restarts ("same line" over
+            last = starts[-1][1] if starts else -1                               # the whole binary section, Get Started 2026-10-28)
+            hit = [t for t in (said_at(l, H, last) for l in lines[:2]) if t is not None]
+        else:
+            hit = [t for t, line in R if line and not line.startswith("(") and any(norm(line) == w or difflib.SequenceMatcher(None, norm(line), w).ratio() >= 0.85 for w in want)]
         if hit: starts.append([title, min(hit)])
     starts.sort(key=lambda c: c[1])
     if not starts: return []

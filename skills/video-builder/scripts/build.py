@@ -166,7 +166,15 @@ class Build:
         sys.path.insert(0, STYLES); import engine as E
         pr = E.Project(base=self.p("cut", "cut.mp4"), cutlist=self.p("cut", "cutlist.md"), lookaways=self._empty_look(), words=self.p("cut", "words.json"))
         pieces = [dict(i=i, t0=round(pr.L(i), 3), t1=round(pr.end(i), 3), line=pr.line(i), words=[[w, round(t, 3)] for w, t in pr.words_in(i)]) for i in range(len(pr.pieces))]
-        json.dump(dict(pieces=pieces, dur=round(pr.dur, 3)), open(out, "w"), indent=0); return [out], f"{len(pieces)} pieces, {pr.dur:.1f} s"
+        how = "from the take's transcript"
+        try:                                    # the words the cut itself says: the take's transcript smears around restarts and leaves pieces empty
+            sys.path.insert(0, os.path.join(SK, "raw-edit", "scripts")); import raw_edit_checks as RC     # (Get Started, 2026-10-28: "Now let's open
+            H = RC.heard_cut(self.p("cut", "cut.mp4"))                                                    # the Web UI" heard nowhere, 70 s lost B-roll)
+            for p in pieces:
+                p["words"] = [[re.sub(r"[^\w'\-]", "", w["w"].lower()), round(w["s"], 3)] for w in H if p["t0"] <= (w["s"] + w["e"]) / 2 < p["t1"] and re.sub(r"[^\w]", "", w["w"])]
+            how = "heard in the cut"
+        except Exception as e: print(f"  could not hear the cut ({e}); words from the take's transcript")
+        json.dump(dict(pieces=pieces, dur=round(pr.dur, 3)), open(out, "w"), indent=0); return [out], f"{len(pieces)} pieces, {pr.dur:.1f} s, words {how}"
     def _empty_look(self):
         p = self.p("lookaways_empty.json")
         if not os.path.exists(p): json.dump([], open(p, "w"))

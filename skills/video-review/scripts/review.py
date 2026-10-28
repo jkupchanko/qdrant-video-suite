@@ -270,6 +270,12 @@ def text_pass(v, F, lex, trans, faces, every=1.0, cache=None, broll_windows=(), 
     def face_at(i):
         if face_is is None: return None
         j = face_is[int(np.argmin(np.abs(face_is - i)))]; return fr_by_t[j] if abs(j - i) <= 6 else None
+    def moving(i, box, dt=0.1):
+        """the box's pixels change within dt: the text is on its way in or out, not resting cut at the edge"""
+        a_, b_ = v.frame(i), v.frame(min(v.n - 1, i + max(1, int(dt * v.fps))))
+        if a_ is None or b_ is None: return False
+        x0, y0, x1, y1 = [int(c) for c in box]; ys, xs = slice(max(0, y0), y1), slice(max(0, x0), x1)
+        return float(np.abs(a_[ys, xs].astype(np.int16) - b_[ys, xs].astype(np.int16)).mean()) > 12
     results = {}
     for i in samples:
         key = str(i)
@@ -281,6 +287,7 @@ def text_pass(v, F, lex, trans, faces, every=1.0, cache=None, broll_windows=(), 
         in_broll = next((w for w in broll_windows if w.get("t0") is not None and w["t0"] <= t <= w["t1"]), None)              # on the page
         page = in_broll or next((w for w in broll_windows if w.get("t0") is not None and w["t0"] - 0.8 <= t < w["t0"]), None)   # or zooming into it
         for kind, sev, msg, box in TX.check_frame(lines, v.W, v.H, lex, in_transition=bool(trans[min(i, len(trans) - 1)]), bgr=v.frame(i), page=bool(page)):
+            if kind == "edge" and moving(i, box): continue          # a label sliding in or out passes the edge on its way (Get Started 2:06)
             F.add(kind, sev, t, msg, box, frame=i)
         cl = TX.code_lines(lines); fa = face_at(i)
         if len(cl) >= 2 and not in_broll and fa is not None and not fa.get("off") and not any(a_ <= t <= b_ for a_, b_ in hide):
@@ -290,8 +297,8 @@ def text_pass(v, F, lex, trans, faces, every=1.0, cache=None, broll_windows=(), 
             if not in_tr and not corner_busy:
                 F.add("code_window", "check", t, "code on screen and the eyes on the lens, but no small top-right presenter window" + (" (the face is full or elsewhere)" if win else " (no face)"),
                       [min(l["box"][0] for l in cl), min(l["box"][1] for l in cl), max(l["box"][2] for l in cl), max(l["box"][3] for l in cl)], frame=i)
-        if in_broll and sections:
-            sec, how, others = TX.section_of(lines, sections, v.H, v.W); in_broll.setdefault("seen", []).append((round(t, 2), sec, how, others, i))
+        if in_broll and (sections or {}).get(in_broll["name"]):
+            sec, how, others = TX.section_of(lines, sections[in_broll["name"]], v.H, v.W); in_broll.setdefault("seen", []).append((round(t, 2), sec, how, others, i))
     return results
 
 def broll_pass(v, small, motion, trans, script, pcs, cut, broll_dir, F):
@@ -465,14 +472,14 @@ def main():
     texts = []
     if script: texts += script["lines"] + [m["section"] for m in script["markers"]] + [c["text"] for c in script["calls"]] + [f'{lw["name"]} {lw["title"]}' for lw in script.get("lowers", [])]
     if pcs: texts += [" ".join(p[2]) for p in pcs]
-    sections = None; page_titles = {}
+    sections = {}; page_titles = {}                                       # per clip: each clip's own page (a video can show many)
     if a.broll:
-        sj = sorted(glob.glob(os.path.join(a.broll, "*_sections.json")))
-        if sj:
-            d = json.load(open(sj[0], encoding="utf-8")); sections = [s for s in d["sections"] if s.get("text")]
-            h1 = next((s_["text"] for s_ in d["sections"] if s_.get("tag") == "H1"), d.get("title", ""))
-            for m in (script["markers"] if script else []): page_titles[m["url"].split("#")[0].rstrip("/")] = h1
-            texts += [s["text"] + " " + s.get("body", "") for s in sections] + [d.get("title", "")]
+        for m in (script["markers"] if script else []):
+            sj = os.path.join(a.broll, m["name"] + "_sections.json")
+            if not os.path.exists(sj): continue
+            d = json.load(open(sj, encoding="utf-8")); sections[m["name"]] = [s for s in d["sections"] if s.get("text")]
+            page_titles[m["url"].split("#")[0].rstrip("/")] = next((s_["text"] for s_ in d["sections"] if s_.get("tag") == "H1"), d.get("title", ""))
+            texts += [s["text"] + " " + s.get("body", "") for s in sections[m["name"]]] + [d.get("title", "")]
     if a.assets and os.path.exists(a.assets):
         A = json.load(open(a.assets, encoding="utf-8"))
         texts += [s_["text"] + " " + s_.get("best_fit", "") + " " + s_.get("watch_for", "") + " " + " ".join(c["text"] for c in s_.get("code", [])) + " " + " ".join(f["caption"] for f in s_.get("figures", [])) for s_ in A["sections"]]
@@ -507,7 +514,8 @@ def main():
         stats["text"] = f"{len(res)} frames read"
         if script: stats["brand"] = brand_pass(v, res, script, faces, F)
         bspans = [(w["t0"], w["t1"]) for w in windows if w.get("t0") is not None]
-        rd = PC.reading(small, motion, v.fps, res, v.H, TX.is_code, bspans, TH.get("read_wps", 3.8))
+        covers = [tuple(s_) for s_ in held_off(look)]                 # a page held over a look-away covers the eyes; nobody is meant to read it
+        rd = PC.reading(small, motion, v.fps, res, v.H, TX.is_code, bspans + covers, TH.get("read_wps", 3.8))
         for sev, t0_, t1_, i, msg in rd: F.add("read", sev, t0_, msg, t1=t1_, frame=i)
         stats["pace"] = stats.get("pace", "") + f"; {sum(1 for r in rd if r[0] == 'fix')} cards gone before they can be read, {sum(1 for r in rd if r[0] == 'check')} tight"
         for t_, i, msg in PC.broll_context(res, v.fps, windows, page_titles): F.add("broll_context", "fix", t_, msg, frame=i)
@@ -533,7 +541,7 @@ def main():
                 if how.startswith("heading"): state = sec
                 elif state: sec, how = state, "the last heading that crossed the middle"
                 if t < lead_until or (sec and title and TX.norm(sec) == title and t < t_in + 2.0): continue   # the click and the landing
-                if sec and w["section"] and TX.norm(sec) != TX.norm(w["section"]):
+                if sec and w["section"] and TX.norm(sec) != TX.norm(w["section"]) and TX.norm(w["section"]) not in {TX.norm(o) for o in others}:   # its heading in frame
                     F.add("broll_section", "fix", t, f'B-roll "{w["name"]}" shows "{sec}" ({how}), not "{w["section"]}"', frame=i)
                 elif others: F.add("broll_other", "note", t, f'B-roll "{w["name"]}": other headings in frame: {", ".join(o[:40] for o in others)}', frame=i)
         dead_runs = []
