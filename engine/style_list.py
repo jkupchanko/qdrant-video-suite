@@ -139,8 +139,9 @@ class Build:
                 if not os.path.isabs(f["png"]): f["png"] = os.path.join(here, os.path.basename(f["png"]))
         self.title = cfg.get("title") or re.sub(r"\s*[-|]\s*Qdrant.*$", "", A.get("title", "")).strip()
         self.sections = self.script_sections(cfg["script"]); self.items, self.groups = self.list_items()
+        at = {m["name"]: sec["lines"][min(m["line_index"], len(sec["lines"]) - 1)]["t0"] for sec in self.sections for m in sec["markers"]}   # its line, as placed
         self.windows = {w["name"]: w for w in BL.windows(cfg["script"], cfg["broll"], words=cfg["words"], cut=cfg["cut"],
-                                                       lead=SHEET.get("broll", {}).get("lead_in_seconds", BL.ARRIVE_LEAD))}
+                                                       lead=SHEET.get("broll", {}).get("lead_in_seconds", BL.ARRIVE_LEAD), at=at)}
     def script_sections(self, path):
         """[{heading, lines: [{text, t0, t1, piece}], markers: [...], calls: [...]}] with every line placed in the cut"""
         text_ = re.sub(r"<!--.*?-->", "", open(path, encoding="utf-8").read(), flags=re.S); secs = []; cur = None; self.unplaced = []; self.last_t = None

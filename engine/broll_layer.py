@@ -64,13 +64,17 @@ def find_line(line, pieces=None):
             if r > best[0]: best = (r, i, pieces[i][3][0] if pieces[i][3] else pieces[i][0])
     return best[1], best[2], best[0]
 
-def windows(path=SCRIPT, broll=BROLL, words=None, cut=None, lead=ARRIVE_LEAD):
-    """words / cut: another build's cut-time word pieces and cut (default: the v2 Bulk Uploads cut)"""
+def windows(path=SCRIPT, broll=BROLL, words=None, cut=None, lead=ARRIVE_LEAD, at=None):
+    """words / cut: another build's cut-time word pieces and cut (default: the v2 Bulk Uploads cut). at: {marker name: the
+    time the caller placed the line the marker sits under}; the style places lines in script order, which a search for the
+    marker's fragment alone does not (Docker Compose's clip went to the outro's "Now you can use Docker", Get Started 10-28)"""
     pcs = _pieces(words); out = []
     for m in markers(path):
         clip = os.path.join(broll, m["name"] + ".mp4"); man = os.path.join(broll, m["name"] + "_manifest.json")
         if not os.path.exists(clip): print(f"  B-roll {m['name']}: no clip at {clip}"); continue
-        i, t0, r = find_line(m["line"], pcs); t0 = max(0.0, onset(pcs[i][0], t0 + 0.01, path=cut or CUT) - 0.05)   # lands with the first sound of the line
+        if at and m["name"] in at: i, t0, r = min(range(len(pcs)), key=lambda k: abs(pcs[k][0] - at[m["name"]])), at[m["name"]], 1.0
+        else: i, t0, r = find_line(m["line"], pcs)
+        t0 = max(0.0, onset(pcs[i][0], t0 + 0.01, path=cut or CUT) - 0.05)   # lands with the first sound of the line
         mj = json.load(open(man)) if os.path.exists(man) else {}
         arrive = mj.get("style") == "arrive"
         if arrive: t0 = max(0.0, t0 - lead)                                    # the click-through is a lead-in: the section is up on the line

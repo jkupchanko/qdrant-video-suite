@@ -304,9 +304,11 @@ def text_pass(v, F, lex, trans, faces, every=1.0, cache=None, broll_windows=(), 
 def broll_pass(v, small, motion, trans, script, pcs, cut, broll_dir, F):
     """find each B-roll clip in the output by its frames, and compare where it lands with where its line starts"""
     out = []
+    P = SC.placed(script, pcs, cut) if pcs else {}                                  # the lines in script order, as the style places them
     for m in script["markers"]:
         clip = os.path.join(broll_dir, m["name"] + ".mp4")
-        _, t_line, r = SC.line_time(m["line"], pcs, cut) if pcs else (None, None, 0)
+        if m.get("under") in P: t_line, r = P[m["under"]], 1.0
+        else: _, t_line, r = SC.line_time(m["line"], pcs, cut) if pcs else (None, None, 0)
         w = dict(name=m["name"], section=m["section"], line=m["line"], t_line=t_line, match=round(r, 2), t0=None, t1=None, url=m.get("url", ""))
         if t_line is not None and t_line > v.dur - 0.5: continue                        # past the end of this video (a sample range)
         if not os.path.exists(clip): F.add("broll_missing", "fix", t_line or 0, f'B-roll "{m["name"]}": no clip at {clip}'); out.append(w); continue
@@ -515,7 +517,11 @@ def main():
         if script: stats["brand"] = brand_pass(v, res, script, faces, F)
         bspans = [(w["t0"], w["t1"]) for w in windows if w.get("t0") is not None]
         covers = [tuple(s_) for s_ in held_off(look)]                 # a page held over a look-away covers the eyes; nobody is meant to read it
-        rd = PC.reading(small, motion, v.fps, res, v.H, TX.is_code, bspans + covers, TH.get("read_wps", 3.8))
+        spans = []                                                    # joined: a B-roll page held on to cover a glance after it
+        for x0, x1 in sorted(bspans + covers):                        # is one stretch (Configuration, Get Started 4:31)
+            if spans and x0 <= spans[-1][1] + 0.5: spans[-1][1] = max(spans[-1][1], x1)
+            else: spans.append([x0, x1])
+        rd = PC.reading(small, motion, v.fps, res, v.H, TX.is_code, [tuple(s_) for s_ in spans], TH.get("read_wps", 3.8))
         for sev, t0_, t1_, i, msg in rd: F.add("read", sev, t0_, msg, t1=t1_, frame=i)
         stats["pace"] = stats.get("pace", "") + f"; {sum(1 for r in rd if r[0] == 'fix')} cards gone before they can be read, {sum(1 for r in rd if r[0] == 'check')} tight"
         for t_, i, msg in PC.broll_context(res, v.fps, windows, page_titles): F.add("broll_context", "fix", t_, msg, frame=i)

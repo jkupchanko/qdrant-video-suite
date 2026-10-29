@@ -39,7 +39,7 @@ def parse(path):
                 if ":" in part: k, v = part.split(":", 1); f[k.strip()] = v.strip()
                 else: f["len"] = part
             markers.append(dict(url=m.group(1).strip(), line=m.group(2).strip(), section=f.get("section", ""), name=f.get("name", ""),
-                                secs=float(re.sub(r"[^0-9.]", "", f.get("len", "6")) or 6)))
+                                secs=float(re.sub(r"[^0-9.]", "", f.get("len", "6")) or 6), under=last_line))   # under: the spoken line it sits under
         for lw in lower_thirds_in(s): lowers.append(dict(lw, line=last_line))
         for m in CALL.finditer(s):
             rest = m.group(2); at = re.search(r"\bat (\d+:\d{2})", rest); to = re.search(r"\bto (\d+:\d{2}|the end)", rest); fo = re.search(r"\bfor (\d+(?:\.\d+)?) s\b", rest)
@@ -92,6 +92,18 @@ def line_time(line, pcs, cut):
     i, t0, r = find_line(line, pcs)
     if i is None: return None, None, 0.0
     return i, (onset(cut, pcs[i][0], t0 + 0.01) if cut else t0), r
+
+def placed(script, pcs, cut):
+    """each script line's time in the cut, found in script order as the style places them -> {line: t}. A B-roll marker
+    quotes a fragment, and a fragment searched alone can match a near-twin minutes away (Docker Compose's "you can also use
+    Docker Compose" found the outro's "Now you can use Docker", Get Started 10-28); the line it sits under, in order, cannot"""
+    out, last = {}, None
+    for s in script["lines"]:
+        i, t0, r = line_time(s, pcs, cut)
+        if i is None or (r < 0.38 and recall(s, pcs, i) < 0.5): continue           # not in the cut
+        if last is not None and t0 < last - 0.5: continue                           # out of order: a match elsewhere
+        last = t0; out.setdefault(s, t0)
+    return out
 
 def call_spans(calls, pcs, cut, dur):
     """each camera call's [t0, t1] in the cut: its 'at', else the first of the lines it describes (those since the call before);
