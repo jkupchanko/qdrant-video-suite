@@ -22,6 +22,11 @@ times    edit-time start of each piece (a cut list's times); default: the runnin
          timeline, taken from x0 onwards in the source.
 vf_for   k -> the video filter chain for piece k (mirror, crop and push, bars); fps and format are added here
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import os, sys, wave, subprocess, tempfile, shutil
 from concurrent.futures import ThreadPoolExecutor
 import imageio_ffmpeg

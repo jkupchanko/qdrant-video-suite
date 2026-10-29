@@ -12,6 +12,11 @@ A section the cut leaves under 10 s (--min) joins the next one and both titles a
 no topic disappears from the list; a section the cut does not say at all has no chapter.
 --offset: seconds before the cut starts in the finished video (an intro card), added to every chapter after the first.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, difflib, os, re, sys
 
 def norm(s): return re.sub(r"[^a-z0-9 ]", "", s.lower().replace("’", "'")).strip()

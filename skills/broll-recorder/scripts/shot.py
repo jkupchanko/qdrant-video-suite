@@ -13,6 +13,11 @@
 Every shot: 1920x1080, 60 fps, off-white background rgb(245,244,240), the page or editor in a rounded card with a
 soft shadow, pushes in slow and swoops out in one move, hard-cut safe (no slides, no fades to black).
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, json, os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))

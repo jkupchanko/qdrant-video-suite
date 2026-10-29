@@ -13,6 +13,11 @@ Brand (qdrant-brand): the logo is the supplied Qdrant-Profile-Circular-Light fil
 the bar is Qdrant Red #DC244C into Primary Dark #9E0D38 (the gradient is on the bar only; text is one solid colour);
 the name is Mona Sans Bold, the title Mona Sans Regular, both white. It sits above the bottom letterbox bar.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import os, sys, math, argparse
 import numpy as np, skia
 from PIL import Image

@@ -8,6 +8,11 @@
 face is measured here with the same rule. The window is --width of the frame width, in --aspect, with rounded
 corners and a thin off-white border, --margin px in from the corner. Audio comes from the screen clip.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, os, subprocess, sys, tempfile
 import imageio_ffmpeg
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

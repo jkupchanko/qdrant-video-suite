@@ -21,6 +21,11 @@ The numbers a run gives (lengths, loudness, the review's counts, the caption cou
 last passing run; a change is printed under "changed since the last pass", so a quiet regression is seen, not missed.
 It takes several minutes and needs the network (the B-roll records the docs page) and Chrome.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, glob, json, os, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 DEMO = os.path.join(REPO, "demos", "bulk-uploads-first30")

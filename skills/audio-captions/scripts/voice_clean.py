@@ -17,6 +17,11 @@ Loudness is not set here: master_audio.py (the build's master stage) brings the 
 Writes what it measured, what it did and why (--report), and checks the result: the same length to the sample (the voice
 stays on the lips), level jumps after, the floor after.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, json, os, re, subprocess, sys
 import numpy as np, imageio_ffmpeg
 FF = imageio_ffmpeg.get_ffmpeg_exe(); SR = 48000

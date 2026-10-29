@@ -21,6 +21,11 @@ the captions stage, and review.py --captions DIR runs it too.
            middle of every burned caption (captions.ass: shorter than the file's, with pauses between them). Over the name card (overlays) -> fix; over other text on screen (code, a card, read
            under the caption box in VIDEO) -> fix; over the mouth -> check.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, difflib, json, os, re, sys
 import cv2, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); SK = os.path.dirname(os.path.dirname(HERE))

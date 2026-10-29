@@ -5,6 +5,11 @@ usage: python osmouse.py move X Y [seconds]      eased glide to screen coordinat
        python osmouse.py key F11                 press a key (F11, ESC, ENTER, TAB, ...)
        python osmouse.py pos                     print the current pointer position
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import ctypes, math, sys, time
 from ctypes import wintypes
 

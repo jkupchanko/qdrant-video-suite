@@ -11,6 +11,11 @@ captions   a brand or script term spelled the way the transcript heard it ("Quad
 voice      a level jump over 3 dB left between two pieces after voice_clean.py (check); the voice under 30 dB above the
            room after it (check); a length change of more than one sample (fix: the voice would drift off the lips)
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); SKILL = os.path.dirname(HERE)
 LIMITS = dict(cps_check=20.0, min_s=0.8, chars=42, lines=2, jump_db=3.0, snr_db=30.0)

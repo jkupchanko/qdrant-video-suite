@@ -14,6 +14,11 @@ fixes every moment marked Fix that has a fix, and shows each added moment (the w
 Decisions stay in the browser for this cut until the cut changes. The page is a local file next to the video: nothing is
 uploaded, and anyone with the folder can open it.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, html, json, os, sys, webbrowser
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 SK = os.path.dirname(os.path.dirname(HERE)); sys.path += [os.path.join(SK, "editing", "scripts"), os.path.join(SK, "video-review", "scripts")]   # shared: assemble, respan, gaze; join_checks

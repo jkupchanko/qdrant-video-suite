@@ -18,6 +18,11 @@ those on the same 50 videos (360p is enough for all of it), over the first 5 min
   checks   raw_edit_checks.py run on the video as if it were our raw edit (pieces = the stretches between jump cuts): how
            often a finished, professional edit trips our restart, stop and glance rules
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, glob, json, os, re, subprocess, sys
 import numpy as np
 SPAN = 300.0                                   # the first 5 minutes of each video: a creator's cutting habits hold for the whole video

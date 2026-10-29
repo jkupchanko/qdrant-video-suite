@@ -12,6 +12,11 @@ Bulk Uploads, 2026-10-21: at 2:21 "A ... batch size starting ... from 64 to 256"
 (--piece 136.57=405.80-406.08 --piece 137.40=407.05-408.12,409.30-412.45), and at 2:23 a piece that began on the tail of
 "that" was moved to start on "large" (--piece 143.30=430.36-434.68). The old cut is kept as cut_before_respan.mp4.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, os, re, shutil, sys
 import cv2
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
