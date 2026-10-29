@@ -28,13 +28,40 @@ def find(cut_dir, name):
 
 def secs(t): return sum(float(x) * 60 ** k for k, x in enumerate(reversed(t.split(":"))))
 
-def join_fixes(J, R):
-    """the join check's fixes that name a pause to cut in at, as new spans"""
+def later(R, k, W, H=None):
+    """a piece that starts inside a word, fixed by cutting in after that word: -> (new spans or None to drop it, why), or None.
+    The word cut into is the tail of a false start ("only," before "you can only display", Get Started 2:15), or the piece
+    only says again what the piece before ends on ("...rial selections" after "The tutorial selections", 3:18): then it goes"""
+    a, b = R[k][1], R[k][2]; ws = [w for w in W if RE.norm(w["w"]) and w["e"] > a and w["s"] < b]
+    if not ws or not (ws[0]["s"] < a < ws[0]["e"]): return None
+    rest = [w for w in ws[1:] if w["s"] >= ws[0]["e"]]
+    if k > 0 and H:                                                    # the piece before as the cut says it (the take's transcript
+        t0, t1 = R[k - 1][0], R[k - 1][0] + R[k - 1][2] - R[k - 1][1]   # can miss a first attempt: it did at 3:18)
+        prev = [RE.norm(w["w"]) for w in H if RE.norm(w["w"]) and t0 <= (w["s"] + w["e"]) / 2 <= t1]
+    else: prev = [RE.norm(w["w"]) for w in W if k > 0 and RE.norm(w["w"]) and R[k - 1][1] <= (w["s"] + w["e"]) / 2 <= R[k - 1][2]]
+    said = [RE.norm(w["w"]) for w in ws]
+    again = len(said) <= len(prev) and prev[-len(said):] == said           # it says again what the piece before ends on, or (a
+    again |= len(said) <= 3 and said[0] in prev[-2:]                         # join smears which side Whisper hears a word on) it is
+    if prev and said and again:                                              # short and starts inside the word just said
+        return None, f'it only repeats "{" ".join(said)}" from the piece before: dropped'
+    if not rest: return None
+    gap = (ws[0]["e"], rest[0]["s"])
+    if gap[1] - gap[0] < 0.06: return None
+    return [(round(sum(gap) / 2, 2), b)], f'cut in after "{ws[0]["w"]}" instead ({sum(gap) / 2:.2f} s)'
+
+def join_fixes(J, R, W=(), H=None):
+    """the join check's fixes that name a pause to cut in at, as new spans. Not when the earlier in-point would bring a
+    word back: a breath at the start beats "Only, you can only" (Get Started 2:14, 10-28, from a mid-sound fix)"""
     out = []
     for j in J:
         m = re.search(r"pause to cut in at source ([\d.]+)", j["msg"])
         if j["sev"] == "fix" and m:
             k = min(range(len(R)), key=lambda k: abs(R[k][1] - j["src"]))
+            new = float(m.group(1))
+            if any(new - 0.02 <= (w["s"] + w["e"]) / 2 <= R[k][1] - 0.05 for w in W if RE.norm(w["w"])):
+                f = later(R, k, W, H)                                           # earlier brings words back: cut in later instead
+                if f: out.append(dict(t=j["t"], kind="join", sev="fix", msg=j["msg"] + "; " + f[1], edit={f"{R[k][0]:.2f}": f[0]}))
+                continue
             out.append(dict(t=j["t"], kind="join", sev="fix", msg=j["msg"], edit={f"{R[k][0]:.2f}": [(float(m.group(1)), R[k][2])]}))
     return out
 
@@ -84,7 +111,9 @@ def main():
     W = json.load(open(lit, encoding="utf-8")); G = json.load(open(gz, encoding="utf-8")) if gz else None
     E = JC.envelope(a.raw); at = secs(a.at) if a.at else None
     def check():
-        R = JC.rows(cl); F, S = RE.checks(E, cl, W, G); return R, F + join_fixes(JC.joins(a.raw, cl), R), S
+        R = JC.rows(cl); F, S = RE.checks(E, cl, W, G, raw=a.raw); cut = os.path.join(a.cut_dir, "cut.mp4")
+        H = RE.heard_cut(cut) if os.path.exists(cut) else None
+        return R, F + join_fixes(JC.joins(a.raw, cl), R, W, H), S
     R, F, S = check(); marked = None
     if a.notes:
         N = json.load(open(a.notes, encoding="utf-8"))["items"]

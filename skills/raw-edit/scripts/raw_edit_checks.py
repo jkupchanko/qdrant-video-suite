@@ -152,7 +152,7 @@ def inside(w, a, b):
 
 def same(a, b): return a == b or (len(a) > 3 and len(b) > 3 and (a.startswith(b) or b.startswith(a)))
 
-def checks(take, cutlist, literal, gaze=None, cut=None):
+def checks(take, cutlist, literal, gaze=None, cut=None, raw=None):
     """cut: the cut itself (default: cut.mp4 next to the cut list). Words the take's transcript says the cut left out are
     listened for in the cut before they are reported: a smeared transcript must not put back words the cut already has"""
     if cut is None and isinstance(cutlist, str): cut = os.path.join(os.path.dirname(os.path.abspath(cutlist)), "cut.mp4")
@@ -284,8 +284,9 @@ def checks(take, cutlist, literal, gaze=None, cut=None):
                     out.append(dict(t=t + last["e"] - a, kind="glance", sev="fix", edit={key(k): [(a, round(float(vend) + 0.04, 2))]},
                                     msg=f'the piece runs {tail:.2f} s past "{last["w"]}" into a {after:.1f} s thinking pause, and the eyes start to leave the lens there; end it on the word'))
     out.sort(key=lambda d: d["t"])
-    if cut and isinstance(take, str):                                   # a restart the transcript wrote once, heard in the cut
-        for f in said_twice(take, R, key, os.path.join(os.path.dirname(os.path.abspath(cut)), "heard_joins.json")):
+    raw = take if isinstance(take, str) else raw                        # (fix_cut passes the envelope; it skipped this, Get Started 10-28)
+    if cut and raw:                                                     # a restart the transcript wrote once, heard in the cut
+        for f in said_twice(raw, R, key, os.path.join(os.path.dirname(os.path.abspath(cut)), "heard_joins.json")):
             if not any(o["kind"] == "restart" and abs(o["t"] - f["t"]) < 3 for o in out): out.append(f)
     return out, S
 
