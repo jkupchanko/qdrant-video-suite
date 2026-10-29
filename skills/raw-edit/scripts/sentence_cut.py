@@ -173,8 +173,10 @@ def main():
     # whole sentences: from the silence before the first word to the silence after the last; long pauses inside come out
     def q_before(x):
         i = int(round(x * 100)); return next((k / 100 for k in range(i, max(0, i - 40), -1) if env[k] < quiet), x - 0.08)
-    def q_after(x):
-        i = int(round(x * 100)); return next(((k + 2) / 100 for k in range(i, min(len(env) - 2, i + 60)) if env[k] < quiet and env[k + 1] < quiet), x + 0.15)
+    starts = sorted(w["s"] for w in W)
+    def q_after(x):                                                                   # never into the take's next word: a speaker who runs
+        i = int(round(x * 100)); nxt = next((s for s in starts if s > x + 0.05), 1e9)  # on ("uploads. So let's") has no silence before it
+        return min(next(((k + 2) / 100 for k in range(i, min(len(env) - 2, i + 60)) if env[k] < quiet and env[k + 1] < quiet), x + 0.15), max(x + 0.02, nxt - 0.02))
     pieces = []                                                                       # (x0, x1, line, said, note)
     for line, c, note in chosen:
         if not c: pieces.append((None, None, line, "", note)); continue
