@@ -13,6 +13,11 @@ whole sentence: identifiers (on_disk, batch_size, upload_points), acronyms (HNSW
 terms, and the page's own heading words. Each line is printed with its terms, the best section, the score
 and the call (B-ROLL or none), and the B-ROLL lines are written as markers the recorder reads.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, json, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -55,7 +60,8 @@ def main():
     ap.add_argument("script"); ap.add_argument("url"); ap.add_argument("--out"); ap.add_argument("--min-score", type=float, default=0.9)
     a = ap.parse_args()
     secs = sections(a.url)
-    lines = [l.strip() for l in open(a.script, encoding="utf-8") if l.strip() and not l.strip().startswith(("#", "[", "**", "🎥", "🎙", "💻", "✅", "⚖", "```"))]
+    body = re.sub(r"<!--.*?-->", "", open(a.script, encoding="utf-8").read(), flags=re.S)   # notes are never spoken
+    lines = [l.strip() for l in body.splitlines() if l.strip() and not l.strip().startswith(("#", "[", "**", "🎥", "🎙", "💻", "✅", "⚖", "```"))]
     rows = []; markers = []; used = set()
     secs = [x for x in secs if x.get("tag") != "H1"]          # the page title matches every general line; never a reason
     ORD = {"first": 1, "second": 2, "third": 3, "fourth": 4, "final": None, "last": None}

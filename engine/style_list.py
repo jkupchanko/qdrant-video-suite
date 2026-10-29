@@ -162,6 +162,8 @@ class Build:
             for lw in SC.lower_thirds_in(s): cur["lowers"].append(dict(lw, after=len(cur["lines"])))
             if s.startswith("["): continue
             i, t0, r = SC.line_time(s, self.pcs, self.cfg["cut"])
+            if i is not None and self.last_t is not None and t0 < self.last_t - 0.5:              # said loosely, its best match is another
+                i, t0, r = SC.line_time(s, self.pcs, self.cfg["cut"], after=self.last_t)          # line: the best in order (Metrics, 10-29)
             if i is None: continue
             if r < 0.38 and SC.recall(s, self.pcs, i) < 0.5: self.unplaced.append(s); continue          # not in the cut: no beat for it
             if self.last_t is not None and t0 < self.last_t - 0.5: self.unplaced.append(s); continue    # out of order: a match elsewhere

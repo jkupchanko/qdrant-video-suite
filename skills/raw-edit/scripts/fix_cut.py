@@ -16,6 +16,11 @@ repeats (up to --rounds times) until nothing is left to fix. The cut before is k
 The literal words and the eyes on the take are found next to the cut (CUT_DIR/words_literal.json, raw_gaze.json, as the
 build writes them) or one or two folders up; mirror and bars come from CUT_DIR/cut_settings.json when the build wrote it.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, json, os, re, subprocess, sys
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
@@ -141,6 +146,9 @@ def main():
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode: sys.exit(f"respan.py failed: {r.stdout[-400:]}{r.stderr[-400:]}")
         R, F, S = check()
+    if done and os.path.exists(os.path.join(a.cut_dir, "review.html")):   # the presenter's page and list follow the new cut
+        open(os.path.join(a.cut_dir, "raw_edit_check.md"), "w", encoding="utf-8").write("# Raw edit check\n\n" + "\n".join(f"- {RE.ts(f['t'])} {f['sev']} {f['kind']}: {f['msg']}" for f in F) + "\n")
+        subprocess.run([sys.executable, os.path.join(HERE, "review_page.py"), a.cut_dir, a.raw], capture_output=True)
     left = [f for f in F if f["sev"] == "fix" and (at is None or abs(f["t"] - at) <= a.near)]
     print(f"fixed {done}; left to fix {len(left)}" + "".join(f"\n  {RE.ts(f['t'])} {f['kind']}: {f['msg'][:100]}" for f in left) + f"\n-> {os.path.join(a.cut_dir, 'cut.mp4')}")
 

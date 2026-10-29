@@ -205,7 +205,7 @@ runs again.
 **7c. The whole video.** Once the cut and the direction are approved, continue the same build from the cut:
 
 ```bash
-python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style" --style list --from words
+python ~/.claude/skills/video-builder/scripts/build.py --take RAW.mp4 --script SCRIPT.md --out BUILD_DIR --label "Topic, style" --style list --from voice
 ```
 
 ## Step 8 of 8: small edits, until it is ready

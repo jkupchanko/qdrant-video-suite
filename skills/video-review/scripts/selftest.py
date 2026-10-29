@@ -21,6 +21,11 @@ And the captions (caption_checks), on a made-up video with its captions and a bu
 Without CUT.mp4 only the joins, the reading pace, the raw edit and the captions run (they need no real clip).
 Run it after changing any check. Exit 1 if a fault is missed or a fix is invented.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import os, sys, json, argparse, subprocess, cv2, imageio_ffmpeg
 HERE = os.path.dirname(os.path.abspath(__file__))
 WANT = {"blank": (2.0, 2.5), "aspect": (3.0, 6.0), "sync": (6.0, 10.0), "edge": (7.0, 9.0)}
@@ -119,6 +124,20 @@ def raw_edit_selftest(out):
     for f in extra: print(f"  INVENTED  {f['kind']} at {f['t']:.2f} s: {f['msg'][:80]}")
     return ok and not extra
 
+def placed_selftest():
+    """lines placed in script order (script_checks.placed, which the list style shares), from Get Started 10-29: the Metrics
+    line said loosely ("the metric page is going to show...") matches the Collections line two minutes earlier better than
+    its own piece; thrown out as out of order, its B-roll fell 3.4 s late onto the next line -> placed on its own piece"""
+    import script_checks as SC
+    said = [(180.8, "the collections page shows how many collections the cluster has"), (240.0, "make sure you copy all the keys before you close the window"),
+            (246.7, "the metric page is going to show how your clusters are actually performing but"), (250.2, "again because the cluster is brand new there isn't going to be any activity here")]
+    pcs = [(t, t + 3.0, s.split(), [t + 0.2 * k for k in range(len(s.split()))]) for t, s in said]
+    lines = ["The Collections page shows how many collections the cluster has.", "Make sure you copy the key before closing the window.",
+             "The Metrics page shows how the cluster is performing.", "Because this cluster is new, there isn't much activity yet."]
+    got = SC.placed(dict(lines=lines), pcs, None).get(lines[2])
+    ok = got is not None and abs(got - 246.7) < 0.01
+    print(f"  {'caught' if ok else 'MISSED'}  placed  a line said loosely, its best match minutes earlier  -> {got}"); return ok
+
 def reading_selftest(fps=30, H=1080):
     """a 16 s card track read once a second: the face, two short cards, then a card typed in line by line. The picture moves
     throughout (live typing), so only the words on screen tell the cards apart"""
@@ -170,6 +189,49 @@ def said_twice_selftest(out):
     print(f"  {'caught' if hit else 'MISSED'}  said twice: a false start left before its retake" + (f"  -> {hit[0]['msg'][:60]}" if hit else f"  -> {F}"))
     for f in extra: print(f"  INVENTED  said twice at {f['t']:.2f} s: {f['msg'][:80]}  (the list said on purpose must not count)")
     return bool(hit) and not extra
+
+def heard_cut_selftest(out):
+    """the raw edit's checks on the cut as heard (raw_edit_checks.heard_twice, cut_short), from Get Started 10-29, where a
+    fresh transcript of the same take gave a cut the older checks passed: the subscribe line kept three times (16 words a
+    take, past the restart check's window) -> the first two go; a piece ending on "allow us to work" before "with our
+    data inside Quadrant" -> it runs on to the end of the phrase; a list said on purpose ("you can run it locally, you can
+    deploy it") and a piece that ends where its line goes on in the next piece -> nothing"""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "raw-edit", "scripts")); import raw_edit_checks as RE
+    H, t = [], 0.0
+    def say(text, gap=0.25):
+        nonlocal t
+        for w in text.split(): H.append(dict(w=w, s=round(t, 2), e=round(t + 0.25, 2))); t += 0.3
+        t += gap
+    rows, src = [], 100.0
+    def piece(text, line):
+        nonlocal src
+        t0 = t; say(text); rows.append((t0, src, src + t - t0, line)); src += t - t0 + 20
+    piece("You can run it locally, you can deploy it, or use the cloud.", "You can run it locally, deploy it, or use the cloud.")
+    piece("The web UI is going to allow us to work", "The Web UI helps us work with the data inside Qdrant, while the dashboard manages the cluster.")
+    piece("while the dashboard helps us manage the cluster.", "(same line, after a pause)")
+    piece("And then we open the", "And then we open the settings page.")
+    piece("settings page.", "(same line, after a pause)")
+    piece("Make sure you subscribe to Quadrant's YouTube channel for tutorials and other videos.", "Subscribe to the Qdrant YouTube channel.")
+    piece("Make sure you subscribe to Quadrant's YouTube channel for other demos.", "(same line, after a pause)")
+    piece("Make sure you subscribe to Quadrant's YouTube channel for videos just like this.", "(same line, after a pause)")
+    R = [(round(a, 2), round(b, 2), round(c, 2), line) for a, b, c, line in rows]; key = lambda k: f"{R[k][0]:.2f}"
+    cache = os.path.join(out, "heard_cut_joins.json")
+    after = lambda k, words: [dict(w=w, s=round(R[k][2] + 0.1 + 0.3 * i, 2), e=round(R[k][2] + 0.35 + 0.3 * i, 2)) for i, w in enumerate(words.split())]
+    C = {f"{R[k][2]:.2f}-{R[k][2] + 2.5:.2f}": [] for k in range(len(R) - 1)}       # the take just past each piece, as heard
+    C[f"{R[1][2]:.2f}-{R[1][2] + 2.5:.2f}"] = after(1, "with our data inside Quadrant.")
+    C[f"{R[3][2]:.2f}-{R[3][2] + 2.5:.2f}"] = after(3, "settings page.")
+    json.dump(C, open(cache, "w", encoding="utf-8"))
+    phrase = lambda x0, x1: (x0, x1 + 0.04)
+    F = RE.heard_twice(H, R, key) + RE.cut_short("(no take: heard from the cache)", R, key, H, phrase, 0.6, cache)
+    want = [("restart", {key(5): None, key(6): None}, "the subscribe line kept three times: the first two go"),
+            ("dropped", {key(1): None}, 'a piece stopping on "allow us to work" before "with our data inside Quadrant"')]
+    ok = True
+    for kind, edit, what in want:
+        hit = [f for f in F if f["kind"] == kind and f.get("edit") and set(f["edit"]) == set(edit) and (kind != "restart" or f["edit"] == edit)]
+        print(f"  {'caught' if hit else 'MISSED'}  {kind:7s} {what}" + (f"  -> {hit[0]['msg'][:60]}" if hit else f"  -> {F}")); ok &= bool(hit)
+    extra = [f for f in F if not any(f["kind"] == k and set(f.get("edit") or {}) == set(e) for k, e, _ in want)]
+    for f in extra: print(f"  INVENTED  {f['kind']} at {f['t']:.2f} s: {f['msg'][:80]}  (a list, or a line that goes on in its next piece)")
+    return ok and not extra
 
 def caption_selftest(out):
     """captions checked against a made-up video (words as voiced bursts, what was heard, its captions, a burned copy) with
@@ -235,7 +297,7 @@ def caption_selftest(out):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cut", nargs="?"); ap.add_argument("--gaze"); ap.add_argument("--lookaways"); ap.add_argument("--out", default="review_selftest")
-    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & reading_selftest() & raw_edit_selftest(a.out) & said_twice_selftest(a.out) & caption_selftest(a.out)
+    a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); joins_ok = joins_selftest(a.out) & placed_selftest() & reading_selftest() & raw_edit_selftest(a.out) & said_twice_selftest(a.out) & heard_cut_selftest(a.out) & caption_selftest(a.out)
     if not a.cut:
         print("  (no CUT.mp4: the planted-clip checks did not run)"); print("SELF-TEST PASSED" if joins_ok else "SELF-TEST FAILED"); return 0 if joins_ok else 1
     clip = os.path.join(a.out, "planted.mp4"); plant(a.cut, clip)

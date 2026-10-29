@@ -18,6 +18,11 @@ default transcript tidies a restart into one clean sentence, so a check on it ca
 dropped, the cut itself is heard over that line (hear_cut): the take's transcript says where words were said, only the
 cut's own sound says what the viewer hears.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import os, re, json, sys, numpy as np
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "video-review", "scripts"))   # join_checks
 
@@ -56,6 +61,67 @@ def heard_cut(cut):
     dur = len(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", cut, "-ac", "1", "-ar", "100", "-f", "u8", "-"], capture_output=True).stdout) / 100
     W = hear_cut(cut, 0.0, dur + 0.5); json.dump(dict(mtime=os.path.getmtime(cut), words=W), open(p, "w", encoding="utf-8")); return W
 
+_TAKE = {}
+def hear_take(take, spans, C):
+    """the take heard over each (a, b) source span not yet in C, all in one stream 1 s of silence apart -> C["a-b"] = words.
+    Neighbours in the stream are 9 spans apart: two pieces that open alike never share a window"""
+    need = [sp for sp in spans if f"{sp[0]:.2f}-{sp[1]:.2f}" not in C]
+    if not need: return C
+    import subprocess, imageio_ffmpeg
+    if take not in _TAKE:
+        _TAKE[take] = np.frombuffer(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", take, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
+                                                   capture_output=True).stdout, np.int16).astype(np.float32) / 32768
+    x = _TAKE[take]
+    try: import av
+    except ImportError: sys.modules["av"] = type(sys)("av")
+    if not _EAR:
+        from faster_whisper import WhisperModel
+        _EAR.append(WhisperModel("small.en", device="cpu", compute_type="int8"))
+    parts, offs, o = [], [], 0.0
+    for a, b in sorted(need, key=lambda sp: (spans.index(sp) % 9, spans.index(sp))):
+        clip = x[int(a * 16000):int(b * 16000)]; parts += [clip, np.zeros(16000, np.float32)]; offs.append((o, o + len(clip) / 16000, a, b)); o += len(clip) / 16000 + 1.0
+    segs, _ = _EAR[0].transcribe(np.concatenate(parts), language="en", beam_size=5, word_timestamps=True, condition_on_previous_text=False)
+    ws = [w for sg in segs for w in (sg.words or []) if w.word.strip()]
+    for o0, o1, a, b in offs:
+        C[f"{a:.2f}-{b:.2f}"] = [dict(w=w.word.strip(), s=round(a + w.start - o0, 2), e=round(a + w.end - o0, 2)) for w in ws if o0 <= (w.start + w.end) / 2 < o1]
+    return C
+
+def piece_of(R, t):
+    """the piece playing at edit time t"""
+    return max([k for k in range(len(R)) if R[k][0] <= t + 1e-6] or [0])
+
+def heard_twice(H, R, key, n=6):
+    """the same run of n words heard twice within 30 s of the cut: a retake kept beside the take it replaces (Get Started,
+    10-29: "Make sure you subscribe to Quadrant's YouTube channel" three times over, 16 words a take, too long for the
+    restart check's window; "go ahead and look at Quadrant Cloud" twice at 1:27). Six words heard alike is never a list.
+    Keeps the last; a piece that is nothing but the repeat goes instead"""
+    w = [norm(x["w"]) for x in H]; out = []; i = 0
+    while i < len(w) - n:
+        js = []; at = i
+        for j in range(i + n, len(w) - n + 1):                          # each later time the run is said, chained a take at a time
+            if H[j]["s"] - H[at]["s"] > 30: break
+            if all(w[j:j + n]) and w[j:j + n] == w[i:i + n]: js.append(j); at = j
+        if not js or not all(w[i:i + n]): i += 1; continue
+        a, z = i, js[-1]
+        while a > 0 and z - 1 >= a + n and w[a - 1] and w[a - 1] == w[z - 1]: a -= 1; z -= 1   # the repeat from its first word
+        t0, t1 = H[a]["s"], H[z]["s"]; edit = {}
+        k2 = piece_of(R, H[z + n // 2]["s"]); t2 = R[k2][0] + R[k2][2] - R[k2][1]   # by the run's middle: heard times run early
+        rest = [x for q, x in enumerate(w) if R[k2][0] + 0.3 <= H[q]["s"] < t2 - 0.3 and not z <= q < z + (i - a) + n and x]   # its other words
+        if len(js) == 1 and not rest and R[k2][0] > t0 + 0.3:                  # the later piece only says it again: it goes
+            edit[key(k2)] = None
+        else:
+            for k in range(len(R)):
+                s, e = R[k][0], R[k][0] + R[k][2] - R[k][1]
+                if e <= t0 + 0.05 or s >= t1 - 0.05: continue
+                if s >= t0 - 0.3 and e <= t1 + 0.3: edit[key(k)] = None           # wholly inside the earlier tries
+                elif s < t0: edit[key(k)] = [(R[k][1], round(R[k][1] + t0 - s - 0.04, 2))]
+                elif t1 - s > 0.3: edit[key(k)] = [(round(R[k][1] + t1 - s - 0.04, 2), R[k][2])]   # (a piece opening on the last try stays)
+        said = " ".join(x["w"] for x in H[a:i + n])
+        out.append(dict(t=t0, kind="restart", sev="fix", edit=edit or None,
+                        msg=f'said {len(js) + 1} times: "{said}" at {ts(t0)}, last at {ts(t1)} (heard in the cut; keep the last)'))
+        i = js[-1] + n
+    return out
+
 def said_twice(take, R, key, cache):
     """words a cut says twice across a join ("run requests in... / run requests and follow" at 2:36 of Get Started): the
     end of each piece and the start of the next are heard apart, so nothing tidies the repeat away. Whisper over the whole
@@ -64,28 +130,8 @@ def said_twice(take, R, key, cache):
     not a restart); the fix ends the first piece before the repeated words, or drops it when it is nothing else."""
     C = json.load(open(cache, encoding="utf-8")) if os.path.exists(cache) else {}
     spans = {"tails": [(max(a, b - 2.5), b) for _, a, b, _ in R[:-1]], "heads": [(a, min(b, a + 2.5)) for _, a, b, _ in R[1:]]}
-    need = {g: [sp for sp in v if f"{sp[0]:.2f}-{sp[1]:.2f}" not in C] for g, v in spans.items()}
-    if any(need.values()):                                               # all the ends in one stream and all the starts in another,
-        import subprocess, imageio_ffmpeg                                # 1 s of silence apart: two transcriptions, not one per side,
-        x = np.frombuffer(subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", take, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"],
-                                         capture_output=True).stdout, np.int16).astype(np.float32) / 32768      # and the two sides of a join are
-        # never in one stream, so nothing tidies a repeat away
-        try: import av
-        except ImportError: sys.modules["av"] = type(sys)("av")
-        if not _EAR:
-            from faster_whisper import WhisperModel
-            _EAR.append(WhisperModel("small.en", device="cpu", compute_type="int8"))
-        for g, sps in need.items():
-            if not sps: continue
-            parts, offs, o = [], [], 0.0
-            sps = sorted(sps, key=lambda sp: (spans[g].index(sp) % 9, spans[g].index(sp)))   # neighbours in the stream are 9 joins apart: two
-            for a, b in sps:                                                                 # pieces that open alike never share a window
-                clip = x[int(a * 16000):int(b * 16000)]; parts += [clip, np.zeros(16000, np.float32)]; offs.append((o, o + len(clip) / 16000, a, b)); o += len(clip) / 16000 + 1.0
-            segs, _ = _EAR[0].transcribe(np.concatenate(parts), language="en", beam_size=5, word_timestamps=True, condition_on_previous_text=False)
-            ws = [w for sg in segs for w in (sg.words or []) if w.word.strip()]
-            for o0, o1, a, b in offs:
-                C[f"{a:.2f}-{b:.2f}"] = [dict(w=w.word.strip(), s=round(a + w.start - o0, 2)) for w in ws if o0 <= (w.start + w.end) / 2 < o1]
-    side = lambda a, b: C[f"{a:.2f}-{b:.2f}"]
+    for g in spans: hear_take(take, spans[g], C)                         # all the ends in one stream and all the starts in another: the two
+    side = lambda a, b: C[f"{a:.2f}-{b:.2f}"]                            # sides of a join are never in one stream, so nothing tidies a repeat away
     out = []
     for k in range(len(R) - 1):
         t, a, b, _ = R[k]; a2, b2 = R[k + 1][1], R[k + 1][2]
@@ -288,7 +334,48 @@ def checks(take, cutlist, literal, gaze=None, cut=None, raw=None):
     if cut and raw:                                                     # a restart the transcript wrote once, heard in the cut
         for f in said_twice(raw, R, key, os.path.join(os.path.dirname(os.path.abspath(cut)), "heard_joins.json")):
             if not any(o["kind"] == "restart" and abs(o["t"] - f["t"]) < 3 for o in out): out.append(f)
+    if cut:                                                             # a whole retake kept beside its take, heard in the cut
+        H = heard_cut(cut)
+        for f in heard_twice(H, R, key):
+            out = [o for o in out if not (o["kind"] == "restart" and abs(o["t"] - f["t"]) < 3)] + [f]
+        if raw: out += cut_short(raw, R, key, H, phrase, S["stop"], os.path.join(os.path.dirname(os.path.abspath(cut)), "heard_joins.json"))
+    out.sort(key=lambda d: d["t"])
     return out, S
+
+def cut_short(take, R, key, H, phrase, stop, cache):
+    """a piece that ends inside a sentence, before words its script line needs: "The web UI is going to allow us to work" /
+    "while the cloud dashboard..." (Get Started 3:39, 10-29). The take's transcript put "with our data inside Quadrant" 3 s
+    early, inside the piece, so the dropped-words check believed the cut said them. Here the take is heard just past the
+    piece's end, and the words that run on from it are looked for in what the cut says over that line"""
+    C = json.load(open(cache, encoding="utf-8")) if os.path.exists(cache) else {}
+    head = []
+    for k, r in enumerate(R): head.append(head[-1] if head and r[3].startswith("(same line") else k)
+    end_t = lambda k: R[k][0] + R[k][2] - R[k][1]
+    cand = []
+    for k in range(len(R) - 1):
+        pw = [x for x in H if R[k][0] <= (x["s"] + x.get("e", x["s"])) / 2 < end_t(k)]
+        if pw and not ends(pw[-1]["w"]): cand.append(k)                # it stops without ending a sentence
+    spans = [(R[k][2], R[k][2] + 2.5) for k in cand]
+    hear_take(take, spans, C); json.dump(C, open(cache, "w", encoding="utf-8"))
+    nm = lambda w: (lambda n: "qdrant" if n in ("quadrant", "quadrants") else n)(norm(w))   # Whisper's spelling of the name
+    out = []
+    for k, (b, b2) in zip(cand, spans):
+        run = []                                                        # what the take says straight on from the piece's end
+        for x in C[f"{b:.2f}-{b2:.2f}"]:
+            if (not run and x["s"] - b > 0.6) or (run and x["s"] - run[-1].get("e", run[-1]["s"]) > stop): break
+            run.append(x)
+            if ends(x["w"]): break
+        g = [q for q in range(len(R)) if head[q] == head[k]]
+        heard = {nm(x["w"]) for x in H if R[g[0]][0] - 0.5 <= x["s"] <= end_t(g[-1]) + 0.5}
+        script = {nm(w) for w in R[head[k]][3].split()} - {""}
+        miss = [x["w"] for x in run if nm(x["w"]) and nm(x["w"]) not in STOP and any(same(nm(x["w"]), s) for s in script)
+                and not any(same(nm(x["w"]), h) for h in heard if h)]
+        if len(miss) < 2: continue
+        to = min(phrase(b, run[-1].get("e", run[-1]["s"] + 0.3))[1], run[-1].get("e", run[-1]["s"] + 0.3) + 0.5)
+        if b < R[k + 1][1] < to: to = R[k + 1][1]
+        out.append(dict(t=end_t(k), kind="dropped", sev="fix", edit={key(k): [(R[k][1], round(to, 2))]},
+                        msg=f'the piece stops before "{" ".join(x["w"] for x in run)}", and the cut never says "{", ".join(miss)}" from its script line (heard past the cut at source {b:.1f} s)'))
+    return out
 
 if __name__ == "__main__":
     import argparse

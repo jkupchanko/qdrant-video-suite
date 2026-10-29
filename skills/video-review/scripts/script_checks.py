@@ -55,9 +55,11 @@ def pieces(words_json):
     P = json.load(open(words_json))["pieces"]
     return [(p["t0"], p.get("t1", p["t0"]), [w[0] for w in p.get("words", [])], [w[1] for w in p.get("words", [])]) for p in P]
 
-def find_line(line, pcs):
+def find_line(line, pcs, after=None, within=30.0):
+    """after: only the pieces from that time to `within` s past it (the line after the last one placed)"""
     want = _norm_words(line); best = (0.0, None, None)
     for i in range(len(pcs)):
+        if after is not None and not (after - 0.5 <= pcs[i][0] <= after + within): continue
         for span in (1, 2, 3, 4):                                                     # a line the cut split at its pauses spans several pieces
             ws = sum((pcs[j][2] for j in range(i, min(len(pcs), i + span))), [])
             if not ws: continue
@@ -87,9 +89,9 @@ def onset(path, a, b, sr=16000, win=0.05, db=-32.0):
         if 20 * np.log10(max(1e-6, float(np.sqrt((x[i:i + n] ** 2).mean())))) > db: return i / sr
     return b
 
-def line_time(line, pcs, cut):
+def line_time(line, pcs, cut, after=None):
     """(piece index, the line's first sound in the cut, match ratio)"""
-    i, t0, r = find_line(line, pcs)
+    i, t0, r = find_line(line, pcs, after)
     if i is None: return None, None, 0.0
     return i, (onset(cut, pcs[i][0], t0 + 0.01) if cut else t0), r
 
@@ -100,6 +102,7 @@ def placed(script, pcs, cut):
     out, last = {}, None
     for s in script["lines"]:
         i, t0, r = line_time(s, pcs, cut)
+        if i is not None and last is not None and t0 < last - 0.5: i, t0, r = line_time(s, pcs, cut, after=last)   # said loosely: in order
         if i is None or (r < 0.38 and recall(s, pcs, i) < 0.5): continue           # not in the cut
         if last is not None and t0 < last - 0.5: continue                           # out of order: a match elsewhere
         last = t0; out.setdefault(s, t0)

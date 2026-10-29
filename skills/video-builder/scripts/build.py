@@ -34,6 +34,11 @@ Stages, each one a skill of the suite (outputs in BUILD_DIR/<stage>; a stage who
                             the way the script spells things; --captions burned adds a copy with them in the picture
 Writes BUILD_DIR/BUILD.md (what each stage did, how long it took, what the review found) and build.json.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import os, sys, re, json, time, glob, argparse, subprocess, shutil
 SK = os.path.expanduser("~/.claude/skills"); STYLES = os.path.expanduser(r"~\camera_audit\styles"); PY = sys.executable
 STAGES = ["cut", "voice", "words", "gaze", "camera", "keyterms", "broll", "assets", "style", "master", "review", "upload", "captions"]
@@ -280,7 +285,10 @@ def patch(B, a):
     shots_p = B.p("video_shots.json"); shutil.copy(shots_p, shots_p + ".full")              # a range render writes its own shot list over it
     f0 = round(t0 * fps); lead = min(fps, f0); r0 = (f0 - lead) / fps                      # a second of the shot before: the transition
     run([PY, os.path.join(STYLES, f"style_{a.style}.py"), B.p("style_config.json"), f"{r0}", f"{t1}"], B.p("patch.log"), cwd=STYLES)   # into the first
-    shutil.move(shots_p + ".full", shots_p)                                                  # shot needs its last frame; it is dropped below
+    new = [dict(s, t0=max(s["t0"], t0), t1=min(s["t1"], t1)) for s in json.load(open(shots_p)) if s["t1"] > t0 + 1e-6 and s["t0"] < t1 - 1e-6]
+    full = json.load(open(shots_p + ".full")); os.remove(shots_p + ".full")                 # shot needs its last frame; it is dropped below
+    json.dump([s for s in full if s["t1"] <= t0 + 1e-6] + new + [s for s in full if s["t0"] >= t1 - 1e-6], open(shots_p, "w"), indent=0)   # the shot
+                                                                                             # list follows the video: the next patch and the review read it
     part = B.p(f"video_{int(r0)}-{int(t1)}.mp4"); c = cv2.VideoCapture(part); n = int(c.get(cv2.CAP_PROP_FRAME_COUNT)) - lead; c.release()
     c = cv2.VideoCapture(video); total = int(c.get(cv2.CAP_PROP_FRAME_COUNT)); c.release()
     f1 = min(total, f0 + n)
@@ -339,6 +347,12 @@ def main():
         a.label = f"{a.label or os.path.basename(a.out)} (preview, first {a.preview:.0f} s)"
         print(f"preview: the first {n} section(s) of {full} -> {a.script}")
         if a.cut_from:
+            for st, f in (("words", "words.json"), ("gaze", "lookaways.json")):     # the approved cut's words and eyes, once (start-here
+                if not os.path.exists(os.path.join(a.cut_from, f)):                  # runs them after the raw edit; a preview needs them)
+                    print(f"preview: {a.cut_from} has no {f} yet: running its {st} stage first", flush=True)
+                    if subprocess.run([sys.executable, os.path.abspath(__file__), "--take", a.take, "--script", full, "--out", a.cut_from,
+                                       "--style", a.style, "--bars", a.bars] + ([] if a.mirror else ["--no-mirror"]) + ["--only", st]).returncode:
+                        sys.exit(f"the {st} stage failed on {a.cut_from}: see its BUILD.md")
             t_end, n_cuts = preview_from_cut(os.path.abspath(a.cut_from), os.path.abspath(a.out), a.script)
             print(f"preview: the approved cut's first {t_end:.1f} s ({n_cuts} cuts) and its eye contact, from {a.cut_from}")
     B = Build(a)

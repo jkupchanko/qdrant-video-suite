@@ -14,6 +14,11 @@ section boundaries or when the material changes rather than on a timer.
 Output: a markdown table (time, section, what is said, layout, size and position, hold, why), followed by the
 checks and any conflicts with Camera directions already in the script.
 """
+if __name__ == "__main__":                                   # run on the suite's own Python (.venv, made by setup.py), whichever python started it
+    import os as _o, sys as _s, subprocess as _sp
+    _v = _o.path.join(_o.path.dirname(_o.path.realpath(__file__)), "..", "..", "..", ".venv", *(("Scripts", "python.exe") if _o.name == "nt" else ("bin", "python")))
+    if _o.path.exists(_v) and _o.path.normcase(_o.path.realpath(_s.prefix)) != _o.path.normcase(_o.path.realpath(_o.path.dirname(_o.path.dirname(_v)))):
+        _s.exit(_sp.call([_v, _o.path.realpath(__file__)] + _s.argv[1:]))
 import argparse, re, sys
 
 LAYOUTS = ("full", "half", "inset", "small", "none")
@@ -34,14 +39,16 @@ def mmss(s):
 def parse(text):
     """sections -> passages. A passage is a run of spoken lines; directions in [**...**] attach to the passage before them."""
     sections = []; cur = None
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)              # notes and code-on-screen comments are never spoken
     for raw in text.splitlines():
         line = raw.rstrip()
         h = re.match(r"^##\s+(.*?)(?:\s{2,}|\s+)?(\d+:\d\d)?\s*(?:to|-|–)?\s*(\d+:\d\d)?\s*$", line)
         if line.startswith("## ") and h:
             cur = {"title": h[1].strip(), "start": mmss(h[2] or ""), "end": mmss(h[3] or ""), "passages": [], "raw": []}
             sections.append(cur); continue
+        if line.startswith("# "): continue                         # the video's title
         if cur is None:
-            if line.startswith("# "): continue
+            if not line.strip(): continue
             cur = {"title": "Opening", "start": 0, "end": None, "passages": [], "raw": []}; sections.append(cur)
         cur["raw"].append(line)
     for s in sections:
@@ -148,7 +155,7 @@ def plan(sections, style="cut", corner="top-right"):
             if m: hits.append((m.start(), lay))
         want = min(hits)[1] if hits else None
         if want and want != r["layout"]:
-            conflicts.append(f"{r['t'] // 60:.0f}:{r['t'] % 60:02.0f} script says '{r['script_camera'][:60]}' ({want}); plan says {r['layout']} because {r['why']}")
+            conflicts.append(f"{round(r['t']) // 60}:{round(r['t']) % 60:02d} script says '{r['script_camera'][:60]}' ({want}); plan says {r['layout']} because {r['why']}")
     return rows, notes, conflicts, used, total, cpm, n_used
 
 def render(rows, notes, conflicts, used, total, cpm, n_used, title):
@@ -160,7 +167,7 @@ def render(rows, notes, conflicts, used, total, cpm, n_used, title):
             merged[-1]["hold"] += r["hold"]; continue
         merged.append(dict(r))
     for r in merged:
-        L.append(f"| {r['t'] // 60:.0f}:{r['t'] % 60:02.0f} | {r['section'][:28]} | {r['text'][:70]}{'...' if len(r['text']) > 70 else ''} | **{r['layout']}** | {r['pos']} | {r['hold']:.0f} s | {r['why']} |")
+        L.append(f"| {round(r['t']) // 60}:{round(r['t']) % 60:02d} | {r['section'][:28]} | {r['text'][:70]}{'...' if len(r['text']) > 70 else ''} | **{r['layout']}** | {r['pos']} | {r['hold']:.0f} s | {r['why']} |")
     if notes: L += ["", "## Checks", ""] + [f"- {n}" for n in notes]
     else: L += ["", "## Checks", "", "- opening hold, return-to-face, no-face stretch, variety and pace are all inside the corpus habits"]
     if conflicts: L += ["", "## Where this differs from the script's own Camera notes", ""] + [f"- {c}" for c in conflicts]
